@@ -4607,7 +4607,8 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
     }
 
     int32_t callerPid = IPCSkeleton::GetCallingPid();
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioSessionZoneid(
+        IPCSkeleton::GetCallingUid(), callerPid, true);
     AUDIO_INFO_LOG("activate audio session with concurrencyMode %{public}d for pid %{public}d, zoneId %{public}d",
         static_cast<int32_t>(strategy.concurrencyMode), callerPid, zoneId);
 
@@ -4633,7 +4634,8 @@ int32_t AudioPolicyServer::DeactivateAudioSession()
         return ERR_UNKNOWN;
     }
     int32_t callerPid = IPCSkeleton::GetCallingPid();
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioSessionZoneid(
+        IPCSkeleton::GetCallingUid(), callerPid, false);
     AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d", callerPid, zoneId);
     return interruptService_->DeactivateAudioSession(zoneId, callerPid);
 }
