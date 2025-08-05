@@ -380,6 +380,7 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_216, TestSize.Level1)
     EXPECT_EQ(ret, ERROR);
 }
 
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
 /**
  * @tc.name  : Test AudioPolicyServer.
  * @tc.number: AudioPolicyServer_217
@@ -556,5 +557,6 @@ HWTEST(AudioPolicyUnitTest, ProcessVolumeKeyEvents_001, TestSize.Level1)
     EXPECT_NE(ptrAudioPolicyServer, nullptr);
     ptrAudioPolicyServer->ProcessVolumeKeyEvents(keyType);
 }
+#endif
 } // AudioStandard
 } // OHOS
