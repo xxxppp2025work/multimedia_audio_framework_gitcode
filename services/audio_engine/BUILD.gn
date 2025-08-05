@@ -217,7 +217,7 @@ ohos_shared_library("audio_engine_manager") {
     "../audio_policy/common/include",
     "../audio_policy/server/infra/datashare/include",
     "../../frameworks/native/audioeffect/include",
-    "../../frameworks/native/audioschedule/include",
+    "../../frameworks/native/audioqosmanager/include",
   ]
 
   sources = [
@@ -238,7 +238,7 @@ ohos_shared_library("audio_engine_manager") {
     ":audio_engine_node",
     ":audio_engine_utils",
     "../../frameworks/native/audioeffect:audio_effect",
-    "../../frameworks/native/audioschedule:audio_schedule",
+    "../../frameworks/native/audioqosmanager:audio_qosmanager",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../audio_policy:audio_foundation",
