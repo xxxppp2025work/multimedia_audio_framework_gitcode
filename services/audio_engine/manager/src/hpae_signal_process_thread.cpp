@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 #include "hpae_signal_process_thread.h"
-#include "audio_schedule.h"
+#include "audio_qosmanager.h"
+#include "parameter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -52,7 +53,10 @@ void HpaeSignalProcessThread::Notify()
 
 void HpaeSignalProcessThread::Run()
 {
-    ScheduleThreadInServer(getpid(), gettid());
+    AUDIO_INFO_LOG("set thread priority start");
+    int32_t setpriority = GetIntParameter("const.multimedia.audio_setPriority", 1);
+    SetThreadQosLevelAsync(setpriority);
+    AUDIO_INFO_LOG("set thread priority end");
     while (running_.load() && streamManager_.lock() != nullptr) {
         {
             std::unique_lock<std::mutex> lock(mutex_);
@@ -67,7 +71,7 @@ void HpaeSignalProcessThread::Run()
         }
         recvSignal_.store(false);
     }
-    UnscheduleThreadInServer(getpid(), gettid());
+    ResetThreadQosLevel();
 }
 
 }  // namespace HPAE

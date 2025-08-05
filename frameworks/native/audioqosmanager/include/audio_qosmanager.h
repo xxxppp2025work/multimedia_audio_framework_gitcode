@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 void SetThreadQosLevel(void);
-void SetThreadQosLevelAsync(void);
+void SetThreadQosLevelAsync(int32_t setpriority);
 void ResetThreadQosLevel(void);
 
 #ifdef __cplusplus
