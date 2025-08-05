@@ -56,6 +56,7 @@ static void SetThreadQosLevelWithTid(int32_t pid, int32_t tid, int32_t setpriori
     payload["pid"] = std::to_string(pid);
     OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
 
+    int32_t ret;
     if (setpriority == 1) {
         ret = OHOS::QOS::SetQosForOtherThread(OHOS::QOS::QosLevel::QOS_USER_INTERACTIVE, tid);
         CHECK_AND_RETURN_LOG(ret == 0, "set thread qos failed, ret = %{public}d", ret);
@@ -70,6 +71,7 @@ static void SetThreadQosLevelWithTid(int32_t pid, int32_t tid, int32_t setpriori
 
 void SetThreadQosLevelAsync(int32_t setpriority)
 {
+    AUDIO_INFO_LOG("set thread qos level start");
     int32_t tid = gettid();
     int32_t pid = getpid();
     std::thread setThreadQosLevelThread = std::thread([=] { SetThreadQosLevelWithTid(pid, tid, setpriority); });

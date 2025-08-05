@@ -16,6 +16,8 @@
 #ifndef AUDIO_QOSMANAGER_H
 #define AUDIO_QOSMANAGER_H
 
+#include <cstdint>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
