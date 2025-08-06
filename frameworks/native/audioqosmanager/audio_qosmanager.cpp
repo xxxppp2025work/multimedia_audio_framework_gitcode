@@ -49,7 +49,7 @@ void SetThreadQosLevel(void)
     AUDIO_INFO_LOG("set thread qos success");
 }
 
-static void SetThreadQosLevelWithTid(int32_t pid, int32_t tid, int32_t setpriority)
+static void SetThreadQosLevelWithTid(int32_t pid, int32_t tid, int32_t setPriority)
 {
     std::unordered_map<std::string, std::string> payload;
     payload["groupId"] = std::to_string(AUDIO_PROC_QOS_TABLE);
@@ -57,7 +57,7 @@ static void SetThreadQosLevelWithTid(int32_t pid, int32_t tid, int32_t setpriori
     OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
 
     int32_t ret;
-    if (setpriority == 1) {
+    if (setPriority == 1) {
         ret = OHOS::QOS::SetQosForOtherThread(OHOS::QOS::QosLevel::QOS_USER_INTERACTIVE, tid);
         CHECK_AND_RETURN_LOG(ret == 0, "set thread qos failed, ret = %{public}d", ret);
         AUDIO_INFO_LOG("set qos %{public}d for thread %{public}d success", OHOS::QOS::QosLevel::QOS_USER_INTERACTIVE, tid);
@@ -69,12 +69,12 @@ static void SetThreadQosLevelWithTid(int32_t pid, int32_t tid, int32_t setpriori
     AUDIO_INFO_LOG("set qos %{public}d for thread %{public}d success", OHOS::QOS::QosLevel::QOS_KEY_BACKGROUND, tid);
 }
 
-void SetThreadQosLevelAsync(int32_t setpriority)
+void SetThreadQosLevelAsync(int32_t setPriority)
 {
     AUDIO_INFO_LOG("set thread qos level start");
     int32_t tid = gettid();
     int32_t pid = getpid();
-    std::thread setThreadQosLevelThread = std::thread([=] { SetThreadQosLevelWithTid(pid, tid, setpriority); });
+    std::thread setThreadQosLevelThread = std::thread([=] { SetThreadQosLevelWithTid(pid, tid, setPriority); });
     setThreadQosLevelThread.detach();
 }
 
@@ -84,7 +84,7 @@ void ResetThreadQosLevel(void)
 }
 #else
 void SetThreadQosLevel(void) {};
-void SetThreadQosLevelAsync(int32_t setpriority) {};
+void SetThreadQosLevelAsync(int32_t setPriority) {};
 void ResetThreadQosLevel(void) {};
 #endif
 

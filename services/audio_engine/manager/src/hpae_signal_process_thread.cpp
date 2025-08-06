@@ -53,8 +53,8 @@ void HpaeSignalProcessThread::Notify()
 
 void HpaeSignalProcessThread::Run()
 {
-    int32_t setpriority = GetIntParameter("const.multimedia.audio_setPriority", 1);
-    SetThreadQosLevelAsync(setpriority);
+    int32_t setPriority = GetIntParameter("const.multimedia.audio_setPriority", 1);
+    SetThreadQosLevelAsync(setPriority);
     while (running_.load() && streamManager_.lock() != nullptr) {
         {
             std::unique_lock<std::mutex> lock(mutex_);
