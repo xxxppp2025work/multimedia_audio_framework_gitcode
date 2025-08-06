@@ -330,6 +330,21 @@ void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
     audioServerBuffer_->SetTimeStampInfo(curProcessPos_, timestamp);
 }
 
+void CapturerInServer::MuteVoiceTranscripTion(const SourceType sourceType)
+{
+    if (sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION) {
+        return;
+    }
+
+    bool muteState = false;
+    if (CoreServiceHandler::GetInstance().GetVoiceTranscripTionMuteState(sessionId, muteState)) {
+        if (muteState) {
+            memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
+        }
+    }
+    return;
+}
+
 void CapturerInServer::ReadData(size_t length)
 {
     CHECK_AND_RETURN_LOG(length >= spanSizeInBytes_,
@@ -366,14 +381,7 @@ void CapturerInServer::ReadData(size_t length)
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
     }
 
-    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
-        bool muteState = false;
-        if (CoreServiceHandler::GetInstance().GetVoiceTranscripTionMuteState(sessionId, muteState)) {
-            if (muteState) {
-                memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
-            }
-        }
-    }
+    MuteVoiceTranscripTion(processConfig_.capturerInfo.sourceType);
 
     if (muteFlag_) {
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
@@ -437,14 +445,7 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
     }
 
-    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
-        bool muteState = false;
-        if (CoreServiceHandler::GetInstance().GetVoiceTranscripTionMuteState(sessionId, muteState)) {
-            if (muteState) {
-                memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
-            }
-        }
-    }
+    MuteVoiceTranscripTion(processConfig_.capturerInfo.sourceType);
 
     if (muteFlag_) {
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);

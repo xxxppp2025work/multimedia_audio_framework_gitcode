@@ -363,9 +363,8 @@ private:
         std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
     void MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    int32_t MoveToLocalInputDevice(
-        std::vector<SourceOutput> sourceOutputs, std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor,
-        uint32_t routeFlag = AUDIO_FLAG_NONE);
+    int32_t MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,
+        std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor, uint32_t routeFlag = AUDIO_FLAG_NONE);
     int32_t MoveToRemoteInputDevice(
         std::vector<SourceOutput> sourceInputs, std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
     int32_t OpenRemoteAudioDevice(std::string networkId, DeviceRole deviceRole, DeviceType deviceType,

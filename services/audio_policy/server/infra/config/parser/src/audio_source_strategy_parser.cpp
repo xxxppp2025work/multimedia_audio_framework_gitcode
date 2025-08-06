@@ -98,7 +98,7 @@ void AudioSourceStrategyParser::ParseSourceStrategyMap(std::shared_ptr<AudioXmlN
 
 void AudioSourceStrategyParser::ParseAudioSourceConfig(std::shared_ptr<AudioXmlNode> curNode)
 {
-    while(curNode->IsNodeValid()) {
+    while (curNode->IsNodeValid()) {
         if (curNode->CompareName("audio_source_config")) {
             AUDIO_INFO_LOG("Loadconfig 1 enter");
             ParseConfig(curNode->GetChildrenNode());

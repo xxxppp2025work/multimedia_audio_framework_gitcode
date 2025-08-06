@@ -102,6 +102,11 @@ private:
 
     std::string GetEnhancePropByName(const AudioEnhancePropertyArray &propertyArray, const std::string &propName);
     std::string GetEnhancePropByNameV3(const AudioEffectPropertyArrayV3 &oldPropertyArray, const std::string &propName);
+    bool IsInvalidPipeRole(std::shared_ptr<AudioPipeInfo> pipe);
+    bool IsAIInputPipeValid(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList);
+    bool CheckNormalInputPipes(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
+        uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
+    bool IsStreamValid(std::shared_ptr<AudioStreamDescriptor> stream);
 private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioRouterCenter& audioRouterCenter_;
