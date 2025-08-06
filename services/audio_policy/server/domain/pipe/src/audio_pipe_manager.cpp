@@ -548,7 +548,14 @@ std::shared_ptr<AudioPipeInfo> AudioPipeManager::FindPipeBySessionId(
     const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList, uint32_t sessionId)
 {
     for (const auto &pipe : pipeList) {
+        if (!pipe) {
+            continue;
+        }
+
         for (const auto &stream : pipe->streamDescriptors_) {
+            if (!stream) {
+                continue;
+            }
             if (stream->sessionId_ == sessionId) {
                 return pipe;
             }

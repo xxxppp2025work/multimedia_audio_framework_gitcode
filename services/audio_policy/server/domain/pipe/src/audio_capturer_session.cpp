@@ -207,6 +207,9 @@ bool AudioCapturerSession::FindRunningNormalSession(uint32_t sessionId, AudioStr
     if (incommingPipe->routeFlag_ == AUDIO_INPUT_FLAG_AI) {
         AUDIO_INFO_LOG("In AI pipe");
         for (const auto &pipe : pipeList) {
+            if (!pipe) {
+                continue;
+            }
             if (pipe->pipeRole_ == PIPE_ROLE_INPUT && pipe->routeFlag_ == AUDIO_INPUT_FLAG_AI) {
                 for (const auto &stream: pipe->streamDescriptors_) {
                     // pipe AI 内部优先级比较
@@ -219,12 +222,18 @@ bool AudioCapturerSession::FindRunningNormalSession(uint32_t sessionId, AudioStr
 
     AUDIO_INFO_LOG("not AI pipe");
     for (const auto &pipe : pipeList) {
-        if (pipe->pipeRole_ == PIPE_ROLE_OUTPUT || ipe->pipeRole_ == PIPE_ROLE_NONE) {
+        if (!pipe) {
+            continue;
+        }
+        if ((pipe->pipeRole_ == PIPE_ROLE_OUTPUT || ipe->pipeRole_ == PIPE_ROLE_NONE)) {
             continue;
         }
 
         AUDIO_INFO_LOG("normal input");
         for (const auto &stream : pipe->streamDescriptors_) {
+            if (!stream) {
+                continue;
+            }
             if (sessionWithNormalSourceType_.find(stream->sessionId_) == sessionWithNormalSourceType_.end()) {
                 continue;
             }
@@ -235,7 +244,7 @@ bool AudioCapturerSession::FindRunningNormalSession(uint32_t sessionId, AudioStr
             }
             if (IsHigherPrioritySourceType(tmpSource, runningSessionInfo.capturerInfo_.sourceType)) {
                 hasSession = true;
-                runningSessionInfo = *info;
+                runningSessionInfo = *stream;
             }
         }
     }

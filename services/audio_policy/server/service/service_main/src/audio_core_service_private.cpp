@@ -1680,7 +1680,7 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
         AUDIO_INFO_LOG("routeFlag:%{public}d", pipeInfo->routeFlag_);
         if ((audioActiveDevice_.GetCurrentInputDeviceType() == DEVICE_TYPE_MIC ||
             audioActiveDevice_.GetCurrentInputDeviceType() == DEVICE_TYPE_ACCESSORY) &&
-            (ipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_AI)) {
+            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_AI)) {
             audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(),
                 pipeInfo->moduleInfo_.name, true, INPUT_DEVICES_FLAG);
         }

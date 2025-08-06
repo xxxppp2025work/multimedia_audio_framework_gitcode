@@ -1543,6 +1543,7 @@ void HandleVoiceCallAndTranscriptionFocus(
             return;
         }
 
+        CHECK_AND_RETURN_LOG(policyServer_ != nullptr, "policyServer nullptr");
         if (policyServer_->VerifyPermission(CAPTURE_VOICE_CALL_PERMISSION)) {
             AUDIO_INFO_LOG("VerifyPermission mutesessionId:%{public}d", mutesessionId);
             it->second.forceType = INTERRUPT_FORCE;
