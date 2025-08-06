@@ -55,7 +55,7 @@ AppStateListener::AppStateListener()
     AUDIO_INFO_LOG("enter");
 }
 
-void AppStateListener::OnAppStateChanged(const AppExecFwk::AppProcessData& appProcessData)
+ErrCode AppStateListener::OnAppStateChanged(const AppExecFwk::AppProcessData& appProcessData)
 {
     for (const auto& appData : appProcessData.appDatas) {
         AUDIO_INFO_LOG("app state changed, bundleName=%{public}s uid=%{public}d pid=%{public}d state=%{public}d",
@@ -71,6 +71,7 @@ void AppStateListener::OnAppStateChanged(const AppExecFwk::AppProcessData& appPr
         sessionService->NotifyAppStateChange(appProcessData.pid,
             (appProcessData.appState == AppExecFwk::ApplicationState::APP_STATE_BACKGROUND));
     }
+    return ERR_OK;
 }
 
 void AppStateListener::HandleAppStateChange(int32_t pid, int32_t uid, int32_t state)
