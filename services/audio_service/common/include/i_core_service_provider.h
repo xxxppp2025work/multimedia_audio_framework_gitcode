@@ -37,6 +37,9 @@ public:
     virtual uint32_t GenerateSessionId() = 0;
     virtual int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) = 0;
 
+    virtual int32_t GetVoiceTranscripTionMuteState(uint32_t sessionId, bool &muteState) = 0;
+    virtual int32_t RemoveVoiceTranscripTionMuteState(uint32_t sessionId) = 0;
+
     virtual ~ICoreServiceProvider() = default;
 };
 } // namespace AudioStandard

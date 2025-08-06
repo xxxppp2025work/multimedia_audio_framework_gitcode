@@ -82,5 +82,17 @@ int32_t CoreServiceProviderWrapper::SetWakeUpAudioCapturerFromAudioServer(
     ret = coreServiceWorker_->SetWakeUpAudioCapturerFromAudioServer(config);
     return SUCCESS;
 }
+
+int32_t CoreServiceProviderWrapper::GetVoiceTranscripTionMuteState(uint32_t sessionId, bool &muteState)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, 0, "coreServiceWorker_ is null");
+    return coreServiceWorker_->GetVoiceTranscripTionMuteState(sessionId, muteState);
+}
+
+int32_t CoreServiceProviderWrapper::RemoveVoiceTranscripTionMuteState(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, 0, "coreServiceWorker_ is null");
+    return coreServiceWorker_->RemoveVoiceTranscripTionMuteState(sessionId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

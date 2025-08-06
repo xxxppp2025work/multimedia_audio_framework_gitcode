@@ -95,6 +95,8 @@ public:
         int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
             bool isReloadProcess = false) override;
         uint32_t GenerateSessionId() override;
+        int32_t GetVoiceTranscripTionMuteState(uint32_t sessionId, bool &muteState) override;
+        int32_t RemoveVoiceTranscripTionMuteState(uint32_t sessionId) override;
         int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
         // IDeviceStatusObserver
@@ -205,6 +207,8 @@ private:
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo);
     uint32_t GenerateSessionId();
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
+    int32_t GetVoiceTranscripTionMuteState(uint32_t sessionId, bool &muteState);
+    int32_t RemoveVoiceTranscripTionMuteState(uint32_t sessionId);
 
     // IDeviceStatusObserver from EventEntry
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
@@ -360,7 +364,8 @@ private:
     void MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     int32_t MoveToLocalInputDevice(
-        std::vector<SourceOutput> sourceOutputs, std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor);
+        std::vector<SourceOutput> sourceOutputs, std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor,
+        uint32_t routeFlag = AUDIO_FLAG_NONE);
     int32_t MoveToRemoteInputDevice(
         std::vector<SourceOutput> sourceInputs, std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
     int32_t OpenRemoteAudioDevice(std::string networkId, DeviceRole deviceRole, DeviceType deviceType,
@@ -386,7 +391,7 @@ private:
     bool IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     AudioFlag SetFlagForSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
-    void UpdateRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId);
     std::vector<SourceOutput> GetSourceOutputs();
     void UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);

@@ -98,7 +98,7 @@ private:
     void SetInputDeviceTypeForReload(const AudioDeviceDescriptor &inputDevice);
     const AudioDeviceDescriptor& GetInputDeviceTypeForReload();
     bool IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDevcie, const AudioDeviceDescriptor &outputDevice);
-    bool FindRunningNormalSession(uint32_t sessionId, AudioCapturerChangeInfo &runingSessionInfo);
+    bool FindRunningNormalSession(uint32_t sessionId, AudioStreamDescriptor &runingSessionInfo);
 
     std::string GetEnhancePropByName(const AudioEnhancePropertyArray &propertyArray, const std::string &propName);
     std::string GetEnhancePropByNameV3(const AudioEffectPropertyArrayV3 &oldPropertyArray, const std::string &propName);

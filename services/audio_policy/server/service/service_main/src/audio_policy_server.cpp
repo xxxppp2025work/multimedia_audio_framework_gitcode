@@ -5073,5 +5073,10 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
     dataShareHelper->Release();
     return SUCCESS;
 }
+
+void AudioPolicyServer::SetVoiceTranscripTionMuteState(uint32_t sessionId, bool isMute)
+{
+    return audioPolicyService_.SetVoiceTranscripTionMuteState(sessionId, isMute);
+}
 } // namespace AudioStandard
 } // namespace OHOS

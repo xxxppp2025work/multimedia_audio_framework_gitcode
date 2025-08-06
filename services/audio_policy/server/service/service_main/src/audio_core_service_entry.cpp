@@ -137,6 +137,16 @@ uint32_t AudioCoreService::EventEntry::GenerateSessionId()
     return coreService_->GenerateSessionId();
 }
 
+int32_t AudioCoreService::EventEntry::GetVoiceTranscripTionMuteState(uint32_t sessionId, bool &muteState)
+{
+    return coreService_->GetVoiceTranscripTionMuteState(sessionId, muteState);
+}
+
+int32_t AudioCoreService::EventEntry::RemoveVoiceTranscripTionMuteState(uint32_t sessionId)
+{
+    return coreService_->RemoveVoiceTranscripTionMuteState(sessionId);
+}
+
 int32_t AudioCoreService::EventEntry::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning)
 {
