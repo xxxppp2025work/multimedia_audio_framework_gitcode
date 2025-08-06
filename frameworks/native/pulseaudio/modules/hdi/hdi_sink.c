@@ -45,7 +45,6 @@
 #include "securec.h"
 
 #include "audio_hdi_log.h"
-#include "audio_qosmanager.h"
 #include "audio_schedule.h"
 #include "parameter.h"
 #include "audio_utils_c.h"
