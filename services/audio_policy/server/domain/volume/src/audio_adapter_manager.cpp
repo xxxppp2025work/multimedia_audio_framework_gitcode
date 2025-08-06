@@ -1256,8 +1256,7 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
     AudioVolume::GetInstance()->SetCurrentActiveDevice(currentActiveDevice_.deviceType_);
 
     if (deviceDescriptor.deviceType_ == DEVICE_TYPE_SPEAKER && deviceDescriptor.networkId_ != LOCAL_NETWORK_ID) {
-        HandleDistributedDeviceVolume();
-        UpdateVolumeForLowLatency();
+        HandleDistributedDevice(deviceDescriptor);
         return;
     }
 
@@ -1287,6 +1286,17 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
     }
 
     UpdateVolumeForLowLatency();
+}
+
+void AudioAdapterManager::HandleDistributedDevice(AudioDeviceDescriptor deviceDescriptor)
+{
+    HandleDistributedDeviceVolume();
+    UpdateVolumeForLowLatency();
+    CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler_ is null");
+    for (auto streamType : DISTRIBUTED_VOLUME_TYPE_LIST) {
+        handler_->SendSaveVolume(deviceDescriptor.deviceType_, streamType, MAX_VOLUME_LEVEL,
+            deviceDescriptor.networkId_);
+    }
 }
 
 int32_t AudioAdapterManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName)
