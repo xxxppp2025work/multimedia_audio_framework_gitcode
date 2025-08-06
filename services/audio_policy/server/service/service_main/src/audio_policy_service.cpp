@@ -1214,5 +1214,38 @@ int32_t AudioPolicyService::CaptureConcurrentCheck(const uint32_t &sessionID)
 {
     return AudioCoreService::GetCoreService()->CaptureConcurrentCheck(sessionID);
 }
+
+void AudioPolicyService::SetVoiceTranscripTionMuteState(uint32_t sessionId, bool isMute)
+{
+    std::lock_guard<std::mutex> lock(muteMutex_);
+    voiceTranscripTionMuteStateMap_[sessionId] = isMute;
+    AUDIO_INFO_LOG("set mute state for session %{public}u to %{public}s", sessionId, isMute ? "muted" : "unmuted");
+}
+
+int32_t AudioPolicyService::GetVoiceTranscripTionMuteState(uint32_t sessionId, bool &muteState)
+{
+    std::lock_guard<std::mutex> lock(muteMutex_);
+    AUDIO_INFO_LOG("get mute state for session %{public}u", sessionId);
+    auto it = voiceTranscripTionMuteStateMap_.find(sessionId);
+    if (it != voiceTranscripTionMuteStateMap_.end()) {
+        AUDIO_INFO_LOG("get mute state for session %{public}u, state %{public}s", sessionId,
+            it->second ? "muted" : "unmuted");
+        muteState = it->second;
+        return SUCCESS;
+    }
+
+    muteState = false;
+    return SUCCESS;
+}
+
+
+int32_t AudioPolicyService::RemoveVoiceTranscripTionMuteState(uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(muteMutex_);
+    voiceTranscripTionMuteStateMap_.erase(sessionId);
+    AUDIO_INFO_LOG("remove mute state for session %{public}u", sessionId);
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

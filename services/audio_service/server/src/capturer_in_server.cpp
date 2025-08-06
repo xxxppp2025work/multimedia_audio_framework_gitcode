@@ -330,6 +330,21 @@ void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
     audioServerBuffer_->SetTimeStampInfo(curProcessPos_, timestamp);
 }
 
+void CapturerInServer::MuteVoiceTranscripTion(const SourceType sourceType)
+{
+    if (sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION) {
+        return;
+    }
+
+    bool muteState = false;
+    if (CoreServiceHandler::GetInstance().GetVoiceTranscripTionMuteState(sessionId, muteState)) {
+        if (muteState) {
+            memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
+        }
+    }
+    return;
+}
+
 void CapturerInServer::ReadData(size_t length)
 {
     CHECK_AND_RETURN_LOG(length >= spanSizeInBytes_,
@@ -365,6 +380,9 @@ void CapturerInServer::ReadData(size_t length)
         LEGACY_MUTE_CAP) || muteFlag_) {
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
     }
+
+    MuteVoiceTranscripTion(processConfig_.capturerInfo.sourceType);
+
     if (muteFlag_) {
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
     }
@@ -426,6 +444,9 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
         LEGACY_MUTE_CAP) || muteFlag_) {
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
     }
+
+    MuteVoiceTranscripTion(processConfig_.capturerInfo.sourceType);
+
     if (muteFlag_) {
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
     }
@@ -702,6 +723,7 @@ int32_t CapturerInServer::Stop()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
+    CoreServiceHandler::GetInstance().RemoveVoiceTranscripTionMuteState(streamIndex_);
     return SUCCESS;
 }
 
