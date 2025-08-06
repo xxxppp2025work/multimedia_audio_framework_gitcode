@@ -18,15 +18,25 @@
 
 #include <memory>
 #include "app_mgr_client.h"
-#include "app_state_callback_host.h"
+#include "app_state_callback_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class AppStateListener : public AppExecFwk::AppStateCallbackHost {
+class AppStateListener : public AppExecFwk::AppStateCallbackStub {
 public:
     AppStateListener();
-    void OnAppStateChanged(const AppExecFwk::AppProcessData& appProcessData) override;
+    ErrCode OnAppStateChanged(const AppExecFwk::AppProcessData& appProcessData) override;
+    ErrCode OnAbilityRequestDone(const sptr<IRemoteObject>& token, AppExecFwk::AbilityState state) override;
+    ErrCode NotifyConfigurationChange(const Configuration& config, int32_t userId) override;
+    ErrCode NotifyStartResidentProcess(const std::vector<BundleInfo>& bundleInfos) override;
+    ErrCode NotifyStartKeepAliveProcess(const std::vector<BundleInfo>& bundleInfos) override;
+    ErrCode OnAppRemoteDied(const std::vector<sptr<IRemoteObject>>& abilityTokens) override;
+    ErrCode OnStartProcessFailed(const sptr<IRemoteObject>& token) override;
+    ErrCode NotifyAppPreCache(int32_t pid, int32_t userId) override;
+    ErrCode OnCacheExitInfo(uint32_t accessTokenId, const RunningProcessInfo& exitInfo,
+        const std::string& bundleName, const std::vector<std::string>& abilityNames,
+        const std::vector<std::string>& uiExtensionNames) override;
 private:
     void HandleAppStateChange(int32_t pid, int32_t uid, int32_t state);
     void HandleBackgroundAppStateChange(int32_t pid, int32_t uid, int32_t state);

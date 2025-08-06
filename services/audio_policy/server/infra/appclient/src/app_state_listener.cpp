@@ -55,7 +55,7 @@ AppStateListener::AppStateListener()
     AUDIO_INFO_LOG("enter");
 }
 
-void AppStateListener::OnAppStateChanged(const AppExecFwk::AppProcessData& appProcessData)
+ErrCode AppStateListener::OnAppStateChanged(const AppExecFwk::AppProcessData& appProcessData)
 {
     for (const auto& appData : appProcessData.appDatas) {
         AUDIO_INFO_LOG("app state changed, bundleName=%{public}s uid=%{public}d pid=%{public}d state=%{public}d",
@@ -71,6 +71,42 @@ void AppStateListener::OnAppStateChanged(const AppExecFwk::AppProcessData& appPr
         sessionService->NotifyAppStateChange(appProcessData.pid,
             (appProcessData.appState == AppExecFwk::ApplicationState::APP_STATE_BACKGROUND));
     }
+    return ERR_OK;
+}
+
+ErrCode AppStateListener::OnAbilityRequestDone(const sptr<IRemoteObject>& token, AppExecFwk::AbilityState state)
+{
+    return ERR_OK;
+}
+ErrCode AppStateListener::NotifyConfigurationChange(const Configuration& config, int32_t userId)
+{
+    return ERR_OK;
+}
+ErrCode AppStateListener::NotifyStartResidentProcess(const std::vector<BundleInfo>& bundleInfos)
+{
+    return ERR_OK;
+}
+ErrCode AppStateListener::NotifyStartKeepAliveProcess(const std::vector<BundleInfo>& bundleInfos)
+{
+    return ERR_OK;
+}
+ErrCode AppStateListener::OnAppRemoteDied(const std::vector<sptr<IRemoteObject>>& abilityTokens)
+{
+    return ERR_OK;
+}
+ErrCode AppStateListener::OnStartProcessFailed(const sptr<IRemoteObject>& token)
+{
+    return ERR_OK;
+}
+ErrCode AppStateListener::NotifyAppPreCache(int32_t pid, int32_t userId)
+{
+    return ERR_OK;
+}
+ErrCode AppStateListener::OnCacheExitInfo(uint32_t accessTokenId, const RunningProcessInfo& exitInfo,
+    const std::string& bundleName, const std::vector<std::string>& abilityNames,
+    const std::vector<std::string>& uiExtensionNames)
+{
+    return ERR_OK;
 }
 
 void AppStateListener::HandleAppStateChange(int32_t pid, int32_t uid, int32_t state)
