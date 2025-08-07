@@ -1169,36 +1169,6 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_053, TestSize.Level1)
 {
     AAFwk::Want want;
     EventFwk::CommonEventData eventData;
-    std::string action = AUDIO_RESTORE_VOLUME_EVENT;
-    want.SetAction(action);
-    eventData.SetWant(want);
-    AudioVolumeManager::GetInstance().OnReceiveEvent(eventData);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_054
-* @tc.desc  : Test OnReceiveEvent interface.
-*/
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_054, TestSize.Level1)
-{
-    AAFwk::Want want;
-    EventFwk::CommonEventData eventData;
-    std::string action = AUDIO_INCREASE_VOLUME_EVENT;
-    want.SetAction(action);
-    eventData.SetWant(want);
-    AudioVolumeManager::GetInstance().OnReceiveEvent(eventData);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_055
-* @tc.desc  : Test OnReceiveEvent interface.
-*/
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_055, TestSize.Level1)
-{
-    AAFwk::Want want;
-    EventFwk::CommonEventData eventData;
     std::string action = "test";
     want.SetAction(action);
     eventData.SetWant(want);
@@ -1207,10 +1177,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_055, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_056
+* @tc.number: AudioVolumeManager_054
 * @tc.desc  : Test SetDeviceSafeVolumeStatus interface.
 */
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_056, TestSize.Level1)
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_054, TestSize.Level1)
 {
     AudioVolumeManager::GetInstance().userSelect_ = true;
     AudioVolumeManager::GetInstance().audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
@@ -1224,10 +1194,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_056, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_057
+* @tc.number: AudioVolumeManager_055
 * @tc.desc  : Test SetAbsVolumeSceneAsync interface.
 */
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_057, TestSize.Level1)
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_055, TestSize.Level1)
 {
     auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
     ASSERT_TRUE(audioVolumeManager != nullptr);
@@ -1244,10 +1214,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_057, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_058
+* @tc.number: AudioVolumeManager_056
 * @tc.desc  : Test SetAbsVolumeSceneAsync interface.
 */
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_058, TestSize.Level1)
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_056, TestSize.Level1)
 {
     std::string macAddress = "test";
     bool support = true;
@@ -1260,10 +1230,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_058, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_059
+* @tc.number: AudioVolumeManager_057
 * @tc.desc  : Test SetDeviceAbsVolumeSupported interface.
 */
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_059, TestSize.Level1)
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_057, TestSize.Level1)
 {
     std::string macAddress = "test";
     bool support = true;
@@ -1278,10 +1248,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_059, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_060
+* @tc.number: AudioVolumeManager_058
 * @tc.desc  : Test SetStreamMute interface.
 */
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_060, TestSize.Level1)
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_058, TestSize.Level1)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     AudioStreamType streamType = STREAM_MUSIC;
@@ -1295,10 +1265,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_060, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_061
+* @tc.number: AudioVolumeManager_059
 * @tc.desc  : Test GetStreamMute interface.
 */
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_061, TestSize.Level1)
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_059, TestSize.Level1)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
@@ -1310,10 +1280,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_061, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_062
+* @tc.number: AudioVolumeManager_060
 * @tc.desc  : Test ResetRingerModeMute interface.
 */
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_062, TestSize.Level1)
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_060, TestSize.Level1)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     auto ret = audioVolumeManager.ResetRingerModeMute();
