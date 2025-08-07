@@ -376,7 +376,7 @@ void AudioPolicyProxyThreeFuzzTest()
         "1234",
         true,
         true,
-        AudioSpatialDeviceType::EARPHONE_TYPE_NONE,        
+        AudioSpatialDeviceType::EARPHONE_TYPE_NONE
     }
     audioPolicyProxy->UpdateSpatialDeviceState(audioSpatialDeviceState);
     int32_t zoneID = GetData<int32_t>();
