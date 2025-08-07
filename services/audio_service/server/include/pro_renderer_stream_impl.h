@@ -77,7 +77,9 @@ public:
     int32_t SetClientVolume(float clientVolume) override;
     int32_t SetLoudnessGain(float loudnessGain) override;
     void BlockStream() noexcept override;
-
+#ifdef HAS_FEATURE_COLLABORATION
+    void SetCollaborativeEnabled() override;
+#endif
 private:
     bool GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &nanoSec);
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate) const noexcept;

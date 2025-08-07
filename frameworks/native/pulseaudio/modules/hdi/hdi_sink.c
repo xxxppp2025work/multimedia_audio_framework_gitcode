@@ -59,6 +59,7 @@
 #include "sink_userdata.h"
 #include "time.h"
 #include "audio_performance_monitor_c.h"
+#include "collaborative_playback_adapter.h"
 
 #define DEFAULT_SINK_NAME "hdi_output"
 #define DEFAULT_AUDIO_DEVICE_NAME "Speaker"
@@ -74,7 +75,11 @@
 #define PRIMARY_CHANNEL_NUM 2
 #define IN_CHANNEL_NUM_MAX 16
 #define DEFAULT_FRAMELEN 2048
+#ifdef HAS_FEATURE_COLLABORATION
+#define SCENE_TYPE_NUM 10
+#else
 #define SCENE_TYPE_NUM 9
+#endif
 #define HDI_MIN_MS_MAINTAIN 40
 #define OFFLOAD_HDI_CACHE1 200 // ms, should equal with val in client
 #define OFFLOAD_HDI_CACHE2 7000 // ms, should equal with val in client
@@ -119,14 +124,23 @@ const char *MCH_SINK_NAME = "MCH_Speaker";
 const char *BT_SINK_NAME = "Bt_Speaker";
 const char *OFFLOAD_SINK_NAME = "Offload_Speaker";
 const char *DP_SINK_NAME = "DP_speaker";
-
+#ifdef HAS_FEATURE_COLLABORATION
+const char *SCENE_COLLABORATIVE = "SCENE_COLLABORATIVE";
+const char *SCENE_NONE = "EFFECT_NONE";
+const char *SPK_SINK_NAME = "Speaker";
+#endif
 const int32_t WAIT_CLOSE_PA_OR_EFFECT_TIME = 4; // secs
 const int32_t MONITOR_CLOSE_PA_TIME_SEC = 5 * 60; // 5min
 bool g_effectAllStreamVolumeZeroMap[SCENE_TYPE_NUM] = {false, false, false, false, false, false, false};
 bool g_effectHaveDisabledMap[SCENE_TYPE_NUM] = {false, false, false, false, false, false, false};
 time_t g_effectStartVolZeroTimeMap[SCENE_TYPE_NUM] = {0, 0, 0, 0, 0, 0, 0};
+#ifdef HAS_FEATURE_COLLABORATION
+char *const SCENE_TYPE_SET[SCENE_TYPE_NUM] = {"SCENE_DEFAULT", "SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE",
+    "SCENE_SPEECH", "SCENE_RING", "SCENE_VOIP_DOWN", "SCENE_OTHERS", "SCENE_COLLABORATIVE", "EFFECT_NONE"};
+#else
 char *const SCENE_TYPE_SET[SCENE_TYPE_NUM] = {"SCENE_DEFAULT", "SCENE_MUSIC", "SCENE_GAME", "SCENE_MOVIE",
     "SCENE_SPEECH", "SCENE_RING", "SCENE_VOIP_DOWN", "SCENE_OTHERS", "EFFECT_NONE"};
+#endif
 const int32_t COMMON_SCENE_TYPE_INDEX = 0;
 const int32_t SUCCESS = 0;
 const int32_t ERROR = -1;
@@ -196,7 +210,8 @@ static void UpdateStreamVolumeMap(struct Userdata *u);
 static struct VolumeValues *GetVolumeFromStreamVolumeMap(struct Userdata *u, uint32_t sessionID);
 static void RemoveVolumeFromStreamVolumeMap(struct Userdata *u, pa_sink_input *i);
 static bool IsZeroVolume(float volume);
-
+static const char *GetSceneTypeForCollaboration(const pa_proplist* p, const char* sinkName);
+static void CollaborativeProcess(struct Userdata *u, char *sinkSceneType);
 // BEGIN Utility functions
 #define FLOAT_EPS 1e-6f
 #define MEMBLOCKQ_MAXLENGTH (16*1024*16)
@@ -323,6 +338,39 @@ static void ConvertFromFloat(pa_sample_format_t format, unsigned n, float *src, 
             CHECK_AND_RETURN_LOG(ret == 0, "ConvertFromFloat: copy from src to dst fail!");
             break;
     }
+}
+
+static const char *GetSceneTypeForCollaboration(const pa_proplist* p, const char* sinkName)
+{
+    if (!p || !sinkName) {
+        AUDIO_ERR_LOG("GetSceneTypeForCollaboration: p or sinkName is null");
+        return "NULL";
+    }
+
+    const char* collaborationEnabled = safeProplistGets(p, "collaboration.enabled", "NULL");
+    if (!strcmp(sinkName, BT_SINK_NAME) && collaborationEnabled && !strcmp(collaborationEnabled, "1")) {
+        return SCENE_COLLABORATIVE;
+    }
+
+    return safeProplistGets(p, "scene.type", "NULL");
+}
+
+static void CollaborativeProcess(struct Userdata *u, char *sinkSceneType)
+{
+    if (!IsCollaborationEnabled()) {
+        return;
+    }
+
+    if (!strcmp(u->sink->name, BT_SINK_NAME) && !strcmp(sinkSceneType, SCENE_COLLABORATIVE)) {
+        CollaborativePlaybackEnqueue(u->bufferAttr);
+        return;
+    }
+
+    if (!strcmp(u->sink->name, SPK_SINK_NAME) && !strcmp(sinkSceneType, SCENE_NONE)) {
+        CollaborativePlaybackDequeue(u->bufferAttr);
+        return;
+    }
+    return;
 }
 
 static void updateResampler(pa_sink_input *sinkIn, const char *sceneType, bool mchFlag, pa_sink *si)
@@ -1372,7 +1420,11 @@ static unsigned SinkRenderPrimaryCluster(pa_sink *si, size_t *length, pa_mix_inf
     size_t count = 0;
     while ((sinkIn = pa_hashmap_iterate(si->thread_info.inputs, &state, NULL)) && maxInfo > 0) {
         CheckAndPushUidToArr(sinkIn, appsUid, &count);
+#ifdef HAS_FEATURE_COLLABORATION
+        const char *sSceneType = GetSceneTypeForCollaboration(sinkIn->proplist, u->sink->name);
+#else
         const char *sSceneType = pa_proplist_gets(sinkIn->proplist, "scene.type");
+#endif
         const char *sSceneMode = pa_proplist_gets(sinkIn->proplist, "scene.mode");
         bool existFlag = GetExistFlag(sinkIn, sSceneType, sSceneMode);
         bool sceneTypeFlag = EffectChainManagerSceneCheck(sSceneType, sceneType);
@@ -1787,7 +1839,24 @@ static char *CheckAndDealEffectZeroVolume(struct Userdata *u, time_t currentTime
         if (input->thread_info.state != PA_SINK_INPUT_RUNNING) {
             continue;
         }
+#ifdef HAS_FEATURE_COLLABORATION
+        const char* collaborationEnabled = safeProplistGets(p, "collaboration.enabled", "NULL");
+        const char *sinkSceneTypeTmp = NULL;
+        if (collaborationEnabled && !strcmp(collaborationEnabled, "1")) {
+            if (!strcmp(sinkName, SPK_SINK_NAME)) {
+                g_effectAllStreamVolumeZeroMap[i] = false;
+                g_effectStartVolZeroTimeMap[i] = 0;
+                break;
+            }
+            if (!strcmp(sinkName, BT_SINK_NAME)) {
+                sinkSceneTypeTmp = SCENE_COLLABORATIVE;
+            }
+        } else {
+            sinkSceneTypeTmp = pa_proplist_gets(input->proplist, "scene.type");
+        }
+#else
         const char *sinkSceneTypeTmp = pa_proplist_gets(input->proplist, "scene.type");
+#endif
         const char *streamType = safeProplistGets(input->proplist, "stream.type", "NULL");
         const char *sessionIDStr = safeProplistGets(input->proplist, "stream.sessionID", "NULL");
         uint32_t sessionID = sessionIDStr != NULL ? (uint32_t)atoi(sessionIDStr) : 0;
@@ -2040,6 +2109,9 @@ static void PrimaryEffectProcess(struct Userdata *u, char *sinkSceneType, const 
 {
     AUTO_CTRACE("hdi_sink::EffectChainManagerProcess:%s", sinkSceneType);
     EffectChainManagerProcess(sinkSceneType, u->bufferAttr);
+#ifdef HAS_FEATURE_COLLABORATION
+    CollaborativeProcess(u, sinkSceneType);
+#endif
     UpdateStreamAvailableMap(u, sinkSceneType);
     ResampleAfterEffectChain(sceneType, u);
     for (uint32_t k = 0; k < outBufferLen; k++) {

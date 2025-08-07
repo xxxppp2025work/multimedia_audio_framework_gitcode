@@ -147,8 +147,14 @@ public:
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame);
 
     int32_t SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId);
+<<<<<<< HEAD
+    // for collaboration
+    void EnableCollaboration();
+    void DisableCollaboration();
+=======
     void InitDupBuffer(int32_t innerCapId);
 
+>>>>>>> upstream/master
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -181,9 +187,18 @@ private:
     void ProcessFadeOutIfNeeded(RingBufferWrapper& ringBufferDesc, uint64_t currentReadFrame,
         uint64_t currentWriteFrame, size_t requestDataInFrame);
     void UpdateLatestForWorkgroup(float systemVolume);
+<<<<<<< HEAD
+// for collaboration
+    void CollaborativeStreamStartInner();
+    void CollaborativeStreamPauseInner();
+    void CollaborativeStreamFlushInner();
+    void CollaborativeStreamDrainInner(bool stopFlag);
+    void CollaborativeStreamStopInner();
+=======
     int32_t DisableInnerCapHandle(int32_t innerCapId);
     int32_t InitDupStreamVolume(uint32_t dupStreamIndex);
     void ProcessManagerType();
+>>>>>>> upstream/master
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -273,6 +288,11 @@ private:
 
     bool latestForWorkgroupInited_ = false;
     struct RendererLatestInfoForWorkgroup latestForWorkgroup_;
+    // for collaboration
+    std::mutex collaborationMutex_;
+    bool isCollaborationEnabled_ = false;
+    std::shared_ptr<IRendererStream> collaborativeStream_ = nullptr;
+    uint32_t collaborativeStreamIndex_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

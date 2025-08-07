@@ -33,6 +33,10 @@
 #include "audio_device_descriptor.h"
 #include "ipc_stream_in_server.h"
 #include "playback_capturer_filter_listener.h"
+#ifdef HAS_FEATURE_COLLABORATION
+#include "collaborative_playback_listener.h"
+#include "i_collaborative_playback_manager.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -53,9 +57,9 @@ enum ReuseEndpointType : uint32_t {
 using MuteStateChangeCallbck = std::function<void(bool)>;
 
 #ifdef SUPPORT_LOW_LATENCY
-class AudioService : public ProcessReleaseCallback, public ICapturerFilterListener
+class AudioService : public ProcessReleaseCallback, public ICapturerFilterListener, public ICollaborativeListener
 #else
-class AudioService : public ICapturerFilterListener
+class AudioService : public ICapturerFilterListener, public ICollaborativeListener
 #endif
 {
 public:
@@ -140,7 +144,9 @@ public:
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
     void RenderersCheckForAudioWorkgroup(int32_t pid);
-
+#ifdef HAS_FEATURE_COLLABORATION
+    void OnCollaborativeStateChanged(bool isCollaborative) override;
+#endif
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);
@@ -179,7 +185,9 @@ private:
     bool IsMuteSwitchStream(uint32_t sessionId);
     float GetSystemVolume();
     void UpdateSystemVolume(AudioStreamType streamType, float volume);
-
+#ifdef HAS_FEATURE_COLLABORATION
+    void CheckCollaborationForRendererInner(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
+#endif
 private:
     std::mutex foregroundSetMutex_;
     std::set<std::string> foregroundSet_;
@@ -230,6 +238,10 @@ private:
     std::map<uint32_t, bool> muteStateMap_{};
     std::mutex musicOrVoipSystemVolumeMutex_;
     float musicOrVoipSystemVolume_ = 0.0f;
+#ifdef HAS_FEATURE_COLLABORATION
+    ICollaborativePlaybackManager* collaborativePlaybackManager_;
+    bool isRegisterCollaborativeListened_ = false;
+#endif
 };
 } // namespace AudioStandard
 } // namespace OHOS

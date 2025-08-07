@@ -810,6 +810,20 @@ void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
             dualToneStream_->EnqueueBuffer(bufferDesc); // what if enqueue fail?
         }
     }
+#ifdef HAS_FEATURE_COLLABORATION
+    // for collaborative
+    if (isCollaborationEnabled_) {
+        Trace traceDup("RendererInServer::WriteData CollaborativeSteam write");
+        std::lock_guard<std::mutex> lock(collaborationMutex_);
+        if (collaborativeStream_ != nullptr) {
+            size_t emptyBufferSize = spanSizeInByte_;
+            auto buffer = std::make_unique<uint8_t []>(emptyBufferSize);
+            BufferDesc emptyBufferDesc = {buffer.get(), emptyBufferSize, emptyBufferSize};
+            memset_s(emptyBufferDesc.buffer, emptyBufferDesc.bufLength, 0, emptyBufferDesc.bufLength);
+            collaborativeStream_->EnqueueBuffer(bufferDesc);
+        }
+    }
+#endif
 }
 
 void RendererInServer::InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, CaptureInfo &captureInfo,
@@ -1027,7 +1041,14 @@ int32_t RendererInServer::StartInner()
     enterStandbyTime_ = 0;
 
     dualToneStreamInStart();
+<<<<<<< HEAD
+#ifdef HAS_FEATURE_COLLABORATION
+    CollaborativeStreamStartInner();
+#endif
+    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(streamIndex_);
+=======
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(streamIndex_, processConfig_.appInfo.appTokenId);
+>>>>>>> upstream/master
     return SUCCESS;
 }
 
@@ -1103,6 +1124,9 @@ int32_t RendererInServer::Pause()
             dualToneStream_->Pause();
         }
     }
+#ifdef HAS_FEATURE_COLLABORATION
+    CollaborativeStreamPauseInner();
+#endif
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE, isStandbyTmp);
@@ -1172,6 +1196,9 @@ int32_t RendererInServer::Flush()
             dualToneStream_->Flush();
         }
     }
+#ifdef HAS_FEATURE_COLLABORATION
+    CollaborativeStreamFlushInner();
+#endif
     return SUCCESS;
 }
 
@@ -1218,6 +1245,9 @@ int32_t RendererInServer::Drain(bool stopFlag)
             dualToneStream_->Drain(stopFlag);
         }
     }
+#ifdef HAS_FEATURE_COLLABORATION
+    CollaborativeStreamDrainInner(stopFlag);
+#endif
     return SUCCESS;
 }
 
@@ -1279,6 +1309,9 @@ int32_t RendererInServer::StopInner()
             dualToneStream_->Stop();
         }
     }
+#ifdef HAS_FEATURE_COLLABORATION
+    CollaborativeStreamStopInner();
+#endif
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP, false);
@@ -1327,6 +1360,11 @@ int32_t RendererInServer::Release(bool isSwitchStream)
     if (isDualToneEnabled_) {
         DisableDualTone();
     }
+#ifdef HAS_FEATURE_COLLABORATION
+    if (isCollaborationEnabled_) {
+        DisableCollaboration();
+    }
+#endif
     return SUCCESS;
 }
 
@@ -2232,6 +2270,119 @@ bool RendererInServer::CollectInfosForWorkgroup(float systemVolume)
         !isInSilentState_ && !silentModeAndMixWithOthers_ && !lastWriteStandbyEnableStatus_;
 }
 
+<<<<<<< HEAD
+void RendererInServer::EnableCollaboration()
+{
+    {
+        std::lock_guard<std::mutex> lock(collaborationMutex_);
+        if (isCollaborationEnabled_) {
+            AUDIO_INFO_LOG("collaborative stream is already enabled");
+            return;
+        }
+
+        int32_t ret = IStreamManager::GetCollaborativeManager().CreateRender(processConfig_, collaborativeStream_);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS && collaborativeStream_ != nullptr,
+            "create collaborative render failed: %{public}d", ret);
+        collaborativeStreamIndex_ = collaborativeStream_->GetStreamIndex();
+        isCollaborationEnabled_ = true;
+        AUDIO_INFO_LOG("init collaborative renderer:[%{public}u]", collaborativeStreamIndex_);
+        bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
+        StreamVolumeParams streamVolumeParams = { collaborativeStreamIndex_, processConfig_.streamType,
+            processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
+            isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
+        AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
+    }
+    if (audioServerBuffer_ != nullptr) {
+        float clientVolume = audioServerBuffer_->GetStreamVolume();
+        float duckFactor = audioServerBuffer_->GetDuckFactor();
+        bool isMuted = (isMuted_ || silentModeAndMixWithOthers_ || muteFlag_);
+        // If some factors are not needed, remove them.
+        AudioVolume::GetInstance()->SetStreamVolume(collaborativeStreamIndex_, clientVolume);
+        AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(collaborativeStreamIndex_, duckFactor);
+        AudioVolume::GetInstance()->SetStreamVolumeMute(collaborativeStreamIndex_, isMuted);
+        AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(collaborativeStreamIndex_, lowPowerVolume_);
+    }
+    stream_->SetCollaborativeEnabled();
+    {
+        std::lock_guard<std::mutex> lock(collaborationMutex_);
+        collaborativeStream_->SetCollaborativeEnabled();
+        collaborativeStream_->SetAudioEffectMode(EFFECT_NONE);
+        if (status_ == I_STATUS_STARTED) {
+            AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the collaborative stream",
+                collaborativeStreamIndex_);
+            if (collaborativeStream_ != nullptr) {
+                //Locking before SetCollaborativeEnabled results in a deadlock.
+                collaborativeStream_->Start();
+            }
+        }
+    }
+    return;
+}
+
+void RendererInServer::DisableCollaboration()
+{
+    std::lock_guard<std::mutex> lock(collaborationMutex_);
+    if (!isCollaborationEnabled_) {
+        AUDIO_WARNING_LOG("collaborative stream is already disabled.");
+        return;
+    }
+    IStreamManager::GetCollaborativeManager().ReleaseRender(collaborativeStreamIndex_);
+    isCollaborationEnabled_ = false;
+    AUDIO_INFO_LOG("Disable collaborative renderer:[%{public}u]", collaborativeStreamIndex_);
+    AudioVolume::GetInstance()->RemoveStreamVolume(collaborativeStreamIndex_);
+    collaborativeStream_ = nullptr;
+    return;
+}
+
+void RendererInServer::CollaborativeStreamStartInner()
+{
+    if (isCollaborationEnabled_ && collaborativeStream_ != nullptr) {
+        std::lock_guard<std::mutex> lock(collaborationMutex_);
+        if (collaborativeStream_ != nullptr) {
+            collaborativeStream_->Start();
+        }
+    }
+}
+
+void RendererInServer::CollaborativeStreamPauseInner()
+{
+    if (isCollaborationEnabled_ && collaborativeStream_ != nullptr) {
+        std::lock_guard<std::mutex> lock(collaborationMutex_);
+        if (collaborativeStream_ != nullptr) {
+            collaborativeStream_->Pause();
+        }
+    }
+}
+
+void RendererInServer::CollaborativeStreamFlushInner()
+{
+    if (isCollaborationEnabled_ && collaborativeStream_ != nullptr) {
+        std::lock_guard<std::mutex> lock(collaborationMutex_);
+        if (collaborativeStream_ != nullptr) {
+            collaborativeStream_->Flush();
+        }
+    }
+}
+
+void RendererInServer::CollaborativeStreamDrainInner(bool stopFlag)
+{
+    if (isCollaborationEnabled_ && collaborativeStream_ != nullptr) {
+        std::lock_guard<std::mutex> lock(collaborationMutex_);
+        if (collaborativeStream_ != nullptr) {
+            collaborativeStream_->Drain(stopFlag);
+        }
+    }
+}
+
+void RendererInServer::CollaborativeStreamStopInner()
+{
+    if (isCollaborationEnabled_ && collaborativeStream_ != nullptr) {
+        std::lock_guard<std::mutex> lock(collaborationMutex_);
+        if (collaborativeStream_ != nullptr) {
+            collaborativeStream_->Stop();
+        }
+    }
+=======
 void RendererInServer::InitDupBuffer(int32_t innerCapId)
 {
     std::lock_guard<std::mutex> lock(dupMutex_);
@@ -2245,6 +2396,7 @@ void RendererInServer::InitDupBuffer(int32_t innerCapId)
         ReConfig(dupTotalSizeInFrame_ * dupByteSizePerFrame_, false);
     AUDIO_INFO_LOG("InitDupBuffer success, innerCapId: %{public}d, stream sessionId: %{public}u",
         innerCapId, streamIndex_);
+>>>>>>> upstream/master
 }
 } // namespace AudioStandard
 } // namespace OHOS

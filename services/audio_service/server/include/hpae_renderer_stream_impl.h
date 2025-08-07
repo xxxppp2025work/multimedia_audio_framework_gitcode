@@ -80,7 +80,15 @@ public:
     int32_t SetLoudnessGain(float loudnessGain) override;
     void BlockStream() noexcept override;
     int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) override;
+<<<<<<< HEAD
+    void OnStatusUpdate(IOperation operation) override;
+#ifdef HAS_FEATURE_COLLABORATION
+    void SetCollaborativeEnabled() override;
+#endif
+
+=======
     void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
+>>>>>>> upstream/master
 private:
     void SyncOffloadMode();
     void InitRingBuffer();

@@ -96,7 +96,16 @@
     *CheckProcessClusterInstances*;
     *QueryEffectChannelInfo*;
     *ResetInfo*;
+<<<<<<< HEAD
+    *IsStreamSupportCollaborative*；
+    *IsCollaborationEnabled*；
+    *CollaborativePlaybackEnqueue*；
+    *CollaborativePlaybackDequeue*；
+    *IsCollaborativeChanged*；
+    *CollaborativePlaybackReset*；
+=======
     *SetAbsVolumeStateToEffect*;
+>>>>>>> upstream/master
   local:
     *;
 };

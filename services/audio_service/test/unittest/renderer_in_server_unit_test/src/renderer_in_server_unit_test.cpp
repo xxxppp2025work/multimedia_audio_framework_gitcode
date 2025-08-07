@@ -3439,5 +3439,137 @@ HWTEST_F(RendererInServerUnitTest, SetSourceDuration_001, TestSize.Level1)
     int32_t ret = rendererInServer->SetSourceDuration(duration);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: EnableCollaboration_001
+ * @tc.desc  : Test EnableCollaboration API
+ */
+HWTEST_F(RendererInServerUnitTest, EnableCollaboration_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+    int32_t ret = rendererInServer->Init();
+    EXPECT_NE(SUCCESS, ret);
+    rendererInServer->EnableCollaboration();
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: DisableCollaboration_001
+ * @tc.desc  : Test DisableCollaboration API
+ */
+HWTEST_F(RendererInServerUnitTest, DisableCollaboration_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+    ret = rendererInServer->Init();
+    EXPECT_NE(SUCCESS, ret);
+    rendererInServer->DisableCollaboration();
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: CollaborativeStreamStartInner_001
+ * @tc.desc  : Test CollaborativeStreamStartInner API when isCollaborationEnabled_ is true.
+ */
+HWTEST_F(RendererInServerUnitTest, CollaborativeStreamStartInner_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_NE(SUCCESS, ret);
+    rendererInServer->CollaborativeStreamStartInner();
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: CollaborativeStreamPauseInner_001
+ * @tc.desc  : Test CollaborativeStreamPauseInner API when isCollaborationEnabled_ is true.
+ */
+HWTEST_F(RendererInServerUnitTest, CollaborativeStreamPauseInner_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_NE(SUCCESS, ret);
+    rendererInServer->CollaborativeStreamPauseInner();
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: CollaborativeStreamFlushInner_001
+ * @tc.desc  : Test CollaborativeStreamFlushInner API when isCollaborationEnabled_ is true.
+ */
+HWTEST_F(RendererInServerUnitTest, CollaborativeStreamFlushInner_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_NE(SUCCESS, ret);
+    rendererInServer->CollaborativeStreamFlushInner();
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: CollaborativeStreamDrainInner_001
+ * @tc.desc  : Test CollaborativeStreamDrainInner API when isCollaborationEnabled_ is true.
+ */
+HWTEST_F(RendererInServerUnitTest, CollaborativeStreamDrainInner_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_NE(SUCCESS, ret);
+    bool stopFlag = true;
+    rendererInServer->CollaborativeStreamDrainInner(stopFlag);
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: CollaborativeStreamStopInner_001
+ * @tc.desc  : Test CollaborativeStreamStopInner API when isCollaborationEnabled_ is true.
+ */
+HWTEST_F(RendererInServerUnitTest, CollaborativeStreamStopInner_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_NE(SUCCESS, ret);
+    rendererInServer->CollaborativeStreamStopInner();
+}
 } // namespace AudioStandard
 } // namespace OHOS

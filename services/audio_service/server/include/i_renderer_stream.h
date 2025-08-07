@@ -72,6 +72,9 @@ public:
     virtual int32_t SetSpeed(float speed) = 0;
     virtual int32_t SetLoudnessGain(float loudnessGain) = 0;
     virtual void BlockStream() noexcept = 0;
+#ifdef HAS_FEATURE_COLLABORATION
+    virtual void SetCollaborativeEnabled() = 0;
+#endif
 };
 
 struct CaptureInfo {

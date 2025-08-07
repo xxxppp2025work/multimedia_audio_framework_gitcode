@@ -73,6 +73,9 @@ public:
     int32_t SetClientVolume(float clientVolume) override;
     int32_t SetLoudnessGain(float loudnessGain) override;
     void BlockStream() noexcept override;
+#ifdef HAS_FEATURE_COLLABORATION
+    void SetCollaborativeEnabled() override;
+#endif
 
 private:
     static void PAStreamWriteCb(pa_stream *stream, size_t length, void *userdata);
