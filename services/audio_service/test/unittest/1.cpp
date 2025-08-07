@@ -159,4 +159,33 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_004, TestSize.Level0)
     EXPECT_EQ(audioResourceService.AudioWorkgroupCheck(pid), SUCCESS);
 }
 
+audio_service_unit_test.cpp
+
+HWTEST(AudioServiceUnitTest, ConfigCoreServiceProvider_002, TestSize.Level1)
+{
+    auto coreServiceHandler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    EXPECT_NE(nullptr, samgr);
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    int32_t ret = coreServiceHandler.ConfigCoreServiceProvider(coreServiceProvider);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST(AudioServiceUnitTest, ConfigCoreServiceProvider_003, TestSize.Level1)
+{
+    auto coreServiceHandler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    EXPECT_NE(nullptr, samgr);
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    coreServiceHandler.ConfigCoreServiceProvider(coreServiceProvider); // Set the provider
+    int32_t ret = coreServiceHandler.ConfigCoreServiceProvider(coreServiceProvider);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+}
+
+
+
+
+
 
