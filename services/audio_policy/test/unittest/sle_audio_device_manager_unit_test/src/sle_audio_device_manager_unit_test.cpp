@@ -1219,5 +1219,24 @@ HWTEST(SleAudioDeviceManagerUnitTest, GetVolumeLevelByVolumeType_003, TestSize.L
     EXPECT_EQ(ret, -1);
 }
 
+/**
+ * @tc.name  : Test OnSleDspChrDataSend
+ * @tc.number: OnSleDspChrDataSend_001
+ * @tc.desc  : Test SleAudioDeviceManager::OnSleDspChrDataSend
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, OnSleDspChrDataSend_001, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+    std::string data = "DspChrData";
+    uint32_t len = data.size();
+
+    sleAudioDeviceManager_->OnSleDspChrDataSend(data, len);
+    EXPECT_EQ(0, SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

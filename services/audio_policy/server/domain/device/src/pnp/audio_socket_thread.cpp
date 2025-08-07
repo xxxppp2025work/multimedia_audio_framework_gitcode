@@ -32,6 +32,11 @@
 #include "audio_policy_log.h"
 #include "audio_pnp_server.h"
 #include "audio_policy_server_handler.h"
+#include "sle_audio_device_manager.h"
+
+namespace {
+    #include "v5_0/audio_types.h"
+}
 
 namespace OHOS {
 namespace AudioStandard {
@@ -423,6 +428,25 @@ int32_t AudioSocketThread::AudioHDMIDetectDevice(struct AudioPnpUevent *audioPnp
     return SUCCESS;
 }
 
+int32_t AudioSocketThread::AudioSendSleChrDspData(struct AudioPnpUevent *audioPnpUevent)
+{
+    if (audioPnpUevent == nullptr || audioPnpUevent->name == nullptr) {
+        return HDF_ERR_INVALID_PARAM;
+    }
+
+    if (strncmp(audioPnpUevent->name, "sle_dsp_data", strlen("sle_dsp_data")) != 0) {
+        return HDF_ERR_INVALID_PARAM;
+    }
+
+    std::string ueventStr = audioPnpUevent->name;
+    auto state = ueventStr.substr(ueventStr.find("sle_dsp_data") + strlen("sle_dsp_data") + 1);
+
+    AUDIO_INFO_LOG("SleDspChrData:[%{public}s] len:[%{public}zu]", state.c_str(), state.length());
+    // callback of sle
+    SleAudioDeviceManager::GetInstance().OnSleDspChrDataSend(state, static_cast<uint32_t>(state.length()));
+    return SUCCESS;
+}
+
 bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLength)
 {
     struct AudioPnpUevent audioPnpUevent = {"", "", "", "", "", "", "", "", "", ""};
@@ -468,7 +492,8 @@ bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLe
         (AudioDpDetectDevice(&audioPnpUevent) == SUCCESS) ||
         (AudioAnahsDetectDevice(&audioPnpUevent) == SUCCESS) ||
         (AudioNnDetectDevice(&audioPnpUevent) == SUCCESS) ||
-        (AudioMicBlockDevice(&audioPnpUevent) == SUCCESS)) {
+        (AudioMicBlockDevice(&audioPnpUevent) == SUCCESS) ||
+        (AudioSendSleChrDspData(&audioPnpUevent) == SUCCESS)) {
         return true;
     }
 

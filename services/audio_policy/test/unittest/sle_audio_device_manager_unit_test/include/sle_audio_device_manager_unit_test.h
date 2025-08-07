@@ -97,6 +97,11 @@ public:
     {
         return SUCCESS;
     }
+
+    int32_t OnSleDspChrDataSend(const std::string &sleChrDspData, uint32_t len) override
+    {
+        return SUCCESS;
+    }
 };
 
 } // namespace AudioStandard

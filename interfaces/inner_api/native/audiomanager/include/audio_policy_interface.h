@@ -345,6 +345,13 @@ public:
      * @return int32_t
      */
     virtual int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) = 0;
+
+    /**
+     * @brief Send chr data of dsp to nearlink service.
+     * @param sleChrDspData chr data of dsp.
+     * @param len length of sleChrDspData.
+     */
+    virtual void OnSleDspChrDataSend(const std::string &sleChrDspData, uint32_t len) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
