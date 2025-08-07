@@ -176,16 +176,6 @@ void InitFuzzTest()
     interruptService->Init(server);
 }
 
-void GetHighestPriorityAudioSceneFuzzTest()
-{
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    int32_t zoneId = GetData<int32_t>();
-    if (interruptService == nullptr) {
-        return;
-    }
-    interruptService->GetHighestPriorityAudioScene(zoneId);
-}
-
 void AudioInterruptZoneDumpFuzzTest()
 {
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
