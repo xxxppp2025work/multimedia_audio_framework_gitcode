@@ -28,7 +28,7 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t DEFAULT_STREAM_ID = 10;
-const std::u16string FORMMGR_INTERFACE_TOKEN = u"IStandardAudioService";
+const std::u16string FORMMGR_INTERFACE_TOKEN = u"OHOS.AudioStandard.IAudioPolicy";
 const uint64_t COMMON_LENGTH_NUM = 2;
 const uint32_t OPERATION_ENUM_NUM = 13;
 const uint32_t SOURCETYPE_ENUM_NUM = 4;

@@ -29,7 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 bool g_hasPermission = false;
 constexpr int32_t OFFSET = 4;
-const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
+const std::u16string FORMMGR_INTERFACE_TOKEN = u"OHOS.AudioStandard.IAudioPolicy";
 const int32_t SYSTEM_ABILITY_ID = 3009;
 const bool RUN_ON_CREATE = false;
 const int32_t LIMITSIZE = 4;

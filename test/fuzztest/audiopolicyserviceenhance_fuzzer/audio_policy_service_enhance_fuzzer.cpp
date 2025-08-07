@@ -35,7 +35,7 @@ const int32_t SYSTEM_ABILITY_ID = 3009;
 const bool RUN_ON_CREATE = false;
 bool g_hasServerInit = false;
 bool g_hasPermission = false;
-const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
+const std::u16string FORMMGR_INTERFACE_TOKEN = u"OHOS.AudioStandard.IAudioPolicy";
 static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;

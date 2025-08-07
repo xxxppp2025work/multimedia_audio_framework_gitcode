@@ -38,7 +38,7 @@ const int32_t LIMITSIZE = 4;
 bool g_hasPnpServerInit = false;
 bool g_hasServerInit = false;
 bool g_hasPermission = false;
-const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
+const std::u16string FORMMGR_INTERFACE_TOKEN = u"OHOS.AudioStandard.IAudioPolicy";
 const bool RUN_ON_CREATE = false;
 const int32_t SYSTEM_ABILITY_ID = 3009;
 const string DEFAULTNAME = "name";
@@ -174,16 +174,6 @@ void InitFuzzTest()
         return;
     }
     interruptService->Init(server);
-}
-
-void GetHighestPriorityAudioSceneFuzzTest()
-{
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    int32_t zoneId = GetData<int32_t>();
-    if (interruptService == nullptr) {
-        return;
-    }
-    interruptService->GetHighestPriorityAudioScene(zoneId);
 }
 
 void AudioInterruptZoneDumpFuzzTest()
