@@ -68,5 +68,13 @@ void AudioManagerListenerCallback::OnDataTransferStateChange(const int32_t &call
         listener_->OnDataTransferStateChange(callbackId, info);
     }
 }
+
+void AudioManagerListenerCallback::OnMuteStateChange(const int32_t &callbackId,
+    const int32_t &uid, const uint32_t &sessionId, const bool &isMuted)
+{
+    if (listener_ != nullptr) {
+        listener_->OnMuteStateChange(callbackId, uid, sessionId, isMuted);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
