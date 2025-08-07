@@ -129,6 +129,7 @@ private:
     std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
     std::condition_variable cvReachLimit_;
     std::mutex mutexLock_;
+    std::mutex infoLock_;
     std::map<int32_t, std::tuple<uint8_t, uint8_t, uint8_t, uint8_t>> indexesInfo_;
 
     enum {
