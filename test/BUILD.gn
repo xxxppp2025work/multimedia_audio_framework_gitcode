@@ -320,6 +320,8 @@ group("audio_fuzz_test") {
     "fuzztest/resourcemanageradapter_fuzzer:fuzztest",
     "fuzztest/sleaudiodevicemanager_fuzzer:fuzztest",
     "fuzztest/volumedatamaintainer_fuzzer:fuzztest",
+    "fuzztest/audioserverasr_fuzzer:fuzztest",
+    "fuzztest/audioserverhpaedump_fuzzer:fuzztest",
   ]
 }
 
