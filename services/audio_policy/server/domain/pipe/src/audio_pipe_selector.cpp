@@ -157,6 +157,9 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
 {
     std::string adapterName{};
     for (auto &streamDesc : streamDescs) {
+        std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+        configManager_.GetStreamPropInfo(streamDesc, streamPropInfo);
+        UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
         std::string streamDescAdapterName = GetAdapterNameByStreamDesc(streamDesc);
         // find if curStream's prefer pipe has already exist
         auto newPipeIter = std::find_if(newPipeInfoList.begin(), newPipeInfoList.end(),
