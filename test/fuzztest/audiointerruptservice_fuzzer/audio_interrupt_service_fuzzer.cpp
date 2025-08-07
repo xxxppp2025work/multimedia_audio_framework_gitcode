@@ -26,8 +26,8 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 const int32_t LIMITSIZE = 4;
-const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
-const uint8_t TESTSIZE = 71;
+const std::u16string FORMMGR_INTERFACE_TOKEN = u"OHOS.AudioStandard.IAudioPolicy";
+const uint8_t TESTSIZE = 57;
 const uint32_t TEST_ID_MODULO = 3;
 constexpr uint32_t BOOL_MODULO = 2;
 typedef void (*TestPtr)(const uint8_t *, size_t);
