@@ -38,7 +38,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::u16string FORMMGR_INTERFACE_TOKEN = u"IStandardAudioService";
+const std::u16string FORMMGR_INTERFACE_TOKEN = u"OHOS.AudioStandard.IAudioPolicy";
 const int32_t SYSTEM_ABILITY_ID = 3001;
 const int32_t POLICY_SYSTEM_ABILITY_ID = 3009;
 const int32_t NUM_2 = 2;
