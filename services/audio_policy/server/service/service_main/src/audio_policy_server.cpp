@@ -2556,6 +2556,13 @@ int32_t AudioPolicyServer::SetAppConcurrencyMode(const int32_t appUid, const int
     return ERR_UNKNOWN;
 }
 
+int32_t AudioPolicyServer::SetAppSlientOnDisplay(const int32_t displayId)
+{
+    if (interruptService_ != nullptr) {
+        return AudioZoneService::GetInstance().SetAppSlientOnDisplay(IPCSkeleton::GetCallingUid(), displayId);
+    }
+    return ERR_UNKNOWN;
+}
 int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
