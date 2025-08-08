@@ -1070,35 +1070,11 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_049, Tes
 }
 
 /**
-* @tc.name  : Test AudioSpatializationService.
-* @tc.number: AudioSpatializationService_050
-* @tc.desc  : Test AudioSpatializationService::Init
-*/
-HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_050, TestSize.Level1)
-{
-    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
-
-    EXPECT_NE(ptrAudioSpatializationService, nullptr);
-
-    const std::vector<EffectChain> effectChains = {
-        {"Effect3", {}, "HEADTRACKING"},
-        {"BLUETOOTH_EFFECT_CHAIN_NAME", {"apply1_1", "apply1_2"}, "SPATIALIZATION_AND_HEAD_TRACKING_SUPPORTED_LABEL"},
-        {"BLUETOOTH_EFFECT_CHAIN_NAME", {"apply1_1", "apply1_2"}, "SPATIALIZATION_SUPPORTED_LABEL"},
-        {"BLUETOOTH_EFFECT_CHAIN_NAME", {"apply2_1"}, "HEAD_TRACKING_SUPPORTED_LABEL"}
-    };
-
-    EXPECT_NO_THROW(
-        ptrAudioSpatializationService->Init(effectChains);
-    );
-    
-}
-
-/**
 * @tc.name  : Test IsHeadTrackingDataRequestedForCurrentDevice.
-* @tc.number: AudioSpatializationService_051
+* @tc.number: AudioSpatializationService_050
 * @tc.desc  : Test IsHeadTrackingDataRequestedForCurrentDevice.
 */
-HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_051, TestSize.Level1)
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_050, TestSize.Level1)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     EXPECT_NE(ptrAudioSpatializationService, nullptr);

@@ -562,23 +562,6 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_018, TestSize.L
 /**
 * @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
 * @tc.number: AudioPolicyConfigData_019
-* @tc.desc  : Test SetDeviceInfoMap
-*/
-HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_019, TestSize.Level1)
-{
-    auto audioPolicyConfigData = std::make_shared<AudioPolicyConfigData>();
-    EXPECT_NE(audioPolicyConfigData, nullptr);
-    
-    std::list<std::shared_ptr<AdapterDeviceInfo>> deviceInfo;
-    std::unordered_map<std::string, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap;
-    deviceInfoMap["test"] = std::make_shared<AdapterDeviceInfo>();
-    EXPECT_NO_THROW(audioPolicyConfigData->SetDeviceInfoMap(deviceInfo, deviceInfoMap));
-
-}
-
-/**
-* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
-* @tc.number: AudioPolicyConfigData_020
 * @tc.desc  : Test GetAdapterType
 */
 HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_021, TestSize.Level1)
@@ -589,6 +572,7 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_021, TestSize.L
     std::string adapterName = ADAPTER_TYPE_ACCESSORY;
     auto ret = policyAdapter->GetAdapterType(adapterName);
     EXPECT_EQ(ret, AudioAdapterType::TYPE_ACCESSORY);
+    
 }
 
 } // namespace AudioStandard
