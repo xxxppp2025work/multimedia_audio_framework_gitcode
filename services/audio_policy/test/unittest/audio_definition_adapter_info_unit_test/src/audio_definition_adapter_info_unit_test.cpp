@@ -568,11 +568,9 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_021, TestSize.L
 {
     auto policyAdapter = std::make_shared<AdapterDeviceInfo>();
     EXPECT_NE(policyAdapter, nullptr);
-    
     std::string adapterName = ADAPTER_TYPE_ACCESSORY;
     auto ret = policyAdapter->GetAdapterType(adapterName);
-    EXPECT_EQ(ret, AudioAdapterType::TYPE_ACCESSORY);
-    
+    EXPECT_EQ(ret, AudioAdapterType::TYPE_ACCESSORY); 
 }
 
 } // namespace AudioStandard
