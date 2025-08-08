@@ -831,6 +831,5 @@ HWTEST_F(AudioPipeSelectorUnitTest, DecidePipesAndStreamAction_001, TestSize.Lev
     audioPipeSelector->DecidePipesAndStreamAction(newPipeInfoList, streamDescToOldPipeInfo);
     EXPECT_TRUE(newPipeInfoList[0]->streamDescriptors_[0]->streamAction_ == AUDIO_STREAM_ACTION_DEFAULT);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

@@ -344,6 +344,7 @@ ohos_unittest("audio_zone_unit_test") {
     "./unittest/audio_zone_unit_test/src/audio_zone_client_manager_unit_test.cpp",
     "./unittest/audio_zone_unit_test/src/audio_zone_interrupt_reporter_unit_test.cpp",
     "./unittest/audio_zone_unit_test/src/audio_zone_service_unit_test.cpp",
+    "./unittest/audio_zone_unit_test/src/audio_zone_class_unit_test.cpp",
   ]
 
   deps = [
