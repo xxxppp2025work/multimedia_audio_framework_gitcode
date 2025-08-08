@@ -138,9 +138,6 @@ void AudioPowerStateListenerFuzzTest()
     powerStub->OnRemoteRequest(code, data, reply, option);
     powerStub->OnSyncSleepCallbackStub(data);
     powerStub->OnSyncWakeupCallbackStub(data);
-    if (GetServerPtr() == nullptr) {
-        return;
-    }
     GetServerPtr()->RegisterPowerStateListener();
     if (GetServerPtr()->powerStateListener_ != nullptr) {
         GetServerPtr()->powerStateListener_->OnSyncSleep(true);
