@@ -36,6 +36,7 @@ private:
     struct AudioVolumeGroupManagerAsyncContext : public ContextBase {
         int32_t volType;
         int32_t volLevel;
+        int32_t volDegree;
         int32_t volFlag;
         int32_t uid;
         int32_t deviceType;
@@ -115,6 +116,9 @@ private:
         std::shared_ptr<AudioVolumeGroupManagerAsyncContext> context);
     static NapiAudioVolumeGroupManager* GetParamWithSync(const napi_env &env, napi_callback_info info,
         size_t &argc, napi_value *args);
+    static napi_value SetVolumeDegree(napi_env env, napi_callback_info info);
+    static napi_value GetVolumeDegree(napi_env env, napi_callback_info info);
+    static napi_value GetMinVolumeDegree(napi_env env, napi_callback_info info);
 
     static std::mutex volumeGroupManagerMutex_;
 

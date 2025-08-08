@@ -81,6 +81,7 @@ public:
         FORMAT_UNSUPPORTED_ERROR,
         SESSION_DEVICE_CHANGE,
         INTERRUPT_EVENT_FOR_AUDIO_SESSION,
+        VOLUME_DEGREE_EVENT,
     };
     /* event data */
     class EventContextObj {
@@ -158,6 +159,7 @@ public:
         DeviceBlockStatus status);
     void HandleMicrophoneBlockedCallback(const AppExecFwk::InnerEvent::Pointer &event);
     bool SendVolumeKeyEventCallback(const VolumeEvent &volumeEvent);
+    bool SendVolumeDegreeEventCallback(const VolumeEvent &volumeEvent);
     bool SendAudioFocusInfoChangeCallback(int32_t callbackCategory, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
     bool SendRingerModeUpdatedCallback(const AudioRingerMode &ringMode);
@@ -218,6 +220,7 @@ private:
     void HandleDeviceChangedCallback(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAvailableDeviceChange(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleVolumeKeyEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleVolumeDegreeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRequestCateGoryEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAbandonCateGoryEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleFocusInfoChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);

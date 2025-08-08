@@ -1184,20 +1184,17 @@ napi_value NapiAudioVolumeManager::RegisterCallback(napi_env env, napi_value jsT
             cb->CreateVolumeTsfn(env);
         }
     } else if (!cbName.compare(APP_VOLUME_CHANGE_CALLBACK_NAME)) {
-        undefinedResult = RegisterSelfAppVolumeChangeCallback(env, args, cbName,
-            napiVolumeManager);
+        undefinedResult = RegisterSelfAppVolumeChangeCallback(env, args, cbName, napiVolumeManager);
     } else if (!cbName.compare(APP_VOLUME_CHANGE_CALLBACK_NAME_FOR_UID)) {
-        undefinedResult = RegisterAppVolumeChangeForUidCallback(env, args, cbName,
-            napiVolumeManager);
+        undefinedResult = RegisterAppVolumeChangeForUidCallback(env, args, cbName, napiVolumeManager);
     } else if (!cbName.compare(ACTIVE_VOLUME_TYPE_CHANGE_CALLBACK_NAME)) {
-        undefinedResult = RegisterActiveVolumeTypeChangeCallback(env, args, cbName,
-            napiVolumeManager);
+        undefinedResult = RegisterActiveVolumeTypeChangeCallback(env, args, cbName, napiVolumeManager);
     } else if (!cbName.compare(AUDIO_STREAM_VOLUME_CHANGE_CALLBACK_NAME)) {
-        undefinedResult = RegisterStreamVolumeChangeCallback(env, args, cbName,
-            napiVolumeManager);
+        undefinedResult = RegisterStreamVolumeChangeCallback(env, args, cbName, napiVolumeManager);
     } else if (!cbName.compare(AUDIO_SYSTEM_VOLUME_CHANGE_CALLBACK_NAME)) {
-        undefinedResult = RegisterSystemVolumeChangeCallback(env, args, cbName,
-            napiVolumeManager);
+        undefinedResult = RegisterSystemVolumeChangeCallback(env, args, cbName, napiVolumeManager);
+    } else if (!cbName.compare(VOLUME_DEGREE_CHANGE_EVENT_CALLBACK_NAME)) {
+        undefinedResult = RegisterVolumeDegreeChangeCallback(env, args, cbName, napiVolumeManager);
     } else {
         AUDIO_ERR_LOG("No such callback supported");
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
@@ -1380,6 +1377,37 @@ napi_value NapiAudioVolumeManager::RegisterSystemVolumeChangeCallback(napi_env e
     return result;
 }
 
+napi_value NapiAudioVolumeManager::RegisterVolumeDegreeChangeCallback(napi_env env, napi_value *args,
+    const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager)
+{
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeManager && napiAudioVolumeManager->audioSystemMngr_,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "audio volume manager is nullptr.");
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+    if (napiAudioVolumeManager->volumeDegreeCallbackNapi_ == nullptr) {
+        napiAudioVolumeManager->volumeDegreeCallbackNapi_ = std::make_shared<
+            NapiAudioVolumeKeyEvent>(env);
+        int32_t ret = napiAudioVolumeManager->audioSystemMngr_->RegisterVolumeDegreeCallback(
+            napiAudioVolumeManager->cachedClientId_, napiAudioVolumeManager->volumeDegreeCallbackNapi_);
+        napiAudioVolumeManager->volumeDegreeCallbackNapiList_.push_back(
+            std::static_pointer_cast<NapiAudioVolumeKeyEvent>(
+                napiAudioVolumeManager->volumeDegreeCallbackNapi_));
+        if (ret) {
+            AUDIO_ERR_LOG("Failed");
+        }
+    }
+
+    std::shared_ptr<NapiAudioVolumeKeyEvent> cb =
+        std::static_pointer_cast<NapiAudioVolumeKeyEvent>(napiAudioVolumeManager->volumeDegreeCallbackNapi_);
+    CHECK_AND_RETURN_RET_LOG(cb && args,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "callback is nullptr");
+    cb->SaveCallbackReference(cbName, args[PARAM1]);
+    if (!cb->GetVolumeDegreeTsfnFlag()) {
+        cb->CreateVolumeDegreeTsfn(env);
+    }
+    return result;
+}
+
 napi_value NapiAudioVolumeManager::On(napi_env env, napi_callback_info info)
 {
     napi_value undefinedResult = nullptr;
@@ -1499,6 +1527,8 @@ void NapiAudioVolumeManager::UnregisterCallbackFir(napi_env env, napi_value *arg
         UnregisterStreamVolumeChangeCallback(env, args, argc, napiVolumeManager);
     } else if (!cbName.compare(AUDIO_SYSTEM_VOLUME_CHANGE_CALLBACK_NAME)) {
         UnregisterSystemVolumeChangeCallback(env, args, argc, napiVolumeManager);
+    } else if (!cbName.compare(VOLUME_DEGREE_CHANGE_EVENT_CALLBACK_NAME)) {
+        UnregisterVolumeDegreeChangeCallback(env, args, argc, napiVolumeManager);
     } else {
         AUDIO_ERR_LOG("No such callback supported");
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
@@ -1652,11 +1682,65 @@ void NapiAudioVolumeManager::UnregisterSystemVolumeChangeCallback(napi_env env, 
     }
 }
 
+void NapiAudioVolumeManager::UnregisterVolumeDegreeChangeCallback(napi_env env, napi_value *args,
+    size_t argc, NapiAudioVolumeManager *napiAudioVolumeManager)
+{
+    napi_value callback = nullptr;
+    CHECK_AND_RETURN_LOG(args && napiAudioVolumeManager && napiAudioVolumeManager->audioSystemMngr_,
+        "callback is nullptr");
+    if (argc == ARGS_TWO) {
+        callback = args[PARAM1];
+    }
+    if (callback != nullptr) {
+        std::shared_ptr<NapiAudioVolumeKeyEvent> cb = GetVolumeDegreeNapiCallback(
+            callback, napiAudioVolumeManager);
+        if (cb == nullptr) {
+            AUDIO_ERR_LOG("nullptr");
+            return;
+        }
+        int32_t ret = napiAudioVolumeManager->audioSystemMngr_->UnregisterVolumeDegreeCallback(
+            napiAudioVolumeManager->cachedClientId_, cb);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("failed");
+            return;
+        }
+        napiAudioVolumeManager->volumeDegreeCallbackNapiList_.remove(cb);
+        napiAudioVolumeManager->volumeDegreeCallbackNapi_.reset();
+        napiAudioVolumeManager->volumeDegreeCallbackNapi_ = nullptr;
+    } else {
+        int32_t ret = napiAudioVolumeManager->audioSystemMngr_->UnregisterVolumeDegreeCallback(
+            napiAudioVolumeManager->cachedClientId_, nullptr);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("failed");
+            return;
+        }
+        napiAudioVolumeManager->volumeDegreeCallbackNapiList_.clear();
+        napiAudioVolumeManager->volumeDegreeCallbackNapi_.reset();
+        napiAudioVolumeManager->volumeDegreeCallbackNapi_ = nullptr;
+    }
+}
+
 std::shared_ptr<NapiAudioVolumeKeyEvent> NapiAudioVolumeManager::GetVolumeEventNapiCallback(napi_value argv,
     NapiAudioVolumeManager *napiVolumeManager)
 {
     std::shared_ptr<NapiAudioVolumeKeyEvent> cb = nullptr;
     for (auto &iter : napiVolumeManager->volumeKeyEventCallbackNapiList_) {
+        if (iter->ContainSameJsCallback(argv)) {
+            cb = iter;
+        }
+    }
+    return cb;
+}
+
+std::shared_ptr<NapiAudioVolumeKeyEvent> NapiAudioVolumeManager::GetVolumeDegreeNapiCallback(napi_value argv,
+    NapiAudioVolumeManager *napiVolumeManager)
+{
+    CHECK_AND_RETURN_RET_LOG(napiVolumeManager, nullptr, "audio volume manager is nullptr");
+    std::shared_ptr<NapiAudioVolumeKeyEvent> cb = nullptr;
+    for (auto &iter : napiVolumeManager->volumeDegreeCallbackNapiList_) {
+        if (iter == nullptr) {
+            continue;
+        }
         if (iter->ContainSameJsCallback(argv)) {
             cb = iter;
         }

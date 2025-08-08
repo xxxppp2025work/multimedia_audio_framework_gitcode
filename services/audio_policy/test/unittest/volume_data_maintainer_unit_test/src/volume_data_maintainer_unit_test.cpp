@@ -75,6 +75,50 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_003, TestSize.
 
 /**
 * @tc.name  : Test VolumeDataMaintainer.
+* @tc.number: VolumeDataMaintainerDegreeUnitTest_001.
+* @tc.desc  : Test VolumeDataMaintainer API.
+*/
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerDegreeUnitTest_001, TestSize.Level1)
+{
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
+    DeviceType typeRet = DEVICE_TYPE_NONE;
+    AudioStreamType streamTypeRet = STREAM_DEFAULT;
+    int32_t volumeLevelRet = 0;
+    auto ret = volumeDataMaintainerRet->SaveVolumeDegree(typeRet, streamTypeRet, volumeLevelRet);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test VolumeDataMaintainer.
+* @tc.number: VolumeDataMaintainerDegreeUnitTest_002.
+* @tc.desc  : Test VolumeDataMaintainer API.
+*/
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerDegreeUnitTest_002, TestSize.Level1)
+{
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
+    DeviceType typeRet = DEVICE_TYPE_DP;
+    AudioStreamType streamTypeRet = STREAM_MUSIC;
+    int32_t volumeLevelRet = 0;
+    auto ret = volumeDataMaintainerRet->SaveVolumeDegree(typeRet, streamTypeRet, volumeLevelRet);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test VolumeDataMaintainer.
+* @tc.number: VolumeDataMaintainerDegreeUnitTest_003.
+* @tc.desc  : Test VolumeDataMaintainer API.
+*/
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerDegreeUnitTest_003, TestSize.Level1)
+{
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
+    DeviceType deviceTypeRet = DEVICE_TYPE_NONE;
+    AudioStreamType streamTypeRet = STREAM_DEFAULT;
+    auto ret = volumeDataMaintainerRet->GetVolumeDegree(deviceTypeRet, streamTypeRet);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test VolumeDataMaintainer.
 * @tc.number: VolumeDataMaintainerUnitTest_004.
 * @tc.desc  : Test VolumeDataMaintainer API.
 */

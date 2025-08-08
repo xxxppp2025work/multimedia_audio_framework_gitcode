@@ -32,6 +32,9 @@ public:
         AudioVolumeType volumeType);
     static std::vector<AudioVolumeType> GetSupportedAudioVolumeTypes();
     static std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType);
+    static int32_t VolumeDegreeToLevel(int32_t degree, int32_t maxLevel);
+    static int32_t VolumeLevelToDegree(int32_t level, int32_t maxLevel);\
+    static int32_t GetVolumeLevelMaxDegree(int32_t level, int32_t maxLevel);
 private:
     static std::set<StreamUsage>& GetStreamUsageSetForVolumeType(AudioVolumeType volumeType);
 
