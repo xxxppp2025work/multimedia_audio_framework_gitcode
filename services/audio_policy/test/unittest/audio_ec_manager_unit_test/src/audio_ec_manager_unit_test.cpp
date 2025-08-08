@@ -646,5 +646,6 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_027, TestSize.Level4)
     ecManager.GetTargetSourceTypeAndMatchingFlag(source, targetSource, useMatchingPropInfo);
     EXPECT_EQ(targetSource, SOURCE_TYPE_LIVE);
 }
+
 } // namespace AudioStandard
 } // namespace OHOS

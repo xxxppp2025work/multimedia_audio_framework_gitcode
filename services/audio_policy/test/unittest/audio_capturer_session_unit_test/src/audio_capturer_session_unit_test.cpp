@@ -586,5 +586,34 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_028, TestSize.Level1)
     audioCapturerSession->ReloadSourceForDeviceChange(inputDevice, outputDevice, caller);
     EXPECT_EQ(audioCapturerSession->inputDeviceForReload_.deviceType_, DEVICE_TYPE_MIC);
 }
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: ConvertToHDIAudioInputType_001
+ * @tc.desc  : Test AudioCapturerSession
+ */
+HWTEST(AudioCapturerSessionTest, ConvertToHDIAudioInputType_001, TestSize.Level1)
+{
+    AudioCapturerSession audioCapturerSession;
+    uint32_t ret = audioCapturerSession.ConvertToHDIAudioInputType(SOURCE_TYPE_INVALID);
+    EXPECT_EQ(ret, 0);
+
+    ret = audioCapturerSession.ConvertToHDIAudioInputType(SOURCE_TYPE_LIVE);
+    EXPECT_EQ(ret, 1);
+
+    ret = audioCapturerSession.ConvertToHDIAudioInputType(SOURCE_TYPE_WAKEUP);
+    EXPECT_EQ(ret, 2);
+
+    ret = audioCapturerSession.ConvertToHDIAudioInputType(SOURCE_TYPE_VOICE_COMMUNICATION);
+    EXPECT_EQ(ret, 4);
+
+    ret = audioCapturerSession.ConvertToHDIAudioInputType(SOURCE_TYPE_VOICE_RECOGNITION);
+    EXPECT_EQ(ret, 8);
+
+    SourceType value = static_cast<SourceType>(-2);
+    ret = audioCapturerSession.ConvertToHDIAudioInputType(value);
+    EXPECT_EQ(ret, 1);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
