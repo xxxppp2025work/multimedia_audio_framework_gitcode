@@ -365,5 +365,6 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_117, TestSize.Level1)
     streamUsages = VolumeUtils::GetStreamUsageSetForVolumeType(STREAM_MUSIC);
     EXPECT_FALSE(streamUsages.empty());
 }
+
 } // namespace AudioStandard
 } // namespace OHOS
