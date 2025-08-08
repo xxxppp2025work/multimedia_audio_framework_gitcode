@@ -89,6 +89,10 @@ const int32_t DATA_INDEX_4 = 4;
 const int32_t DATA_INDEX_5 = 5;
 const int32_t STEREO_CHANNEL_COUNT = 2;
 const int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
+const int32_t MAX_VOLUME_DEGREE = 100;
+const int32_t MIN_VOLUME_DEGREE = 0;
+const int32_t MIN_VOLUME_LEVEL = 0;
+const int32_t DEFAULT_MAX_VOLUME_LEVEL = 15;
 
 const char* DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
 const char* DUMP_SERVICE_DIR = "/data/local/tmp/";
@@ -1964,6 +1968,70 @@ std::set<StreamUsage>& VolumeUtils::GetStreamUsageSetForVolumeType(AudioVolumeTy
     } else {
         return defaultVolumeToStreamUsageMap_.count(volumeType) ? defaultVolumeToStreamUsageMap_[volumeType] : emptySet;
     }
+}
+
+int32_t VolumeUtils::VolumeDegreeToLevel(int32_t degree, int32_t maxLevel)
+{
+    if (degree < MIN_VOLUME_DEGREE || degree > MAX_VOLUME_DEGREE ||
+        maxLevel - 1 <= 0) {
+        return MIN_VOLUME_LEVEL;
+    }
+
+    if (degree == MIN_VOLUME_DEGREE) {
+        return MIN_VOLUME_LEVEL;
+    }
+
+    if (degree == MAX_VOLUME_DEGREE) {
+        return maxLevel;
+    }
+
+    int32_t quotient = (MAX_VOLUME_DEGREE - MIN_VOLUME_DEGREE - 1) / (maxLevel - 1);
+    int32_t level = degree / quotient;
+    int32_t remainder = degree % quotient;
+    level += remainder > 0 ? 1 : 0;
+
+    if (level == maxLevel) {
+        level--;
+    }
+    return level;
+}
+
+int32_t VolumeUtils::VolumeLevelToDegree(int32_t level, int32_t maxLevel)
+{
+    if (level < MIN_VOLUME_LEVEL || level > maxLevel ||
+        maxLevel - 1 <= 0) {
+        return MIN_VOLUME_DEGREE;
+    }
+
+    if (level == MIN_VOLUME_LEVEL) {
+        return MIN_VOLUME_DEGREE;
+    }
+    
+    if (level == maxLevel) {
+        return MAX_VOLUME_DEGREE;
+    }
+
+    int32_t ceiling = GetVolumeLevelMaxDegree(level, maxLevel);
+    int32_t offset = 0;
+    if (maxLevel == DEFAULT_MAX_VOLUME_LEVEL) {
+        const int32_t DEF_STEPS = 3;
+        offset = level / DEF_STEPS;
+        int32_t remainder = level % DEF_STEPS;
+        offset += remainder > 0 ? 1 : 0;
+    }
+
+    int32_t degree = ceiling - offset;
+    return degree;
+}
+
+int32_t VolumeUtils::GetVolumeLevelMaxDegree(int32_t level, int32_t maxLevel)
+{
+    if (maxLevel - 1 <= 0) {
+        return MIN_VOLUME_DEGREE;
+    }
+    int32_t quotient = (MAX_VOLUME_DEGREE - MIN_VOLUME_DEGREE - 1) / (maxLevel - 1);
+    int32_t ceiling = level * quotient;
+    return ceiling;
 }
 
 std::string GetEncryptStr(const std::string &src)

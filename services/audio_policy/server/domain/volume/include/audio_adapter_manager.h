@@ -48,6 +48,7 @@ struct AppConfigVolume {
 };
 
 const int32_t MAX_CACHE_AMOUNT = 10;
+static constexpr int32_t MAX_VOLUME_DEGREE = 100;
 class AudioAdapterManager : public IAudioPolicyInterface {
 public:
     static constexpr std::string_view SPLIT_STREAM_SINK = "libmodule-split-stream-sink.z.so";
@@ -167,7 +168,7 @@ public:
 
     bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false);
 
-    float CalculateVolumeDb(int32_t volumeLevel);
+    float CalculateVolumeDb(int32_t volumeLevel, int32_t maxDegree = MAX_VOLUME_LEVEL);
 
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri);
 
@@ -259,6 +260,9 @@ public:
     void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel,
         std::string networkId);
 
+    void HandleSaveVolumeDegree(DeviceType deviceType, AudioStreamType streamType,
+        int32_t volumeDegree, std::string networkId);
+
     void HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
         const DeviceType &deviceType = DEVICE_TYPE_NONE, std::string networkId = LOCAL_NETWORK_ID);
 
@@ -306,11 +310,17 @@ public:
     void SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
     int32_t GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType);
     int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume);
+    int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree);
+    int32_t GetSystemVolumeDegree(AudioStreamType streamType);
+    int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 private:
+    float CalculateVolumeDbNonlinearExt(AudioStreamType streamType, DeviceType deviceType, int32_t volumeDegree);
+    int32_t SetVolumeDb(AudioStreamType streamType, int32_t volumeDegree);
     friend class PolicyCallbackImpl;
 
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
+    static constexpr int32_t MIN_VALID_VOLUME_DEGREE = 1;
     static constexpr int32_t DEFAULT_VOLUME_LEVEL = 7;
     static constexpr int32_t DP_DEFAULT_VOLUME_LEVEL = 25;
     static constexpr int32_t APP_MAX_VOLUME_LEVEL = 100;
