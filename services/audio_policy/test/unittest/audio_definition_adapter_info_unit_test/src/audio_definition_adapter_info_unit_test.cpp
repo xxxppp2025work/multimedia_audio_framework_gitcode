@@ -572,6 +572,5 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_021, TestSize.L
     auto ret = policyAdapter->GetAdapterType(adapterName);
     EXPECT_EQ(ret, AudioAdapterType::TYPE_ACCESSORY); 
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
