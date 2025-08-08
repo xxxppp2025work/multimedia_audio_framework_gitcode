@@ -832,5 +832,30 @@ HWTEST_F(AudioPipeSelectorUnitTest, DecidePipesAndStreamAction_001, TestSize.Lev
     EXPECT_TRUE(newPipeInfoList[0]->streamDescriptors_[0]->streamAction_ == AUDIO_STREAM_ACTION_DEFAULT);
 }
 
+
+/**
+ * @tc.name: IncomingConcurrency_002
+ * @tc.desc: Test Determine if the condition is true.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, IncomingConcurrency_002, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::shared_ptr<AudioStreamDescriptor> stream = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioStreamDescriptor> cmpStream = std::make_shared<AudioStreamDescriptor>();
+    cmpStream->audioMode_ = AudioMode::AUDIO_MODE_PLAYBACK;
+    stream->audioMode_ = AudioMode::AUDIO_MODE_RECORD;
+    EXPECT_NO_THROW(
+        audioPipeSelector->IncomingConcurrency(stream, cmpStream);
+    );
+
+    cmpStream->audioMode_ = AudioMode::AUDIO_MODE_RECORD;
+    stream->audioMode_ = AudioMode::AUDIO_MODE_PLAYBACK;
+    EXPECT_NO_THROW(
+        audioPipeSelector->IncomingConcurrency(stream, cmpStream);
+    );
+
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

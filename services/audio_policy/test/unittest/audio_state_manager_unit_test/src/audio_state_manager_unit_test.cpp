@@ -174,5 +174,24 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_010, TestSize.Leve
     EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredRecordCaptureDevice()->connectState_,
         ConnectState::CONNECTED);
 }
+
+/**
+* @tc.name  : Test AudioStateManager.
+* @tc.number: AudioStateManagerUnitTest_011
+* @tc.desc  : Test ExcludeOutputDevices interface.
+*/
+HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_011, TestSize.Level1)
+{
+    AudioDeviceUsage audioDevUsage = MEDIA_OUTPUT_DEVICES;
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors{desc};
+    EXPECT_NO_THROW(AudioStateManager::GetAudioStateManager().ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors));
+
+    audioDevUsage = CALL_OUTPUT_DEVICES;
+    EXPECT_NO_THROW(AudioStateManager::GetAudioStateManager().ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors));
+
+    audioDevUsage = ALL_MEDIA_DEVICES;
+    EXPECT_NO_THROW(AudioStateManager::GetAudioStateManager().ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors));
+}
 } // namespace AudioStandard
 } // namespace OHOS
