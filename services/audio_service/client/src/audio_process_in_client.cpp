@@ -47,6 +47,7 @@
 #include "iaudio_process.h"
 #include "process_cb_stub.h"
 #include "istandard_audio_service.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -406,6 +407,14 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
         process = nullptr;
     }
 
+    bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(resetConfig.appInfo.appUid);
+    if (AudioVolume::GetInstance() != nullptr) {
+        StreamVolumeParams streamVolumeParams = { resetConfig.originalSessionId, resetConfig.streamType,
+            resetConfig.rendererInfo.streamUsage, resetConfig.appInfo.appUid, resetConfig.appInfo.appPid,
+            isSystemApp, resetConfig.rendererInfo.volumeMode, resetConfig.rendererInfo.isVirtualKeyboard };
+        AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
+    }
+
     return process;
 }
 
@@ -416,6 +425,9 @@ AudioProcessInClientInner::~AudioProcessInClientInner()
     JoinCallbackLoop();
     if (isInited_) {
         AudioProcessInClientInner::Release();
+    }
+    if (AudioVolume::GetInstance() != nullptr) {
+        AudioVolume::GetInstance()->RemoveStreamVolume(sessionId_);
     }
     DumpFileUtil::CloseDumpFile(&dumpFile_);
     AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
@@ -490,6 +502,9 @@ int32_t AudioProcessInClientInner::SetVolume(float vol)
         CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, ret, "audiobuffer_ is null");
         audioBuffer_->SetStreamVolume(vol);
     }
+    if (AudioVolume::GetInstance() != nullptr) {
+        AudioVolume::GetInstance()->SetStreamVolume(sessionId_, vol);
+    }
     return ret;
 }
 
@@ -503,6 +518,9 @@ int32_t AudioProcessInClientInner::SetMute(bool mute)
     muteVolumeInFloat_ = mute ? 0.0f : 1.0f;
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, SUCCESS, "audiobuffer_ is null");
     audioBuffer_->SetMuteFactor(muteVolumeInFloat_);
+    if (AudioVolume::GetInstance() != nullptr) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(sessionId_, mute);
+    }
     return SUCCESS;
 }
 

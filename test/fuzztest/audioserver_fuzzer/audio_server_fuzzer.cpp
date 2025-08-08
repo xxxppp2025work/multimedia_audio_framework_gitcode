@@ -103,6 +103,8 @@ class DataTransferStateChangeCallbackInnerFuzzTest : public DataTransferStateCha
 public:
     void OnDataTransferStateChange(const int32_t &callbackId,
             const AudioRendererDataTransferStateChangeInfo &info) override {}
+    void OnMuteStateChange(const int32_t &callbackId, const int32_t &uid,
+        const uint32_t &sessionId, const bool &isMuted) override {}
 };
 template<class T>
 uint32_t GetArrLength(T& arr)
