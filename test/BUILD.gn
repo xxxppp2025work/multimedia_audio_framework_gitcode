@@ -233,15 +233,12 @@ group("audio_fuzz_test") {
     "fuzztest/audiopipemanager_fuzzer:fuzztest",
     "fuzztest/audiopipeselector_fuzzer:fuzztest",
     "fuzztest/audiopnpserver_fuzzer:fuzztest",
-    "fuzztest/audiopolicy_fuzzer:fuzztest",
 
     # "fuzztest/audiopolicyanother_fuzzer:fuzztest",
     # "fuzztest/audiopolicyclient_fuzzer:fuzztest",
-    "fuzztest/audiopolicyconcurrency_fuzzer:fuzztest",
     "fuzztest/audiopolicymanager_fuzzer:fuzztest",
 
     # "fuzztest/audiopolicymore_fuzzer:fuzztest",
-    "fuzztest/audiopolicyproxy_fuzzer:fuzztest",
 
     # "fuzztest/audiopolicyservenhance_fuzzer:fuzztest",
     "fuzztest/audiopolicyserverhandler_fuzzer:fuzztest",

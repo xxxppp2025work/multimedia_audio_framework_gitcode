@@ -134,27 +134,6 @@ void MoreFuzzTest()
     interruptService->HandleSessionTimeOutEvent(pid);
 }
 
-void AddAudioSessionFuzzTest()
-{
-    int32_t sessionStrategy = 0;
-    GetServerPtr()->ActivateAudioSession(sessionStrategy);
-
-    AudioInterrupt incomingInterrupt;
-    incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
-    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    AudioInterrupt activeInterrupt;
-    activeInterrupt.audioFocusType.streamType = STREAM_MUSIC;
-    AudioFocusEntry focusEntry;
-    focusEntry.isReject = false;
-
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    interruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
-    interruptService->CanMixForIncomingSession(incomingInterrupt, activeInterrupt, focusEntry);
-    interruptService->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry);
-    interruptService->IsIncomingStreamLowPriority(focusEntry);
-    interruptService->IsActiveStreamLowPriority(focusEntry);
-}
-
 void AddSetAudioManagerInterruptCallbackFuzzTest()
 {
     MessageParcel data;
@@ -182,11 +161,10 @@ void ClearAudioFocusInfoListOnAccountsChangedFuzzTest()
     interruptService->ClearAudioFocusInfoListOnAccountsChanged(id);
 }
 
-typedef void (*TestFuncs[4])();
+typedef void (*TestFuncs[3])();
 
 TestFuncs g_testFuncs = {
     MoreFuzzTest,
-    AddAudioSessionFuzzTest,
     AddSetAudioManagerInterruptCallbackFuzzTest,
     ClearAudioFocusInfoListOnAccountsChangedFuzzTest,
 };

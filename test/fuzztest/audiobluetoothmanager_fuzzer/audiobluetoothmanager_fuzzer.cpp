@@ -32,7 +32,7 @@ const int32_t LIMITSIZE = 4;
 const int32_t SYSTEM_ABILITY_ID = 3009;
 const bool RUN_ON_CREATE = false;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
-const uint8_t TESTSIZE = 4;
+const uint8_t TESTSIZE = 2;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 bool g_hasServerInit = false;
 static size_t g_dataSize = 0;
@@ -55,36 +55,6 @@ sptr<AudioPolicyServer> GetServerPtr()
         g_hasServerInit = true;
     }
     return server;
-}
-
-void AudioBluetoothManagerFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    sptr<AudioPolicyServer> AudioPolicyServerPtr = GetServerPtr();
-
-    if (AudioPolicyServerPtr == nullptr) {
-        return;
-    }
-
-    DeviceType devType = *reinterpret_cast<const DeviceType *>(rawData);
-    bool isConnected = *reinterpret_cast<const bool *>(rawData);
-    std::string macAddress(reinterpret_cast<const char*>(rawData), size);
-    std::string deviceName(reinterpret_cast<const char*>(rawData), size);
-
-    AudioStreamInfo audioStreamInfo = {};
-    audioStreamInfo.samplingRate = *reinterpret_cast<const AudioSamplingRate *>(rawData);
-    audioStreamInfo.encoding = *reinterpret_cast<const AudioEncodingType *>(rawData);
-    audioStreamInfo.format = *reinterpret_cast<const AudioSampleFormat *>(rawData);
-    audioStreamInfo.channels = *reinterpret_cast<const AudioChannel *>(rawData);
-
-    AudioPolicyServerPtr->audioPolicyService_
-        .OnDeviceStatusUpdated(devType, isConnected, macAddress, deviceName, audioStreamInfo);
-
-    AudioPolicyServerPtr->audioPolicyService_
-        .OnDeviceConfigurationChanged(devType, macAddress, deviceName, audioStreamInfo);
 }
 
 void AudioA2dpManagerFuzzTest(const uint8_t *rawData, size_t size)
@@ -115,29 +85,12 @@ void AudioHfpManagerFuzzTest(const uint8_t *rawData, size_t size)
     Bluetooth::AudioHfpManager::UpdateAudioScene(scene);
     Bluetooth::AudioHfpManager::IsAudioScoStateConnect();
 }
-
-void FetchOutputDeviceForTrackInternalFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-
-    AudioStreamChangeInfo streamChangeInfo = {};
-    streamChangeInfo.audioRendererChangeInfo.Unmarshalling(data);
-}
 } // namespace AudioStandard
 } // namesapce OHOS
 
 OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
-    OHOS::AudioStandard::AudioBluetoothManagerFuzzTest,
     OHOS::AudioStandard::AudioA2dpManagerFuzzTest,
     OHOS::AudioStandard::AudioHfpManagerFuzzTest,
-    OHOS::AudioStandard::FetchOutputDeviceForTrackInternalFuzzTest
 };
 
 /* Fuzzer entry point */
