@@ -586,5 +586,6 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_028, TestSize.Level1)
     audioCapturerSession->ReloadSourceForDeviceChange(inputDevice, outputDevice, caller);
     EXPECT_EQ(audioCapturerSession->inputDeviceForReload_.deviceType_, DEVICE_TYPE_MIC);
 }
+
 } // namespace AudioStandard
 } // namespace OHOS
