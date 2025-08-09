@@ -356,9 +356,9 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_015, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test ShouldExecludeStreamType
+* @tc.name  : Test ShouldExcludeStreamType
 * @tc.number: AudioSessionUnitTest_016
-* @tc.desc  : Test ShouldExecludeStreamType function
+* @tc.desc  : Test ShouldExcludeStreamType function
 */
 HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_016, TestSize.Level1)
 {
@@ -371,7 +371,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_016, TestSize.Level1)
     AudioInterrupt incomingInterrupt;
 
     incomingInterrupt.audioFocusType.streamType = STREAM_NOTIFICATION;
-    EXPECT_TRUE(audioSession->ShouldExecludeStreamType(incomingInterrupt));
+    EXPECT_TRUE(audioSession->ShouldExcludeStreamType(incomingInterrupt));
     
     EXPECT_NO_THROW(
         audioSession->AddStreamInfo(incomingInterrupt);
