@@ -2315,6 +2315,7 @@ HWTEST(AudioCoreServicePrivateTest, IsStreamSupportLowpower_001, TestSize.Level1
     streamDesc->streamInfo_.channels = STEREO;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
     streamDesc->rendererInfo_.playerType = PLAYER_TYPE_SOUND_POOL;
+    streamDesc->callerUid_ = 0;
     bool isSupportLowPower = audioCoreService->IsStreamSupportLowpower(streamDesc);
     EXPECT_EQ(isSupportLowPower, false);
 }
@@ -2334,7 +2335,66 @@ HWTEST(AudioCoreServicePrivateTest, IsStreamSupportLowpower_002, TestSize.Level1
     streamDesc->streamInfo_.channels = STEREO;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
     streamDesc->rendererInfo_.playerType = PLAYER_TYPE_OPENSL_ES;
+    streamDesc->callerUid_ = 0;
     bool isSupportLowPower = audioCoreService->IsStreamSupportLowpower(streamDesc);
+    EXPECT_EQ(isSupportLowPower, false);
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: IsStreamSupportLowpower_003
+* @tc.desc  : Test interface IsStreamSupportLowpower
+*/
+HWTEST(AudioCoreServicePrivateTest, IsStreamSupportLowpower_003, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServicePrivateTest IsStreamSupportLower start");
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    EXPECT_NE(streamDesc, nullptr);
+    streamDesc->callerUid_ = -1;
+    bool isSupportLowPower = audioCoreService->IsStreamSupportLowpower(streamDesc);
+    AUDIO_INFO_LOG("AudioCoreServicePrivateTest IsStreamSupportLower_003 end");
+    EXPECT_EQ(isSupportLowPower, false);
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: IsStreamSupportLowpower_004
+* @tc.desc  : Test interface IsStreamSupportLowpower
+*/
+HWTEST(AudioCoreServicePrivateTest, IsStreamSupportLowpower_004, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServicePrivateTest IsStreamSupportLower start");
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    EXPECT_NE(streamDesc, nullptr);
+    const int32_t AUDIO_EXT_UID = 1041;
+    streamDesc->callerUid_ = AUDIO_EXT_UID;
+    bool isSupportLowPower = audioCoreService->IsStreamSupportLowpower(streamDesc);
+    AUDIO_INFO_LOG("AudioCoreServicePrivateTest IsStreamSupportLower_004 end");
+    EXPECT_EQ(isSupportLowPower, false);
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: IsStreamSupportLowpower_005
+* @tc.desc  : Test interface IsStreamSupportLowpower
+*/
+HWTEST(AudioCoreServicePrivateTest, IsStreamSupportLowpower_005, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServicePrivateTest IsStreamSupportLower start");
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    EXPECT_NE(streamDesc, nullptr);
+    const int32_t MEDIA_SERVICE_UID = 1013;
+    const int32_t AUDIO_EXT_UID = 1041;
+    streamDesc->callerUid_ = MEDIA_SERVICE_UID;
+    streamDesc->appInfo_.appUid = AUDIO_EXT_UID;
+    bool isSupportLowPower = audioCoreService->IsStreamSupportLowpower(streamDesc);
+    AUDIO_INFO_LOG("AudioCoreServicePrivateTest IsStreamSupportLower_005 end");
     EXPECT_EQ(isSupportLowPower, false);
 }
 
