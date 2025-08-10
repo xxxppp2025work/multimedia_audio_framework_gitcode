@@ -876,6 +876,10 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
             AUDIO_ERR_LOG("ActivateAudioInterrupt timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(mutex_);
+    if (standaloneAppUid_.second == audioInterrupt.uid) {
+        standaloneAppUid_[audioInterrupt.uid][zoneId].insert(audioInterrupt.sessionId);
+        return SUCCESS;
+    }
     bool updateScene = false;
     int32_t ret = ActivateAudioInterruptCoreProcedure(zoneId, audioInterrupt, isUpdatedAudioStrategy, updateScene);
     if (ret != SUCCESS || !updateScene) {
@@ -939,6 +943,73 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
     CHECK_AND_RETURN_RET_LOG(!ret, ERR_FOCUS_DENIED, "request rejected");
     if (zoneId == ZONEID_DEFAULT) {
         updateScene = true;
+    }
+    return SUCCESS;
+}
+
+void AudioInterruptService::RemoveExistingFocus(const int32_t &appUid)
+{
+    if (zonesMap_.empty()) {
+        return;
+    }
+    for (auto itZone : zonesMap_) {
+        auto audioFocusInfoList = itZone.second->audioFocusInfoList;
+        for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end();) {
+            if (iter->first.uid != appUid) {
+                iter++;
+                continue;
+            } else {
+                iter = audioFocusInfoList.erase(iter);
+            }
+        }
+        zonesMap_[itZone.first]->audioFocusInfoList = audioFocusInfoList;
+        ResumeAudioFocusList(itZone.first, false);
+    }
+}
+
+void AudioInterruptService::ResumeStandalone(const int32_t &appUid)
+{
+    auto resumeAppUidList = standaloneApp_[appUid]
+    for (auto [zonesId, standaloneAppUidList] : resumeAppUidList) {
+        if (standaloneAppUidList.empty()) {
+            continue;
+        }
+        for (auto it = standaloneAppUidList.begin(); it != standaloneAppUidList.end(); it++) {
+            InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN,
+                INTERRUPT_FORCE, INTERRUPT_HINT_EXIT_STANDALONE, 1.0f};
+            if (interruptClients_.find(*it) != interruptClients_.end()) {
+                AUDIO_INFO_LOG("Resume Standalone StreamId = %{public}d", static_cast<int>(*it));
+                if (handler_ != nullptr) {
+                    handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, *it);
+                }
+            }
+        }
+    }
+    standaloneAppUid_.firist = -1;
+    standaloneAppUid_.second = -1;
+    standaloneApp_.erase(appUid);
+}
+
+int32_t AudioInterruptService::SetAppConcurrencyMode(const int32_t ownerPid,
+    const int32_t appUid, const int32_t mode)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (locked_ && ownerPid != standaloneAppUid_.first) {
+        AUDIO_INFO_LOG("Set Fail lockedPid = %{public}d", 
+            static_cast<int>(standaloneAppUid_.first));
+        return -1
+    }
+    AudioConcurrencyMode concurrencyMode = static_cast<AudioConcurrencyMode>(mode);
+    switch (concurrencyMode) {
+    case AudioConcurrencyMode::
+        locked_ = true;
+        standaloneAppUid_ = std::make_pair(ownerPid, appUid);
+        RemoveExistingFocus(appUid);
+    case AudioConcurrencyMode::
+        locked_ = false;
+        ResumeStandalone(appUid);
+    default:
+        break;
     }
     return SUCCESS;
 }
@@ -1011,6 +1082,22 @@ void AudioInterruptService::ResetNonInterruptControl(AudioInterrupt audioInterru
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
+void AudioInterruptService::EraseDeactivateStandaloneAudioSessionId(const int32_t &uid,
+    const int32_t &zoneId, const int32_t &sessionId)
+{
+    std::unordered_set<int32_t> tempSessionIdList = standaloneApp_[uid][zoneId];
+    if (tempSessionIdList.empty()) {
+        return;
+    }
+    for (auto it = tempSessionIdList.begin(); it != tempSessionIdList.end;) {
+        if (*it == sessionId) {
+            it = tempSessionIdList.erase(it);
+        } else {
+            it++;
+        }
+    }
+}
+
 int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt)
 {
     AudioXCollie audioXCollie("AudioInterruptService::DeactivateAudioInterrupt", INTERRUPT_SERVICE_TIMEOUT,
@@ -1019,6 +1106,7 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(mutex_);
 
+    eraseDeactivateStandaloneAudioSessionId(audioInterrupt.uid, zoneId, audioInterrupt.sessionId);
     AudioInterrupt currAudioInterrupt = audioInterrupt;
     HandleAppStreamType(zoneId, currAudioInterrupt);
     AUDIO_INFO_LOG("streamId: %{public}u pid: %{public}d streamType: %{public}d "\
@@ -2661,6 +2749,10 @@ void AudioInterruptService::DispatchInterruptEventWithStreamId(uint32_t streamId
         "EntryPoint Taint Mark:arg streamId: %{public}u is tained", streamId);
     std::lock_guard<std::mutex> lock(mutex_);
 
+    if (interruptEvent.hintType == InterruptHint::INTERRUPT_HINT_EXIT_STANDALONE) {
+         interruptClients_[streamId]->OnInterrupt(interruptEvent);
+         return;
+    }
     // call all clients
     if (streamId == 0) {
         for (auto &it : interruptClients_) {

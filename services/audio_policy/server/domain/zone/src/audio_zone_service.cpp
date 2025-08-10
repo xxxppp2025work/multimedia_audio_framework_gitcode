@@ -543,6 +543,14 @@ int32_t AudioZoneService::ActivateAudioInterrupt(int32_t zoneId,
     return ret;
 }
 
+int32_t AudioZoneService::SetAppConcurrencyMode(const int32_t ownerPid,
+    const int32_t appUid, const int32_t mode);
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, interrupts, "interruptService_ is nullptr");
+    return interruptService_->SetAppConcurrencyMode(ownerPid, appUid, mode);
+}
+
 int32_t AudioZoneService::DeactivateAudioInterrupt(int32_t zoneId,
     const AudioInterrupt &audioInterrupt)
 {
