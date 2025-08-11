@@ -526,6 +526,22 @@ void AudioServer::OnDataTransferStateChange(const int32_t &pid, const int32_t &c
     callback->OnDataTransferStateChange(callbackId, info);
 }
 
+void AudioServer::OnMuteStateChange(const int32_t &pid, const int32_t &callbackId,
+    const int32_t &uid, const uint32_t &sessionId, const bool &isMuted)
+{
+    std::shared_ptr<DataTransferStateChangeCallbackInner> callback = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(audioDataTransferMutex_);
+        if (audioDataTransferCbMap_.count(pid) > 0) {
+            callback = audioDataTransferCbMap_[pid];
+        } else {
+            AUDIO_ERR_LOG("callback is null");
+            return;
+        }
+    }
+    callback->OnMuteStateChange(callbackId, uid, sessionId, isMuted);
+}
+
 void AudioServer::RegisterDataTransferStateChangeCallback()
 {
     DataTransferMonitorParam param;
