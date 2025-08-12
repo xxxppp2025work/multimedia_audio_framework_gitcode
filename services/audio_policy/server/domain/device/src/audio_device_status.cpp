@@ -835,7 +835,7 @@ string AudioDeviceStatus::GetModuleNameByType(ClassType type)
 std::shared_ptr<AudioDeviceDescriptor> AudioDeviceStatus::GetDeviceByStatusInfo(const DStatusInfo &statusInfo)
 {
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
-    AudioDeviceDescriptor deviceDesc(devType, AudioPolicyUtils::GetInstance().GetDeviceRole(devType););
+    AudioDeviceDescriptor deviceDesc(devType, AudioPolicyUtils::GetInstance().GetDeviceRole(devType));
     deviceDesc.SetDeviceInfo(statusInfo.deviceName, statusInfo.macAddress);
     DeviceStreamInfo streamInfo = {};
     std::list<DeviceStreamInfo> streamInfoList = statusInfo.streamInfo.empty() ?
