@@ -805,9 +805,10 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
     param.format = ConvertToHdiFormat(attr_.format);
     param.isBigEndian = attr_.isBigEndian;
     param.channelCount = attr_.channel;
-    param.channelLayout = attr_.channelLayout;
-    if (param.channelLayout == CH_LAYOUT_UNKNOWN) {
-        param.channelLayout = GetChannelLayoutByChannelCount(attr_.channel);
+    param.channelLayout = GetChannelLayoutByChannelCount(attr.channel);
+    if (param.channelLayout != attr.channelLayout) {
+        AUDIO_ERR_LOG("channelLayout:%{public}d convert by channel,not match channelLayout:%{public}d in attr",
+        param.channelLayout, attr.channelLayout);
     }
     param.silenceThreshold = attr_.bufferSize;
     param.frameSize = param.format * param.channelCount;

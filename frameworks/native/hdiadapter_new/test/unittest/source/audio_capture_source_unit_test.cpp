@@ -73,7 +73,7 @@ void AudioCaptureSourceUnitTest::InitPrimarySource()
     attr_.sampleRate = 48000; // 48000: sample rate
     attr_.channel = 2; // 2: channel
     attr_.format = SAMPLE_S16LE;
-    attr_.channelLayout = 3; // 3: channel layout
+    attr_.channelLayout = CH_LAYOUT_UBKNOWN; // 3: channel layout
     attr_.deviceType = DEVICE_TYPE_MIC;
     attr_.openMicSpeaker = 1;
     primarySource_->Init(attr_);
