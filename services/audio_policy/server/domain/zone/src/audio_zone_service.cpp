@@ -202,6 +202,23 @@ int32_t AudioZoneService::UnBindDeviceToAudioZone(int32_t zoneId,
     return SUCCESS;
 }
 
+bool AudioZoneService::MoveDeviceToGlobalFromZones(std::shared_ptr<AudioDeviceDescriptor> device)
+{
+    std::vector<std::shared_ptr<AudioZoneDescriptor>> zoneDescriptor = GetAllAudioZone();
+    bool findDeviceInZone = false;
+    for (auto zoneDes : zoneDescriptor) {
+        int32_t zoneId = zoneDes->zoneId_;
+        auto zone = FindZone(zoneId);
+        CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
+        CHECK_AND_CONTINUE(zone->IsDeviceConnect(device));
+
+        vector<std::shared_ptr<AudioDeviceDescriptor>> devices = {device};
+        zone->RemoveDeviceDescriptor(devices);
+        findDeviceInZone = true;
+    }
+    return findDeviceInZone;
+}
+
 int32_t AudioZoneService::RegisterAudioZoneClient(pid_t clientPid, sptr<IStandardAudioZoneClient> client)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
