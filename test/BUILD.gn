@@ -315,6 +315,7 @@ group("audio_fuzz_test") {
     "fuzztest/hpaesourceinputcluster_fuzzer:fuzztest",
     "fuzztest/hpaesourceinputnode_fuzzer:fuzztest",
     "fuzztest/hpaesourceoutputnode_fuzzer:fuzztest",
+    "fuzztest/hpaesourceprocesscluster_fuzzer:fuzztest",
     "fuzztest/istandardaudiozoneclient_fuzzer:fuzztest",
     "fuzztest/istandardspatializationstatechangelistener_fuzzer:fuzztest",
     "fuzztest/microphonedescriptor_fuzzer:fuzztest",
