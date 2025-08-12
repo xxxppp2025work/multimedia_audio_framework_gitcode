@@ -805,10 +805,10 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
     param.format = ConvertToHdiFormat(attr_.format);
     param.isBigEndian = attr_.isBigEndian;
     param.channelCount = attr_.channel;
-    param.channelLayout = GetChannelLayoutByChannelCount(attr.channel);
-    if (param.channelLayout != attr.channelLayout) {
+    param.channelLayout = GetChannelLayoutByChannelCount(attr_.channel);
+    if (param.channelLayout != attr_.channelLayout) {
         AUDIO_ERR_LOG("channelLayout:%{public} "PRIu64 "convert by channel,"
-        "not match channelLayout:%{public}"PRIu64 "in attr", param.channelLayout, attr.channelLayout);
+        "not match channelLayout:%{public}"PRIu64 "in attr_", param.channelLayout, attr_.channelLayout);
     }
     param.silenceThreshold = attr_.bufferSize;
     param.frameSize = param.format * param.channelCount;
