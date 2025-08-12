@@ -448,7 +448,7 @@ int32_t AudioCoreService::LoadA2dpModule(DeviceType deviceType, const AudioStrea
     std::string networkId, std::string sinkName, SourceType sourceType)
 {
     std::list<AudioModuleInfo> moduleInfoList;
-    bool ret = policyConfigMananger_.GetModuleListByType(ClassType::TYPE_A2DP, moduleInfoList);
+    bool ret = policyConfigManager_.GetModuleListByType(ClassType::TYPE_A2DP, moduleInfoList);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_OPERATION_FAILED, "A2dp module is not exist in the configuration file");
 
     // not load bt_a2dp_fast and bt_hdap, maybe need fix
@@ -1077,7 +1077,7 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
     }
 
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
-    if (policyConfigMananger_.GetUpdateRouteSupport()) {
+    if (policyConfigManager_.GetUpdateRouteSupport()) {
         UpdateOutputRoute(streamDesc);
     }
 
@@ -1211,7 +1211,7 @@ void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescripto
 
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
 
-    if (policyConfigMananger_.GetUpdateRouteSupport() &&
+    if (policyConfigManager_.GetUpdateRouteSupport() &&
         streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID) {
         audioActiveDevice_.UpdateActiveDeviceRoute(streamDesc->newDeviceDescs_.front()->deviceType_,
             DeviceFlag::INPUT_DEVICES_FLAG, streamDesc->newDeviceDescs_.front()->deviceName_,
@@ -1913,7 +1913,7 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
 int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning)
 {
-    CHECK_AND_RETURN_RET_LOG(policyConfigMananger_.GetHasEarpiece(), ERR_NOT_SUPPORTED, "the device has no earpiece");
+    CHECK_AND_RETURN_RET_LOG(policyConfigManager_.GetHasEarpiece(), ERR_NOT_SUPPORTED, "the device has no earpiece");
     CHECK_AND_RETURN_RET_LOG(pipeManager_->GetStreamDescById(sessionID) != nullptr, ERR_NOT_SUPPORTED,
         "sessionId is not exist");
 
@@ -2709,7 +2709,7 @@ int32_t AudioCoreService::LoadHearingAidModule(DeviceType deviceType, const Audi
     std::string networkId, std::string sinkName, SourceType sourceType)
 {
     std::list<AudioModuleInfo> moduleInfoList;
-    bool ret = policyConfigMananger_.GetModuleListByType(ClassType::TYPE_HEARING_AID, moduleInfoList);
+    bool ret = policyConfigManager_.GetModuleListByType(ClassType::TYPE_HEARING_AID, moduleInfoList);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_OPERATION_FAILED, "HearingAid module is not exist in the configuration file");
 
     int32_t loadRet = AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_BLUETOOTH,
