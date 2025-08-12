@@ -1976,7 +1976,7 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
         attr.sampleRate = static_cast<uint32_t>(std::stoul(audioModuleInfo.rate));
     }
     if (!audioModuleInfo.channels.empty()) {
-        AUDIO_INFO_LOG("use custom channel, %{public}s", audioModuleInfo.channels.c_str());
+        AUDIO_INFO_LOG("use custom channel：%{public}s", audioModuleInfo.channels.c_str());
         attr.channel = static_cast<uint32_t>(std::stoul(audioModuleInfo.channels));
     }
     attr.volume = HDI_MAX_SINK_VOLUME_LEVEL;
