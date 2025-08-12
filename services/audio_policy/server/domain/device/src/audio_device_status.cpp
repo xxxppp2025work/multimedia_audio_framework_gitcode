@@ -852,7 +852,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSto
         GetEncryptStr(statusInfo.networkId).c_str());
     if (isStop) {
         std::shared_ptr<AudioDeviceDescriptor> device = GetDeviceByStatusInfo(statusInfo);
-        AudioZoneService::GetInstance().UnBindDeviceAddToGlobal(statusInfo);
+        AudioZoneService::GetInstance().UnBindDeviceAddToGlobal(device);
         audioConnectedDevice_.AddConnectedDevice(device);
 
         HandleOfflineDistributedDevice();
