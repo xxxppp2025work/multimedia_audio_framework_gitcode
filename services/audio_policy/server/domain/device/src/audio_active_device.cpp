@@ -45,6 +45,7 @@ const uint32_t USER_NOT_SELECT_BT = 1;
 const uint32_t USER_SELECT_BT = 2;
 #endif
 
+//用于测试
 bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo)
 {
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
