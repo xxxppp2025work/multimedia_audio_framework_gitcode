@@ -807,8 +807,8 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
     param.channelCount = attr_.channel;
     param.channelLayout = GetChannelLayoutByChannelCount(attr.channel);
     if (param.channelLayout != attr.channelLayout) {
-        AUDIO_ERR_LOG("channelLayout:%{public}d convert by channel,not match channelLayout:%{public}d in attr",
-        param.channelLayout, attr.channelLayout);
+        AUDIO_ERR_LOG("channelLayout:%{public} "PRIu64 "convert by channel,"
+        "not match channelLayout:%{public}"PRIu64 "in attr", param.channelLayout, attr.channelLayout);
     }
     param.silenceThreshold = attr_.bufferSize;
     param.frameSize = param.format * param.channelCount;
