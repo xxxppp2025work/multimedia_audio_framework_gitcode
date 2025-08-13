@@ -482,7 +482,7 @@ private:
     // for collaboration
     void UpdateRouteForCollaboration(InternalDeviceType deviceType);
     int32_t CheckAndUpdateHearingAidCall(const DeviceType deviceType);
-    void CheckModuleForHearingAid();
+    void CheckModuleForHearingAid(uint32_t paIndex);
     void CheckCloseHearingAidCall(const bool isModemCallRunning, const DeviceType type);
     void CheckOpenHearingAidCall(const bool isModemCallRunning, const DeviceType type);
 
