@@ -421,7 +421,7 @@ void AudioCoreService::CheckModuleForHearingAid(uint32_t paIndex) {
     }
 }
 
-int32_t AudioCoreService::CheckAndUpdateHearingAidCall(const DeviceType type)
+int32_t AudioStandard::AudioCoreService::CheckAndUpdateHearingAidCall(const DeviceType type)
 {
     bool isModemCallRunning = audioSceneManager_.IsInPhoneCallScene();
     CheckOpenHearingAidCall(isModemCallRunning, type);
@@ -429,7 +429,7 @@ int32_t AudioCoreService::CheckAndUpdateHearingAidCall(const DeviceType type)
     return SUCCESS;
 }
 
-void AudioCoreService::HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
+void AudioStandard::AudioCoreService::HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
     if (mode == AUDIO_MODE_RECORD &&
         (streamChangeInfo.audioCapturerChangeInfo.capturerState == CAPTURER_RELEASED ||
