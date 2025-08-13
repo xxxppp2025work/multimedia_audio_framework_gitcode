@@ -347,6 +347,7 @@ void AudioCoreService::CheckOpenHearingAidCall(const bool isModemCallRunning, co
 }
 
 void AudioCoreService::CheckCloseHearingAidCall(const bool isModemCallRunning, const DeviceType type) {
+    uint32_t paIndex = 0;
     if (!hearingAidCallFlag_) {
         if (isModemCallRunning && type == DEVICE_TYPE_HEARING_AID) {
             hearingAidCallFlag_ = true;
@@ -354,7 +355,7 @@ void AudioCoreService::CheckCloseHearingAidCall(const bool isModemCallRunning, c
                 DeviceFlag::OUTPUT_DEVICES_FLAG);
             AudioServerProxy::GetInstance().SetAudioParameterProxy("mute_call", "true");
 
-            CheckModuleForHearingAid();
+            CheckModuleForHearingAid(paIndex);
 
             std::shared_ptr<AudioPipeInfo> pipeInfoOutput = pipeManager_->GetPipeinfoByNameAndFlag("hearing_aid",
                 AUDIO_OUTPUT_FLAG_NORMAL);
@@ -369,11 +370,10 @@ void AudioCoreService::CheckCloseHearingAidCall(const bool isModemCallRunning, c
     }
 }
 
-void AudioCoreService::CheckModuleForHearingAid() {
+void AudioCoreService::CheckModuleForHearingAid(uint32_t paIndex) {
     std::list<AudioModuleInfo> moduleInfoList;
     bool configRet = policyConfigMananger_.GetModuleListByType(ClassType::TYPE_PRIMARY, moduleInfoList);
     CHECK_AND_RETURN_LOG(configRet, "HearingAid not exist in config");
-    uint32_t paIndex = 0;
     for (auto &moduleInfo : moduleInfoList) {
         if (moduleInfo.role != "source") {continue;}
             AUDIO_INFO_LOG("hearingAidCall connects");
