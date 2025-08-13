@@ -132,6 +132,12 @@ ohos_shared_library("audio_common") {
     "${audio_framework_root}/services/audio_service/idl:audio_policy_sa_idl_config",
   ]
 
+  ldflags = [ 
+    "-Wl,--emit-relocs", 
+    "-Wl,--no-relax", 
+    "-mno-fix-cortex-a53-843419"  
+  ]
+
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"
@@ -292,6 +298,12 @@ ohos_shared_library("audio_client") {
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
+
+  ldflags = [ 
+    "-Wl,--emit-relocs", 
+    "-Wl,--no-relax", 
+    "-mno-fix-cortex-a53-843419" 
+  ]
 
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
