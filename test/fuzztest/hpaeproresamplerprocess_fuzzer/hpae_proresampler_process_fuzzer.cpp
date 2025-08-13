@@ -32,16 +32,22 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 10;
-static uint32_t BitCounts(uint64_t bits)
-{
-    uint32_t num = 0;
-    for (; bits != 0; bits &= bits - 1) {
-        num++;
-    }
-    return num;
-}
+const static std::vector<uint32_t>  TEST_CHANNELS = {MONO, STEREO, CHANNEL_6};
 
+const static std::map<uint32_t, uint32_t> TEST_SAMPLE_RATE_COMBINATION = { // {input, output} combination
+    {SAMPLE_RATE_24000, SAMPLE_RATE_48000},
+    {SAMPLE_RATE_16000, SAMPLE_RATE_48000},
+    {SAMPLE_RATE_44100, SAMPLE_RATE_192000},
+    {SAMPLE_RATE_48000, SAMPLE_RATE_24000},
+    {SAMPLE_RATE_48000, SAMPLE_RATE_16000},
+    {SAMPLE_RATE_192000, SAMPLE_RATE_44100},
+};
+
+constexpr uint32_t INVALID_QUALITY = -1;
+constexpr uint32_t QUALITY_ONE = 1;
+constexpr uint32_t FRAME_LEN_20MS = 20;
+constexpr uint32_t FRAME_LEN_40MS = 40;
+constexpr uint32_t MS_PER_SECOND = 1000;
 template<class T>
 T GetData()
 {
@@ -176,7 +182,7 @@ void ErrCodeToString()
 }
 
 typedef void (*TestFuncs)();
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     SingleStagePolyphaseResamplerSetRate1,
     SingleStagePolyphaseResamplerSetRate2,
     SingleStagePolyphaseResamplerSetRate3,
