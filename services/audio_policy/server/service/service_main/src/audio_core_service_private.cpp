@@ -370,7 +370,7 @@ void AudioCoreService::CheckCloseHearingAidCall(const bool isModemCallRunning, c
     }
 }
 
-void AudioCoreService::CheckModuleForHearingAid() {
+void AudioCoreService::CheckModuleForHearingAid(uint32_t paIndex) {
     std::list<AudioModuleInfo> moduleInfoList;
     bool configRet = policyConfigMananger_.GetModuleListByType(ClassType::TYPE_PRIMARY, moduleInfoList);
     CHECK_AND_RETURN_LOG(configRet, "HearingAid not exist in config");
