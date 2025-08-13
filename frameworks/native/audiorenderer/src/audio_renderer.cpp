@@ -1665,6 +1665,11 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
 {
     std::unique_lock<std::mutex> lock(mutex_);
 
+    if (interruptEvent.hintType == InterruptHint::INTERRUPT_HINT_EXIT_STANDALONE) {
+        int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+        CHECK_AND_RETURN_LOG(ret == 0, "resume ActivateAudioInterrupt Failed");
+        return;
+    }
     if (switching_) {
         AUDIO_INFO_LOG("Wait for SwitchStream");
         bool res = switchStreamCv_.wait_for(lock, std::chrono::milliseconds(BLOCK_INTERRUPT_CALLBACK_IN_MS),
@@ -2087,7 +2092,7 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetRendererWriteCallback(info.rendererWriteCallback);
 
     audioStream->SetRendererFirstFrameWritingCallback(info.rendererFirstFrameWritingCallback);
-    audioStream->SetSwitchInfoTimestamp(info.lastFramePosAndTimePair);
+    audioStream->SetSwitchInfoTimestamp(info.lastFramePosAndTimePair, info.lastFramePosAndTimePairWithSpeed);
     return true;
 }
 
