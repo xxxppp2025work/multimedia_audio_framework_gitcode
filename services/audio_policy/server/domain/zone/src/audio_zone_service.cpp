@@ -25,6 +25,8 @@
 #include "audio_device_lock.h"
 #include "audio_connected_device.h"
 #include "audio_core_service.h"
+#include "audio_device_manager.h"
+#include "audio_connected_device.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -200,6 +202,26 @@ int32_t AudioZoneService::UnBindDeviceToAudioZone(int32_t zoneId,
         AudioDeviceStatus::GetInstance().AddDeviceBackToGlobalOnly(it);
     }
     return SUCCESS;
+}
+
+void AudioZoneService::MoveDeviceToGlobalFromZones(std::shared_ptr<AudioDeviceDescriptor> device)
+{
+    std::vector<std::shared_ptr<AudioZoneDescriptor>> zoneDescriptor = GetAllAudioZone();
+    {
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        for (auto zoneDes : zoneDescriptor) {
+            CHECK_AND_RETURN_LOG(zoneDes != nullptr, "zoneDes is nullptr");
+            int32_t zoneId = zoneDes->zoneId_;
+            auto zone = FindZone(zoneId);
+            CHECK_AND_RETURN_LOG(zone != nullptr, "zone id %{public}d is not found", zoneId);
+            CHECK_AND_CONTINUE(zone->IsDeviceConnect(device));
+
+            vector<std::shared_ptr<AudioDeviceDescriptor>> devices = {device};
+            zone->RemoveDeviceDescriptor(devices);
+            AudioDeviceManager::GetAudioDeviceManager().AddNewDevice(device);
+            AudioConnectedDevice::GetInstance().AddConnectedDevice(device);
+        }
+    }
 }
 
 int32_t AudioZoneService::RegisterAudioZoneClient(pid_t clientPid, sptr<IStandardAudioZoneClient> client)

@@ -135,6 +135,10 @@ static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::st
     } else if (serviceStatus->status == SERVIE_STATUS_STOP) {
         AUDIO_DEBUG_LOG("distributed service offline");
         DStatusInfo statusInfo;
+        PnpEventType pnpEventType = PNP_EVENT_UNKNOWN;
+        JUDGE_AND_ERR_LOG(sscanf_s(info.c_str(), "EVENT_TYPE=%d;NID=%[^;];PIN=%d;VID=%d;IID=%d", &pnpEventType,
+            statusInfo.networkId, sizeof(statusInfo.networkId), &(statusInfo.hdiPin), &(statusInfo.mappingVolumeId),
+            &(statusInfo.mappingInterruptId)) < D_EVENT_PARAMS, "[DeviceStatusListener]: Failed to scan info string");
         devListener->deviceObserver_.OnDeviceStatusUpdated(statusInfo, true);
     }
 }
