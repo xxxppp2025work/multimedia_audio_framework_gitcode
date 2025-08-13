@@ -479,5 +479,18 @@ int32_t AudioZone::GetSystemVolumeLevel(AudioVolumeType volumeType)
     }
     return mgr->GetSystemVolumeLevel(volumeProxyClientPid_, zoneId_, volumeType);
 }
+
+void AudioZone::SetClientPid(pid_t clientPid)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    AUDIO_INFO_LOG("zone create by client %{public}d", clientPid);
+    zoneClientPid_ = clientPid;
+}
+
+void AudioZone::GetClientPid()
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    return zoneClientPid_;
+}
 } // namespace AudioStandard
 } // namespace OHOS
