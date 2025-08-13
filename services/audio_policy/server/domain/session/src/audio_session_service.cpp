@@ -225,7 +225,7 @@ StreamUsage AudioSessionService::GetAudioSessionStreamUsage(int32_t callerPid)
     if (session != sessionMap_.end() && sessionMap_[callerPid] != nullptr) {
         return sessionMap_[callerPid]->GetSessionStreamUsage();
     }
-
+    AUDIO_ERR_LOG("get audio session streamUsage fail!");
     return STREAM_USAGE_INVALID;
 }
 
