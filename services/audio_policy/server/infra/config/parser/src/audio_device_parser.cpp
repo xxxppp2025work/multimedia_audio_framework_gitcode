@@ -116,8 +116,8 @@ void AudioDeviceParser::ParseDevicePrivacyInfo(std::shared_ptr<AudioXmlNode> cur
             deviceInfo.deviceUsage = static_cast<DeviceUsage>(intValue);
 
             deviceLists.push_back(deviceInfo);
-            AUDIO_DEBUG_LOG("AudioDeviceParser: name:%{public}s, type:%{public}d, role:%{public}d, Category:%{public}d,"
-                "Usage:%{public}d", deviceInfo.deviceName.c_str(), deviceInfo.deviceType, deviceInfo.deviceRole,
+            AUDIO_DEBUG_LOG("AudioDeviceParser: type:%{public}d, role:%{public}d, Category:%{public}d,"
+                "Usage:%{public}d", deviceInfo.deviceType, deviceInfo.deviceRole,
                 deviceInfo.deviceCategory, deviceInfo.deviceUsage);
         }
         curNode->MoveToNext();
