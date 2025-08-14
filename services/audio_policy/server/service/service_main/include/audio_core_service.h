@@ -393,7 +393,7 @@ private:
     bool IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     AudioFlag SetFlagForSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
-    void UpdateRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void UpdateRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc, bool isCreateProcess);
     std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId);
     std::vector<SourceOutput> GetSourceOutputs();
     void UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
