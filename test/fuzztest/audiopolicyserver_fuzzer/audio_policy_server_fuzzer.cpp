@@ -1208,7 +1208,7 @@ void AudioPolicyServerAudioZoneQueryFuzzTest()
     std::string name = "zone";
     AudioZoneContext context;
     int32_t zoneId = 0;
-    server->CreateAudioZone(name, context, zoneId);
+    server->CreateAudioZone(name, context, zoneId, 0);
 
     std::vector<std::shared_ptr<AudioZoneDescriptor>> descs;
     server->GetAllAudioZone(descs);
@@ -1229,7 +1229,7 @@ void AudioPolicyServerBindUnbindDeviceToAudioZoneFuzzTest()
     std::string name = "zone";
     AudioZoneContext context;
     int32_t zoneId = 0;
-    server->CreateAudioZone(name, context, zoneId);
+    server->CreateAudioZone(name, context, zoneId, 0);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     int32_t deviceCount = DEVICE_COUNT;
@@ -1255,7 +1255,7 @@ void AudioPolicyServerEnableAudioZoneReportFuzzTest()
     std::string name = "zone";
     AudioZoneContext context;
     int32_t zoneId = 0;
-    server->CreateAudioZone(name, context, zoneId);
+    server->CreateAudioZone(name, context, zoneId, 0);
 
     bool changeEnable = GetData<bool>();
     server->EnableAudioZoneChangeReport(zoneId, changeEnable);
@@ -1270,7 +1270,7 @@ void AudioPolicyServerAddRemoveUidToAudioZoneFuzzTest()
     std::string name = "zone";
     AudioZoneContext context;
     int32_t zoneId = 0;
-    server->CreateAudioZone(name, context, zoneId);
+    server->CreateAudioZone(name, context, zoneId, 0);
 
     int32_t uid = GetData<int32_t>();
     server->AddUidToAudioZone(zoneId, uid);
@@ -1286,7 +1286,7 @@ void AudioPolicyServerAddStreamToAudioZoneFuzzTest()
     std::string zoneName = "zone";
     AudioZoneContext context;
     int32_t zoneId = 0;
-    server->CreateAudioZone(zoneName, context, zoneId);
+    server->CreateAudioZone(zoneName, context, zoneId, 0);
 
     AudioZoneStream stream;
     stream.streamUsage = GetData<StreamUsage>();
@@ -1304,7 +1304,7 @@ void AudioPolicyServerAddStreamsToAudioZoneFuzzTest()
     std::string zoneName = "zone";
     AudioZoneContext context;
     int32_t zoneId = 0;
-    server->CreateAudioZone(zoneName, context, zoneId);
+    server->CreateAudioZone(zoneName, context, zoneId, 0);
 
     std::vector<AudioZoneStream> streams;
     int32_t count = COUNT;
@@ -1335,7 +1335,7 @@ void AudioPolicyServerEnableSystemVolumeProxyFuzzTest()
     std::string zoneName = "zone";
     AudioZoneContext context;
     int32_t zoneId = 0;
-    server->CreateAudioZone(zoneName, context, zoneId);
+    server->CreateAudioZone(zoneName, context, zoneId, 0);
     bool enable = GetData<bool>();
     server->EnableSystemVolumeProxy(zoneId, enable);
     server->ReleaseAudioZone(zoneId);
@@ -1348,7 +1348,7 @@ void AudioPolicyServerGetAudioInterruptForZoneFuzzTest()
     std::string zoneName = "zone";
     AudioZoneContext context;
     int32_t zoneId = 0;
-    server->CreateAudioZone(zoneName, context, zoneId);
+    server->CreateAudioZone(zoneName, context, zoneId, 0);
     std::vector<std::map<AudioInterrupt, int32_t>> retList;
     server->GetAudioInterruptForZone(zoneId, retList);
     std::string deviceTag = "dev";
