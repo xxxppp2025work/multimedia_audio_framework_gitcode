@@ -481,8 +481,8 @@ private:
         const std::unique_ptr<ConcurrentCaptureDfxResult> &result);
     // for collaboration
     void UpdateRouteForCollaboration(InternalDeviceType deviceType);
-    int32_t CheckAndUpdateHearingAidCall(const DeviceType deviceType);
-    uint32_t CheckModuleForHearingAid();
+    void CheckAndUpdateHearingAidCall(const DeviceType deviceType);
+    void CheckModuleForHearingAid(uint32_t paIndex);
     void CheckCloseHearingAidCall(const bool isModemCallRunning, const DeviceType type);
     void CheckOpenHearingAidCall(const bool isModemCallRunning, const DeviceType type);
 
