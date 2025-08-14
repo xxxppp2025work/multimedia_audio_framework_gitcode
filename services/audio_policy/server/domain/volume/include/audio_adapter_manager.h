@@ -303,6 +303,7 @@ public:
     void HandleDistributedDeviceVolume();
 
     void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
+    void SaveA2dpAbsVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel);
 
 private:
     friend class PolicyCallbackImpl;

@@ -374,6 +374,7 @@ int32_t AudioVolumeManager::HandleA2dpAbsVolume(AudioStreamType streamType, int3
     vol.volumeInt = static_cast<uint32_t>(volumeLevel);
     vol.volumeFloat = audioPolicyManager_.GetSystemVolumeInDb(streamType, volumeLevel, curOutputDeviceType);
     SetSharedVolume(streamType, curOutputDeviceType, vol);
+    audioPolicyManager_.SaveA2dpAbsVolume(curOutputDeviceType, streamType, volumeLevel);
 #ifdef BLUETOOTH_ENABLE
     if (result == SUCCESS) {
         // set to avrcp device
