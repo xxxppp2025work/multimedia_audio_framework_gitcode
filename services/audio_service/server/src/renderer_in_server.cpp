@@ -201,8 +201,8 @@ int32_t RendererInServer::Init()
 
     // eg: /data/data/.pulse_dir/10000_100001_48000_2_1_server_in.pcm
     AudioStreamInfo tempInfo = processConfig_.streamInfo;
-    dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + "_" + std::to_string(streamIndex_)
-        + "_renderer_server_in_" + std::to_string(tempInfo.samplingRate) + "_"
+    dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + "_" + std::to_string(streamIndex_) + "_renderer_server_in_" 
+        + std::to_string(tempInfo.nonStandardSamplingRate == 0 ? tempInfo.samplingRate : tempInfo.nonStandardSamplingRate) + "_"
         + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpC2S_);
     playerDfx_ = std::make_unique<PlayerDfxWriter>(processConfig_.appInfo, streamIndex_);
@@ -2088,6 +2088,7 @@ RestoreStatus RendererInServer::RestoreSession(RestoreInfo restoreInfo)
     if (restoreStatus == NEED_RESTORE) {
         audioServerBuffer_->SetRestoreInfo(restoreInfo);
     }
+    audioServerBuffer_->WakeFutex();
     return restoreStatus;
 }
 

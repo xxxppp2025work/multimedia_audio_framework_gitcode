@@ -108,6 +108,9 @@ public:
         std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair = {
             Timestamp::Timestampbase::BASESIZE, {0, 0}
         };
+        std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed = {
+            Timestamp::Timestampbase::BASESIZE, {0, 0}
+        };
     };
 
     virtual ~IAudioStream() = default;
@@ -279,6 +282,8 @@ public:
 
     bool IsSamplingRateValid(uint32_t samplingRate);
 
+    bool IsNonStandardSamplingRateValid(uint32_t nonStandardSamplingRate);
+
     bool IsRendererChannelLayoutValid(uint64_t channelLayout);
 
     bool IsCapturerChannelLayoutValid(uint64_t channelLayout);
@@ -315,7 +320,8 @@ public:
 
     virtual RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) = 0;
 
-    virtual void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair) = 0;
+    virtual void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair,
+        std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed) = 0;
 
     virtual void FetchDeviceForSplitStream() = 0;
 

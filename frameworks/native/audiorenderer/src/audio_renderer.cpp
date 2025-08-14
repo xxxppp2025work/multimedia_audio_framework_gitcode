@@ -108,6 +108,7 @@ static AudioRendererParams SetStreamInfoToParams(const AudioStreamInfo &streamIn
     AudioRendererParams params;
     params.sampleFormat = streamInfo.format;
     params.sampleRate = streamInfo.samplingRate;
+    params.nonStandardSamplingRate = streamInfo.nonStandardSamplingRate;
     params.channelCount = streamInfo.channels;
     params.encodingType = streamInfo.encoding;
     params.channelLayout = streamInfo.channelLayout;
@@ -326,6 +327,7 @@ void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOpt
     rendererInfo_.expectedPlaybackDurationBytes
         = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
     rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
+    rendererInfo_.nonStandardSamplingRate = rendererOptions.streamInfo.nonStandardSamplingRate;
     rendererInfo_.volumeMode = rendererOptions.rendererInfo.volumeMode;
     rendererInfo_.isLoopback = rendererOptions.rendererInfo.isLoopback;
     rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
@@ -660,7 +662,8 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 
     RegisterRendererPolicyServiceDiedCallback();
     // eg: 100005_44100_2_1_client_in.pcm
-    std::string dumpFileName = std::to_string(sessionID_) + "_" + std::to_string(params.sampleRate) + "_" +
+    std::string dumpFileName = std::to_string(sessionID_) + "_" + 
+        std::to_string(params.nonStandardSamplingRate == 0 ? params.sampleRate : params.nonStandardSamplingRate) + "_" +
         std::to_string(params.channelCount) + "_" + std::to_string(params.sampleFormat) + "_client_in.pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
@@ -711,6 +714,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->streamInfo_.format = static_cast<AudioSampleFormat>(audioStreamParams.format);
     streamDesc->streamInfo_.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
+    streamDesc->streamInfo_.nonStandardSamplingRate = static_cast<uint32_t>(audioStreamParams.nonStandardSamplingRate);
     streamDesc->streamInfo_.channels = static_cast<AudioChannel>(audioStreamParams.channels);
     streamDesc->streamInfo_.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
     streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
@@ -1661,6 +1665,11 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
 {
     std::unique_lock<std::mutex> lock(mutex_);
 
+    if (interruptEvent.hintType == InterruptHint::INTERRUPT_HINT_EXIT_STANDALONE) {
+        int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+        CHECK_AND_RETURN_LOG(ret == 0, "resume ActivateAudioInterrupt Failed");
+        return;
+    }
     if (switching_) {
         AUDIO_INFO_LOG("Wait for SwitchStream");
         bool res = switchStreamCv_.wait_for(lock, std::chrono::milliseconds(BLOCK_INTERRUPT_CALLBACK_IN_MS),
@@ -2083,7 +2092,7 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetRendererWriteCallback(info.rendererWriteCallback);
 
     audioStream->SetRendererFirstFrameWritingCallback(info.rendererFirstFrameWritingCallback);
-    audioStream->SetSwitchInfoTimestamp(info.lastFramePosAndTimePair);
+    audioStream->SetSwitchInfoTimestamp(info.lastFramePosAndTimePair, info.lastFramePosAndTimePairWithSpeed);
     return true;
 }
 
