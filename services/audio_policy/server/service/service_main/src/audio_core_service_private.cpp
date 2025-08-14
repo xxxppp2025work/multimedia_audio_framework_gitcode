@@ -353,7 +353,7 @@ void AudioCoreService::CheckCloseHearingAidCall(const bool isModemCallRunning, c
                 DeviceFlag::OUTPUT_DEVICES_FLAG);
             AudioServerProxy::GetInstance().SetAudioParameterProxy("mute_call", "true");
 
-            CheckModuleForHearingAid()
+            CheckModuleForHearingAid();
 
             std::shared_ptr<AudioPipeInfo> pipeInfoOutput = pipeManager_->GetPipeinfoByNameAndFlag("hearing_aid",
                 AUDIO_OUTPUT_FLAG_NORMAL);
@@ -374,7 +374,7 @@ void AudioCoreService::CheckModuleForHearingAid() {
     CHECK_AND_RETURN_RET_LOG(configRet, ERR_OPERATION_FAILED, "HearingAid not exist in config");
     uint32_t paIndex = 0;
     for (auto &moduleInfo : moduleInfoList) {
-        if (moduleInfo.role != "source") {continue;}
+        if (moduleInfo.role != "source") { continue; }
             AUDIO_INFO_LOG("hearingAidCall connects");
             moduleInfo.networkId = "LocalDevice";
             moduleInfo.deviceType = std::to_string(DEVICE_TYPE_MIC);
