@@ -248,6 +248,7 @@ void AudioCoreService::BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> 
     }
 
     if (streamDesc->streamStatus_ != STREAM_STATUS_STARTED) {
+        AUDIO_WARNING_LOG("Stream not start");
         return;
     }
     if (Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType)) {
