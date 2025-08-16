@@ -20,8 +20,6 @@
 #include "audio_engine_log.h"
 #include "idevice_status_observer.h"
 #include "../fuzz_utils.h"
-#include "bluetooth_hfp_interface.h"
-#include "bluetooth_sco_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
