@@ -415,6 +415,47 @@ void AudioAdapterManager::UpdateSafeVolumeByS4()
     SetVolumeDb(STREAM_MUSIC);
 }
 
+void AudioAdapterManager::SendLoudVolumeModeToDsp(FunctionHoldType funcHoldType, bool state)
+{
+    std::string key = "LOUD_VOLUMN_MODE";
+    std::string value = "super_loudness_mode=voice_off";
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    CHECK_AND_RETURN_LOG(audioServerProxy_ != nullptr, "audioServerProxy_ null");
+
+    if (FUNCTION_HOLD_SYSTEM == funcHoldType) {
+        if (state == true) {
+            value = "super_loudness_mode=voice_on";
+            audioServerProxy_->SetAudioParameter(key, value);
+            IPCSkeleton::SetCallingIdentity(identity);
+            AUDIO_INFO_LOG("update LoudVolume [%{public}s]", value.c_str());
+            return;
+        } else {
+            value = "super_loudness_mode=voice_off";
+            audioServerProxy_->SetAudioParameter(key, value);
+            IPCSkeleton::SetCallingIdentity(identity);
+            AUDIO_INFO_LOG("update LoudVolume [%{public}s]", value.c_str());
+            return;
+        } 
+    } else if (FUNCTION_HOLD_MUSIC == funcHoldType) {
+        if (state == true) {
+            value = "super_loudness_mode=music_on";
+            audioServerProxy_->SetAudioParameter(key, value);
+            IPCSkeleton::SetCallingIdentity(identity);
+            AUDIO_INFO_LOG("update LoudVolume [%{public}s]", value.c_str());
+            return;
+        } else {
+            value = "super_loudness_mode=music_off";
+            audioServerProxy_->SetAudioParameter(key, value);
+            IPCSkeleton::SetCallingIdentity(identity);
+            AUDIO_INFO_LOG("update LoudVolume [%{public}s]", value.c_str());
+            return;
+        }
+    } else {
+        AUDIO_ERR_LOG("funcHoldType error : %{public}d", funcHoldType);
+        return;
+    }
+}
+
 int32_t AudioAdapterManager::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel)
 {
     AUDIO_INFO_LOG("SetSystemVolumeLevel: appUid: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
