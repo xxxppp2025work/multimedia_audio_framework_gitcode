@@ -1774,7 +1774,7 @@ void CapturerInClientInner::JoinCallbackLoop()
     AUDIO_INFO_LOG("Not Support");
 }
 
-int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool notSet)
 {
     (void)defaultOutputDevice;
     AUDIO_WARNING_LOG("not supported in capturer");
