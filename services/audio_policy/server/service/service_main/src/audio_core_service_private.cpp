@@ -2036,7 +2036,7 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
 }
 
 int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-    const StreamUsage streamUsage, bool isRunning)
+    const StreamUsage streamUsage, bool isRunning, bool notSet)
 {
     CHECK_AND_RETURN_RET_LOG(policyConfigMananger_.GetHasEarpiece(), ERR_NOT_SUPPORTED, "the device has no earpiece");
     CHECK_AND_RETURN_RET_LOG(pipeManager_->GetStreamDescById(sessionID) != nullptr, ERR_NOT_SUPPORTED,
@@ -2054,9 +2054,11 @@ int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, co
     bool forceFetch = false;
     for (auto &changeInfo : audioRendererChangeInfos) {
         if (changeInfo->sessionId == static_cast<int32_t>(sessionID)) {
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                std::make_shared<AudioDeviceDescriptor>(), changeInfo->clientUID, "SetDefaultOutputDevice");
-            forceFetch = true;
+            if (!notSet) {
+                AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+                    std::make_shared<AudioDeviceDescriptor>(), changeInfo->clientUID, "SetDefaultOutputDevice");
+                forceFetch = true;
+            }
         }
     }
     int32_t ret = audioDeviceManager_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
