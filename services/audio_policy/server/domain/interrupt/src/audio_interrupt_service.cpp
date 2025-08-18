@@ -2511,9 +2511,12 @@ bool AudioInterruptService::ShouldAudioServerProcessInruptEvent(const InterruptE
  
 #ifdef FEATURE_APPGALLERY
     //CLIENT_TYPE_GAME will be muted or unmuted, need not process in FEATURE_APPGALLERY
-    uint32_t uid = interruptClients_[audioInterrupt.sessionId]->GetCallingUid();
-    ClientType clientType = ClientTypeManager::GetInstance()->GetClientTypeByUid(uid);
-    CHECK_AND_RETURN_RET_LOG(clientType != CLIENT_TYPE_GAME, false, "clientType is Game");
+    if (interruptClients_.find(streamId) != interruptClients_.end() &&
+        interruptClients_[it.streamId] != nullptr) {
+        uint32_t uid = interruptClients_[audioInterrupt.sessionId]->GetCallingUid();
+        ClientType clientType = ClientTypeManager::GetInstance()->GetClientTypeByUid(uid);
+        CHECK_AND_RETURN_RET_LOG(clientType != CLIENT_TYPE_GAME, false, "clientType is Game");
+    } 
 #endif
     //only process INTERRUPT_HINT_PAUSE INTERRUPT_HINT_STOP INTERRUPT_HINT_RESUME
     auto hintType = interruptEvent.hintType;
@@ -2528,7 +2531,7 @@ void AudioInterruptService::SendInterruptEventToAudioServer(
         "need not send audioInterrupt to audioServer");
     if (audioInterrupt.isAudioSessionInterrupt) {
         AUDIO_INFO_LOG("is audioSession interrupt");
-        // record stream may use audioSession in feature，only playback stream use audioSession now
+        // record stream may use audioSession in the future，only playback stream use audioSession now
         CHECK_AND_RETURN_LOG(sessionService_ != nullptr, "sessionService_ is nullptr");
         const auto &audioInterrupts = sessionService_->GetStreams(audioInterrupt.pid);
         for (auto &it : audioInterrupts) {
@@ -2536,7 +2539,7 @@ void AudioInterruptService::SendInterruptEventToAudioServer(
                 interruptEvent, it.sessionId);
         }
     } else {
-        //send interruptEvent to audioServer , allow start in background
+        //send interruptEvent to audioServer , deal with recording in background
         AudioServerProxy::GetInstance().SendInterruptEventToAudioServerProxy(
             interruptEvent, audioInterrupt.sessionId);
     }

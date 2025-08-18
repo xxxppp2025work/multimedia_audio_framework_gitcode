@@ -2272,6 +2272,15 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 }
 // LCOV_EXCL_STOP
 
+int32_t AudioServer::SendInterruptEventToAudioServer(uint32_t sessionId, const InterruptEventInternal &interruptEvent)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "Refused for %{public}d", callingUid);
+    AudioService::GetInstance()->SendInterruptEventToAudioService(sessionId, interruptEvent);
+    return SUCCESS;
+}
+
 bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig &config)
 {
     if (!PermissionUtil::NeedVerifyBackgroundCapture(config.callerUid, config.capturerInfo.sourceType)) {
@@ -2297,6 +2306,8 @@ bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig 
         AUDIO_INFO_LOG("Recreating stream for callerUid:%{public}d need not VerifyBackgroundCapture",
             config.callerUid);
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
+       AudioService::GetInstance()->UpdateBackgroundCaptureMap(sessionId_, ALLOWED_SWITCH_STREAM_CREATED);
+        AudioService::GetInstance()->UpdateSwitchStreamMap(config.originalSessionId, SWITCH_STATE_CREATED);
         return true;
     }
 

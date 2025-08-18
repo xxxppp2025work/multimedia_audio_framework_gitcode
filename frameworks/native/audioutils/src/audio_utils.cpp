@@ -482,9 +482,32 @@ bool PermissionUtil::VerifySelfPermission()
     return false;
 }
 
-bool PermissionUtils::VerifyMicrophoneBackgroundPermission(uint32_t tokenId)
+bool PermissionUtil::VerifyMicrophoneBackgroundPermission(uint32_t tokenId)
 {
-
+    Trace trace("PermissionUtil::VerifyMicrophoneBackground");
+    int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(
+        tokenId, MICROPHONE_BACKGROUND_PERMISSION);
+    CHECK_AND_RETURN_RET_LOG(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED,
+        false, "Permission denied[MICROPHONE_BACKGROUND_PERMISSION]");
+    return true;
+}
+ 
+bool PermissionUtil::IsNotNeedBackgroundCaptureSA(int32_t callerUid) 
+{
+    if (RECORD_ALLOW_BACKGROUND_LIST.count(callerUid)) {
+        AUDIO_INFO_LOG("internal sa(%{public}d) user directly recording", callerUid);
+        return true;
+    }
+    return false;
+}
+ 
+bool PermissionUtil::IsNotNeedBackgroundCaptureSourceType(SourceType sourceType) 
+{
+    if (NO_BACKGROUND_CHECK_SOURCE_TYPE.count(sourceType)) {
+        AUDIO_INFO_LOG("sourceType %{public}d", sourceType);
+        return true;
+    }
+    return false;
 }
 
 bool PermissionUtil::VerifySystemPermission()

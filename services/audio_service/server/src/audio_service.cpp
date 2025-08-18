@@ -514,12 +514,23 @@ BackgroundCaptureState AudioService::UpdateVerifyBackgroundCapture(
     if(IsInInterruptEventMap(sessionId, interruptEvent)) {
         int64_t stamp = interruptEvent.eventTimestamp;
         stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-        if (stamp <= ALLOW_BACKGROUND_CAPTURE_INTERRUPT_RESUME_TIME_OUT
-            && interruptEvent.hintType == INTERRUPT_HINT_RESUME) {
-            backCapState = ALLOWED_INTERRUPT_RESUME;
-            UpdateBackgroundCaptureMap(sessionId, backCapState);
+        if (stamp <= ALLOW_BACKGROUND_CAPTURE_INTERRUPT_RESUME_TIME_OUT) {
+            if (interruptEvent.hintType == INTERRUPT_HINT_NONE) {
+                AUDIO_WARNING_LOG("NONE Interrupt means Pause and Resume, need change to Pause ");
+                interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
+                UpdateInterruptEventMap(sessionId, interruptEvent);
+                backCapState = ALLOWED_INTERRUPT_RESUME;
+                UpdateBackgroundCaptureMap(sessionId, backCapState);
+            } else if (interruptEvent.hintType = INTERRUPT_HINT_RESUME){
+                backCapState = ALLOWED_INTERRUPT_RESUME;
+                UpdateBackgroundCaptureMap(sessionId, backCapState);
+                RemoveInterruptEventMap(sessionId);
+            } else {
+                AUDIO_WARNING_LOG("PAUSE interrupt event");
+                return backCapState;
+            }
+        } else {
             RemoveInterruptEventMap(sessionId);
-            return backCapState;
         }
     }
     return backCapState;
@@ -591,10 +602,16 @@ bool AudioService::UpdateInterruptEventMap(const uint32_t sessionId,
         audioStreamInterruptEventMap_[sessionId] = interruptEvent;
         AUDIO_INFO_LOG("Inserted sessionId:%{public}u, hintType:%{public}d", sessionId, interruptEvent.hintType);
         return true;
+    } else if (iter->second.hintType = INTERRUPT_HINT_NONE|| 
+        (iter->second.hintType = INTERRUPT_HINT_PAUSE && interruptEvent.hintType == INTERRUPT_HINT_RESUME) ||
+        (iter->second.hintType = INTERRUPT_HINT_RESUME && interruptEvent.hintType == INTERRUPT_HINT_PAUSE) {
+        interruptEvent.hintType = INTERRUPT_HINT_NONE;
+        iter->second = interruptEvent;
+        AUDIO_WARNNING_LOG("Updated sessionId:%{public}u, hintType: PAUSE and RESUME", sessionId);
+        return true;
     } else {
         iter->second = interruptEvent;
         AUDIO_INFO_LOG("Updated sessionId:%{public}u, hintType:%{public}d", sessionId, interruptEvent.hintType);
-        return true;
     }
 }
 
@@ -628,8 +645,8 @@ bool AudioService::NeedRemoveInterruptEventAndBackCap(uint32_t sessionId)
             RemoveInterruptEventMap(sessionId);
             return false;
         }
-        if (interruptEvent.hintType == INTERRUPT_HINT_MUTE) {
-            AUDIO_WARNING_LOG("Mute Interrupt means Pause and Resume, need change to Resume ");
+        if (interruptEvent.hintType == INTERRUPT_HINT_NONE) {
+            AUDIO_WARNING_LOG("NONE Interrupt means Pause and Resume, need change to Resume ");
             interruptEvent.hintType = INTERRUPT_HINT_RESUME;
             UpdateInterruptEventMap(sessionId, interruptEvent);
             return false;
@@ -643,7 +660,7 @@ void AudioService::SendInterruptEventToAudioService(uint32_t sessionId,
 {
     interruptEvent.eventTimestamp = ClockTime::GetCurNano();
     AUDIO_INFO_LOG("Recive InterruptEvent:[%{public}] from InterruptService")
-    InsertInterruptEventMap(sessionId, interruptEvent);
+    UpdateInterruptEventMap(sessionId, interruptEvent);
 }
 
 void AudioService::SaveRenderWhitelist(std::vector<std::string> list)
