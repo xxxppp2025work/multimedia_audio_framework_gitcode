@@ -581,14 +581,13 @@ bool AudioService::UpdateInterruptEventMap(const uint32_t sessionId,
 {
     std::lock_guard<std::mutex> lock(audioStreamInterruptEventMutex_);
     auto iter = audioStreamInterruptEventMap_.find(sessionId);
-
     if (iter == audioStreamInterruptEventMap_.end()) {
         audioStreamInterruptEventMap_[sessionId] = interruptEvent;
         AUDIO_INFO_LOG("Inserted sessionId:%{public}u, hintType:%{public}d", sessionId, interruptEvent.hintType);
-    } else if (iter->second.hintType == INTERRUPT_HINT_NONE||
+    } else if (iter->second.hintType == INTERRUPT_HINT_NONE ||
         (iter->second.hintType == INTERRUPT_HINT_PAUSE && interruptEvent.hintType == INTERRUPT_HINT_RESUME) ||
         (iter->second.hintType == INTERRUPT_HINT_RESUME && interruptEvent.hintType == INTERRUPT_HINT_PAUSE)) {
-        AUDIO_WARNNING_LOG("Updated sessionId:%{public}u, HintType:%{public}d",
+        AUDIO_WARNNING_LOG("Updated sessionId:%{public}u, hintType:%{public}d",
             sessionId, interruptEvent.hintType);
         interruptEvent.hintType = INTERRUPT_HINT_NONE;
         iter->second = interruptEvent;
