@@ -151,7 +151,7 @@ public:
     bool RemoveInterruptEventMap(const uint32_t sessionIdt);
 
     bool IsInBackgroudCaptureMap(uint32_t sessionId, BackgroundCaptureState &backCapState);
-    void InsertBackgroundCaptureMap(const uint32_t sessionId, const BackgroundCaptureState backCapState);
+
     void UpdateBackgroundCaptureMap(const uint32_t sessionId, const BackgroundCaptureState backCapState);
     void RemoveBackgroundCaptureMap(const uint32_t sessionId);
     bool NeedRemoveInterruptEventAndBackCap(uint32_t sessionId);

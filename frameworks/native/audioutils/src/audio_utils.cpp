@@ -492,7 +492,7 @@ bool PermissionUtil::VerifyMicrophoneBackgroundPermission(uint32_t tokenId)
     return true;
 }
  
-bool PermissionUtil::IsNotNeedBackgroundCaptureSA(int32_t callerUid) 
+bool PermissionUtil::IsNotNeedBackgroundCaptureSA(int32_t callerUid)
 {
     if (RECORD_ALLOW_BACKGROUND_LIST.count(callerUid)) {
         AUDIO_INFO_LOG("internal sa(%{public}d) user directly recording", callerUid);
@@ -500,8 +500,8 @@ bool PermissionUtil::IsNotNeedBackgroundCaptureSA(int32_t callerUid)
     }
     return false;
 }
- 
-bool PermissionUtil::IsNotNeedBackgroundCaptureSourceType(SourceType sourceType) 
+
+bool PermissionUtil::IsNotNeedBackgroundCaptureSourceType(SourceType sourceType)
 {
     if (NO_BACKGROUND_CHECK_SOURCE_TYPE.count(sourceType)) {
         AUDIO_INFO_LOG("sourceType %{public}d", sourceType);

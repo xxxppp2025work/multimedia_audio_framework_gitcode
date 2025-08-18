@@ -2516,7 +2516,7 @@ bool AudioInterruptService::ShouldAudioServerProcessInruptEvent(const InterruptE
         uint32_t uid = interruptClients_[audioInterrupt.sessionId]->GetCallingUid();
         ClientType clientType = ClientTypeManager::GetInstance()->GetClientTypeByUid(uid);
         CHECK_AND_RETURN_RET_LOG(clientType != CLIENT_TYPE_GAME, false, "clientType is Game");
-    } 
+    }
 #endif
     //only process INTERRUPT_HINT_PAUSE INTERRUPT_HINT_STOP INTERRUPT_HINT_RESUME
     auto hintType = interruptEvent.hintType;

@@ -430,7 +430,7 @@ void AudioService::RemoveBackgroundCaptureMap(const uint32_t sessionId)
         audioStreamBackCapMap_.erase(it);
         AUDIO_INFO_LOG("Remove stream:%{public}u from map", sessionId);
     } else {
-    AUDIO_ERR_LOG("Remove failed, stream:%{public}u not found", sessionId);
+        AUDIO_ERR_LOG("Remove failed, stream:%{public}u not found", sessionId);
     }
 }
 
@@ -484,7 +484,7 @@ BackgroundCaptureState AudioService::VerifyBackgroundCapture(uint32_t sessionId,
         }
     }
     AUDIO_INFO_LOG("Stream:%{public}u Result:%{public}s Reason:%{public}d",
-    sessionId, res ? "allowed" : "denied", backCapState);
+        sessionId, res ? "allowed" : "denied", backCapState);
     return backCapState;
 }
 
@@ -494,7 +494,7 @@ BackgroundCaptureState AudioService::UpdateVerifyBackgroundCapture(
     BackgroundCaptureState backCapState = DENIED_INVALID;
     //InterruptEvent Resume
     InterruptEventInternal interruptEvent;
-    if(IsInInterruptEventMap(sessionId, interruptEvent)) {
+    if (IsInInterruptEventMap(sessionId, interruptEvent)) {
         int64_t stamp = interruptEvent.eventTimestamp;
         stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
         if (stamp <= ALLOW_BACKGROUND_CAPTURE_INTERRUPT_RESUME_TIME_OUT) {
@@ -504,7 +504,7 @@ BackgroundCaptureState AudioService::UpdateVerifyBackgroundCapture(
                 UpdateInterruptEventMap(sessionId, interruptEvent);
                 backCapState = ALLOWED_INTERRUPT_RESUME;
                 UpdateBackgroundCaptureMap(sessionId, backCapState);
-            } else if (interruptEvent.hintType = INTERRUPT_HINT_RESUME){
+            } else if (interruptEvent.hintType = INTERRUPT_HINT_RESUME) {
                 backCapState = ALLOWED_INTERRUPT_RESUME;
                 UpdateBackgroundCaptureMap(sessionId, backCapState);
                 RemoveInterruptEventMap(sessionId);
@@ -513,6 +513,7 @@ BackgroundCaptureState AudioService::UpdateVerifyBackgroundCapture(
                 return backCapState;
             }
         } else {
+            AUDIO_WARNING_LOG("Timeout! Remove all interruptEvent for stream:%{public}u", sessionId);
             RemoveInterruptEventMap(sessionId);
         }
     }
@@ -585,9 +586,9 @@ bool AudioService::UpdateInterruptEventMap(const uint32_t sessionId,
         audioStreamInterruptEventMap_[sessionId] = interruptEvent;
         AUDIO_INFO_LOG("Inserted sessionId:%{public}u, hintType:%{public}d", sessionId, interruptEvent.hintType);
         return true;
-    } else if (iter->second.hintType = INTERRUPT_HINT_NONE|| 
+    } else if (iter->second.hintType = INTERRUPT_HINT_NONE||
         (iter->second.hintType = INTERRUPT_HINT_PAUSE && interruptEvent.hintType == INTERRUPT_HINT_RESUME) ||
-        (iter->second.hintType = INTERRUPT_HINT_RESUME && interruptEvent.hintType == INTERRUPT_HINT_PAUSE) {
+        (iter->second.hintType = INTERRUPT_HINT_RESUME && interruptEvent.hintType == INTERRUPT_HINT_PAUSE)) {
         interruptEvent.hintType = INTERRUPT_HINT_NONE;
         iter->second = interruptEvent;
         AUDIO_WARNNING_LOG("Updated sessionId:%{public}u, hintType: PAUSE and RESUME", sessionId);
@@ -613,7 +614,7 @@ bool AudioService::RemoveInterruptEventMap(const uint32_t sessionId)
 bool AudioService::NeedRemoveInterruptEventAndBackCap(uint32_t sessionId)
 {
     SwitchState switchState;
-    if (IsInSwitchStreamMap(sessionId, switchState) ) {
+    if (IsInSwitchStreamMap(sessionId, switchState)) {
         if (switchState == SWITCH_STATE_WAITING) {
             AUDIO_WARNING_LOG("SwitchStream should not reset");
             return false;

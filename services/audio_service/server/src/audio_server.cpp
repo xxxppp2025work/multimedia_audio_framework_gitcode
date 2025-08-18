@@ -2306,7 +2306,7 @@ bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig 
         AUDIO_INFO_LOG("Recreating stream for callerUid:%{public}d need not VerifyBackgroundCapture",
             config.callerUid);
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
-       AudioService::GetInstance()->UpdateBackgroundCaptureMap(sessionId_, ALLOWED_SWITCH_STREAM_CREATED);
+        AudioService::GetInstance()->UpdateBackgroundCaptureMap(sessionId_, ALLOWED_SWITCH_STREAM_CREATED);
         AudioService::GetInstance()->UpdateSwitchStreamMap(config.originalSessionId, SWITCH_STATE_CREATED);
         return true;
     }

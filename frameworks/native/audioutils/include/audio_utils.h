@@ -160,8 +160,8 @@ public:
     static int32_t StopUsingPermission(uint32_t targetTokenId, const char* permission);
     static bool CheckCallingUidPermission(const std::vector<uid_t> &allowedUids);
     static bool VerifyMicrophoneBackgroundPermission(uint32_t tokenId);
-    static bool IsInNotNeedBackgroundCaptureSAList(int32_t callerUis);
-    static bool IsInNotNeedBackgroundCaptureSourceTypeList(SourceType sourceType);
+    static bool IsNotNeedBackgroundCaptureSA(int32_t callerUid);
+    static bool IsNotNeedBackgroundCaptureSourceType(SourceType sourceType);
 };
 // will be move to audio_permission.h in the feture
 class SwitchStreamUtil {
