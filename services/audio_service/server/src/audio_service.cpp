@@ -504,7 +504,7 @@ BackgroundCaptureState AudioService::UpdateVerifyBackgroundCapture(
                 UpdateInterruptEventMap(sessionId, interruptEvent);
                 backCapState = ALLOWED_INTERRUPT_RESUME;
                 UpdateBackgroundCaptureMap(sessionId, backCapState);
-            } else if (interruptEvent.hintType = INTERRUPT_HINT_RESUME) {
+            } else if (interruptEvent.hintType == INTERRUPT_HINT_RESUME) {
                 backCapState = ALLOWED_INTERRUPT_RESUME;
                 UpdateBackgroundCaptureMap(sessionId, backCapState);
                 RemoveInterruptEventMap(sessionId);
