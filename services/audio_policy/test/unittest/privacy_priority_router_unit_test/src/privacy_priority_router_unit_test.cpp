@@ -136,6 +136,65 @@ HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_002, TestSize.Level1
     EXPECT_EQ(1, router.GetRingRenderDevices(STREAM_USAGE_RINGTONE, 1).size());
     EXPECT_EQ(1, router.GetRingRenderDevices(STREAM_USAGE_ALARM, 1).size());
 }
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: GetMediaRenderDevice_001
+ * @tc.desc  : Test GetMediaRenderDevice interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, GetMediaRenderDevice_001, TestSize.Level4)
+{
+    PrivacyPriorityRouter router;
+    StreamUsage streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    int32_t clientUID = 12345;
+    auto ret = router.GetMediaRenderDevice(streamUsage, clientUID);
+    EXPECT_NE(ret, nullptr);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: GetCallCaptureDevice_001
+ * @tc.desc  : Test GetCallCaptureDevice interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, GetCallCaptureDevice_001, TestSize.Level4)
+{
+    PrivacyPriorityRouter router;
+    SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    int32_t clientUID = 1;
+    uint32_t sessionID = 1;
+    auto ret = router.GetCallCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(ret, nullptr);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: GetToneRenderDevice_001
+ * @tc.desc  : Test GetToneRenderDevice interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, GetToneRenderDevice_001, TestSize.Level4)
+{
+    PrivacyPriorityRouter router;
+    StreamUsage streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    int32_t clientUID = 12345;
+    auto ret = router.GetToneRenderDevice(streamUsage, clientUID);
+    EXPECT_NE(ret, nullptr);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: RemoveArmUsb_001
+ * @tc.desc  : Test RemoveArmUsb interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, RemoveArmUsb_001, TestSize.Level4)
+{
+    PrivacyPriorityRouter router;
+    vector<shared_ptr<AudioDeviceDescriptor>> descs;
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    descs.emplace_back(desc);
+    router.RemoveArmUsb(descs);
+    EXPECT_EQ(descs.size(), 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
  
