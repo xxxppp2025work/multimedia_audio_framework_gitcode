@@ -586,9 +586,9 @@ bool AudioService::UpdateInterruptEventMap(const uint32_t sessionId,
         audioStreamInterruptEventMap_[sessionId] = interruptEvent;
         AUDIO_INFO_LOG("Inserted sessionId:%{public}u, hintType:%{public}d", sessionId, interruptEvent.hintType);
         return true;
-    } else if (iter->second.hintType = INTERRUPT_HINT_NONE||
-        (iter->second.hintType = INTERRUPT_HINT_PAUSE && interruptEvent.hintType == INTERRUPT_HINT_RESUME) ||
-        (iter->second.hintType = INTERRUPT_HINT_RESUME && interruptEvent.hintType == INTERRUPT_HINT_PAUSE)) {
+    } else if (iter->second.hintType == INTERRUPT_HINT_NONE||
+        (iter->second.hintType == INTERRUPT_HINT_PAUSE && interruptEvent.hintType == INTERRUPT_HINT_RESUME) ||
+        (iter->second.hintType == INTERRUPT_HINT_RESUME && interruptEvent.hintType == INTERRUPT_HINT_PAUSE)) {
         interruptEvent.hintType = INTERRUPT_HINT_NONE;
         iter->second = interruptEvent;
         AUDIO_WARNNING_LOG("Updated sessionId:%{public}u, hintType: PAUSE and RESUME", sessionId);
