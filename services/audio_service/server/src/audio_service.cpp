@@ -63,20 +63,6 @@ static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_REMOTE_CAST
 };
 
-enum BackgroundCaptureState {
-    DENIED_INVALID,
-    DENIED_APP_IN_BACKGROUND,
-    ALLOWED_APP_IN_FOREGROUND,
-    ALLOWED_INTERRUPT_RESUME,
-    ALLOWED_SWITCH_STREAM_CREATE,
-    ALLOWED_SWITCH_STREAM_START,
-    ALLOWED_EXEMPTION_FOREGROUND_APP,
-    NOTNEED_SYSTEM_APP,
-    NOTNEED_EXEMPTION_SA,
-    NOTNEED_EXEMPTION_SOURCETYPE,
-    NOTNEED_MICROPHONE_BACKGROUND_PERMISSION
-};
-
 const std::set<int32_t> NEED_NOT_VERIFY_BACKGROUND_CAPTURE_LIST = {
 NOTNEED_SYSTEM_APP,
 NOTNEED_EXEMPTION_SA,
@@ -376,7 +362,7 @@ bool AudioService::InForegroundList(uint32_t uid)
 
 bool AudioService::IsInSwitchStreamMap(uint32_t sessionId, SwitchState &switchState)
 {
-    std::lock_guardstd::mutex lock(audioSwitchStreamMutex_);
+    std::lock_guard<std::mutex> lock(audioSwitchStreamMutex_);
     auto iter = audioSwitchStreamMap_.find(sessionId);
     CHECK_AND_RETURN_RET_LOG(iter != audioSwitchStreamMap_.end(), false,
         "can not find switchStream:%{public}u", sessionId);
@@ -387,10 +373,10 @@ bool AudioService::IsInSwitchStreamMap(uint32_t sessionId, SwitchState &switchSt
 
 bool AudioService::UpdateSwitchStreamMap(uint32_t sessionId, SwitchState switchState)
 {
-    std::lock_guardstd::mutex lock(audioSwitchStreamMutex_);
+    std::lock_guard<std::mutex> lock(audioSwitchStreamMutex_);
     auto iter = audioSwitchStreamMap_.find(sessionId);
     if (iter == audioSwitchStreamMap_.end()) {
-        audioSwitchStreamMap_.[sessionId] = switchState;
+        audioSwitchStreamMap_[sessionId] = switchState;
         AUDIO_WARNING_LOG ("Inserted switchStream:%{public}u, switchState:%{public}d", sessionId, switchState);
         return true;
     }
@@ -401,7 +387,7 @@ bool AudioService::UpdateSwitchStreamMap(uint32_t sessionId, SwitchState switchS
 
 void AudioService::RemoveSwitchStreamMap(uint32_t sessionId)
 {
-    std::lock_guardstd::mutex lock(audioSwitchStreamMutex_);
+    std::lock_guard<std::mutex> lock(audioSwitchStreamMutex_);
     auto iter = audioSwitchStreamMap_.find(sessionId);
     if (iter != audioSwitchStreamMap_.end()) {
         AUDIO_INFO_LOG("Removed switchStream:%{public}u, switchState:%{public}d", sessionId, iter->second);
@@ -413,7 +399,7 @@ void AudioService::RemoveSwitchStreamMap(uint32_t sessionId)
 
 bool AudioService::IsInBackgroudCaptureMap(uint32_t sessionId, BackgroundCaptureState &backCapState)
 {
-    std::lock_guardstd::mutex lock(audioStreamBackCapMutex_);
+    std::lock_guard<std::mutex> lock(audioStreamBackCapMutex_);
     auto iter = audioStreamBackCapMap_.find(sessionId);
     CHECK_AND_RETURN_RET_LOG(iter != audioStreamBackCapMap_.end(), false,
         "can not find sessionId:%{public}u", sessionId);
@@ -425,7 +411,7 @@ bool AudioService::IsInBackgroudCaptureMap(uint32_t sessionId, BackgroundCapture
 void AudioService::UpdateBackgroundCaptureMap(const uint32_t sessionId,
     const BackgroundCaptureState backCapState)
 {
-    std::unique_lockstd::mutex lock(audioStreamBackCapMutex_);
+    std::unique_lock<std::mutex> lock(audioStreamBackCapMutex_);
     auto it = audioStreamBackCapMap_.find(sessionId);
     if (it == audioStreamBackCapMap_.end()) {
         audioStreamBackCapMap_[sessionId] = backCapState;
@@ -438,7 +424,7 @@ void AudioService::UpdateBackgroundCaptureMap(const uint32_t sessionId,
 
 void AudioService::RemoveBackgroundCaptureMap(const uint32_t sessionId)
 {
-    std::unique_lockstd::mutex lock(audioStreamBackCapMutex_);
+    std::unique_lock<std::mutex> lock(audioStreamBackCapMutex_);
     auto it = audioStreamBackCapMap_.find(sessionId);
     if (it != audioStreamBackCapMap_.end()) {
         audioStreamBackCapMap_.erase(it);
@@ -453,16 +439,16 @@ bool AudioService::NeedVerifyBackgroundCapture(uint32_t sessionId, AudioProcessC
     auto sourceType = config.capturerInfo.sourceType;
     int32_t callerUid = config.callerUid;
     uint32_t tokenId = config.appInfo.appTokenId;
-    if (PermissionUtil::IsInNotNeedBackgroundCaptureSAList(config.callerUid)) {
+    if (PermissionUtil::IsNotNeedBackgroundCaptureSAList(config.callerUid)) {
         AUDIO_INFO_LOG("Stream:%{public}u Result:not need Reason:internal sa[%{public}d]",
             sessionId, callerUid);
-            InsertBackgroundCaptureMap(sessionId, NOTNEED_WHITE_LIST_SA);
+        InsertBackgroundCaptureMap(sessionId, NOTNEED_EXEMPTION_SA);
         return false;
     }
-    if (PermissionUtil::IsInNotNeedBackgroundCaptureSourceList(sourceType)) {
+    if (PermissionUtil::IsNotNeedBackgroundCaptureSourceList(sourceType)) {
         AUDIO_INFO_LOG("Stream:%{public}u Result:not need Reason:special sourceType[%{public}d]",
             sessionId, sourceType);
-        InsertBackgroundCaptureMap(sessionId, NOTNEED_SPECIAL_SOURCETYPE);
+        InsertBackgroundCaptureMap(sessionId, NOTNEED_EXEMPTION_SOURCETYPE);
         return false;
     }
     if (PermissionUtil::VerifyIsSystemApp()) {
@@ -474,8 +460,9 @@ bool AudioService::NeedVerifyBackgroundCapture(uint32_t sessionId, AudioProcessC
         AUDIO_INFO_LOG("Stream:%{public}u Result:not need "
             "Reason:has permission[MICROPHONE_BACKGROUND_PERMISSION]", sessionId);
         InsertBackgroundCaptureMap(sessionId, NOTNEED_MICROPHONE_BACKGROUND_PERMISSION);
-    return false;
-}
+        return false;
+    }
+    
     AUDIO_INFO_LOG("stream:%{public}u need check backgroud capture", sessionId);
     return true;
 }
@@ -542,7 +529,7 @@ bool AudioService::IsAllowedUsingMicrophone(uint32_t sessionId, AudioProcessConf
     //check mic permission
     if (!PermissionUtil::VerifyPermission(MICROPHONE_PERMISSION, tokenId)) {
         RemoveBackgroundCaptureMap(sessionId);
-        AUDIO_ERR_LOG("Stream:%{public}u Result:deined Reason:no permission[MICROPHONE_PERMISSION]", sessionId, );
+        AUDIO_ERR_LOG("Stream:%{public}u Result:deined Reason:no permission[MICROPHONE_PERMISSION]", sessionId);
         return false;
     }
     //check background capture
@@ -583,7 +570,7 @@ bool AudioService::IsAllowedUsingMicrophone(uint32_t sessionId, AudioProcessConf
 bool AudioService::IsInInterruptEventMap(const uint32_t sessionId,
     InterruptEventInternal &interruptEvent)
 {
-    std::lock_guardstd::mutex lock(audioStreamInterruptEventMutex_);
+    std::lock_guard<std::mutex> lock(audioStreamInterruptEventMutex_);
     auto iter = audioStreamInterruptEventMap_.find(sessionId);
     CHECK_AND_RETURN_RET_LOG(iter != audioStreamInterruptEventMap_.end(), false,
         "can not find sessionId:%{public}u", sessionId);
@@ -595,7 +582,7 @@ bool AudioService::IsInInterruptEventMap(const uint32_t sessionId,
 bool AudioService::UpdateInterruptEventMap(const uint32_t sessionId,
     const InterruptEventInternal &interruptEvent)
 {
-    std::lock_guardstd::mutex lock(audioStreamInterruptEventMutex_);
+    std::lock_guard<std::mutex> lock(audioStreamInterruptEventMutex_);
     auto iter = audioStreamInterruptEventMap_.find(sessionId);
 
     if (iter == audioStreamInterruptEventMap_.end()) {
@@ -617,7 +604,7 @@ bool AudioService::UpdateInterruptEventMap(const uint32_t sessionId,
 
 bool AudioService::RemoveInterruptEventMap(const uint32_t sessionId)
 {
-    std::lock_guardstd::mutex lock(audioStreamInterruptEventMutex_);
+    std::lock_guard<std::mutex> lock(audioStreamInterruptEventMutex_);
     auto iter = audioStreamInterruptEventMap_.find(sessionId);
     if (iter == audioStreamInterruptEventMap_.end()) {
         return false;
