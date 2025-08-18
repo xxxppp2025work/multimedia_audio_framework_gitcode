@@ -482,6 +482,11 @@ bool PermissionUtil::VerifySelfPermission()
     return false;
 }
 
+bool PermissionUtils::VerifyMicrophoneBackgroundPermission(uint32_t tokenId)
+{
+
+}
+
 bool PermissionUtil::VerifySystemPermission()
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
