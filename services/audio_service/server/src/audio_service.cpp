@@ -585,18 +585,19 @@ bool AudioService::UpdateInterruptEventMap(const uint32_t sessionId,
     if (iter == audioStreamInterruptEventMap_.end()) {
         audioStreamInterruptEventMap_[sessionId] = interruptEvent;
         AUDIO_INFO_LOG("Inserted sessionId:%{public}u, hintType:%{public}d", sessionId, interruptEvent.hintType);
-        return true;
     } else if (iter->second.hintType == INTERRUPT_HINT_NONE||
         (iter->second.hintType == INTERRUPT_HINT_PAUSE && interruptEvent.hintType == INTERRUPT_HINT_RESUME) ||
         (iter->second.hintType == INTERRUPT_HINT_RESUME && interruptEvent.hintType == INTERRUPT_HINT_PAUSE)) {
+        AUDIO_WARNNING_LOG("Updated sessionId:%{public}u, HintType:%{public}d",
+            sessionId, interruptEvent.hintType);
         interruptEvent.hintType = INTERRUPT_HINT_NONE;
         iter->second = interruptEvent;
         AUDIO_WARNNING_LOG("Updated sessionId:%{public}u, hintType: PAUSE and RESUME", sessionId);
-        return true;
     } else {
         iter->second = interruptEvent;
         AUDIO_INFO_LOG("Updated sessionId:%{public}u, hintType:%{public}d", sessionId, interruptEvent.hintType);
     }
+    return true;
 }
 
 bool AudioService::RemoveInterruptEventMap(const uint32_t sessionId)
