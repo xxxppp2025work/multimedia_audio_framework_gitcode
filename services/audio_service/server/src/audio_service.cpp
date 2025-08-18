@@ -439,12 +439,12 @@ bool AudioService::NeedVerifyBackgroundCapture(uint32_t sessionId, AudioProcessC
     auto sourceType = config.capturerInfo.sourceType;
     int32_t callerUid = config.callerUid;
     uint32_t tokenId = config.appInfo.appTokenId;
-    if (PermissionUtil::IsNotNeedBackgroundCaptureSAList(config.callerUid)) {
+    if (PermissionUtil::IsNotNeedBackgroundCaptureSA(config.callerUid)) {
         AUDIO_INFO_LOG("Stream:%{public}u Result:not need Reason:internal sa[%{public}d]",
             sessionId, callerUid);
         return false;
     }
-    if (PermissionUtil::IsNotNeedBackgroundCaptureSourceList(sourceType)) {
+    if (PermissionUtil::IsNotNeedBackgroundCaptureSourceType(sourceType)) {
         AUDIO_INFO_LOG("Stream:%{public}u Result:not need Reason:special sourceType[%{public}d]",
             sessionId, sourceType);
         return false;
