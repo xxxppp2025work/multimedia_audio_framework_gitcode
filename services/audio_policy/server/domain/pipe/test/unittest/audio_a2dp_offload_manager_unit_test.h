@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,15 +13,16 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_OFFLOAD_STREAM_UNIT_TEST_H
-#define AUDIO_OFFLOAD_STREAM_UNIT_TEST_H
+#ifndef AUDIO_A2DP_OFFLOAD_MANAGER_UNIT_TEST_H
+#define AUDIO_A2DP_OFFLOAD_MANAGER_UNIT_TEST_H
 
 #include "gtest/gtest.h"
-#include "audio_offload_stream.h"
+#include "audio_a2dp_offload_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioOffloadStreamTest : public testing::Test {
+
+class AudioA2dpOffloadManagerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
@@ -32,9 +33,11 @@ public:
     // TearDown: Called after each test cases
     void TearDown(void);
 
-protected:
-    AudioOffloadStream *audioOffloadStream_;
+private:
+    void MakeStreamCollectorData(uint32_t runningStreamCnt, uint32_t stopStreamCnt);
+
+    std::shared_ptr<AudioA2dpOffloadManager> testManager_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_OFFLOAD_STREAM_UNIT_TEST_H
+#endif //AUDIO_A2DP_OFFLOAD_MANAGER_UNIT_TEST_H
