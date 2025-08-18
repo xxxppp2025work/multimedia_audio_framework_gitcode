@@ -380,7 +380,7 @@ void AudioCoreService::EventEntry::OnReceiveBluetoothEvent(const std::string mac
 }
 
 int32_t AudioCoreService::EventEntry::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc, const int32_t audioDeviceSelectMode)
 {
     Trace trace("KeyAction AudioCoreService::SelectOutputDevice");
     if (!selectedDesc.empty() && selectedDesc[0] && coreService_ &&
@@ -388,7 +388,7 @@ int32_t AudioCoreService::EventEntry::SelectOutputDevice(sptr<AudioRendererFilte
         coreService_->NotifyDistributedOutputChange(selectedDesc[0]);
     }
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->SelectOutputDevice(audioRendererFilter, selectedDesc);
+    return coreService_->SelectOutputDevice(audioRendererFilter, selectedDesc, audioDeviceSelectMode);
 }
 
 int32_t AudioCoreService::EventEntry::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
