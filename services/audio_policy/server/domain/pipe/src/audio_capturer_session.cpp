@@ -301,10 +301,7 @@ int32_t AudioCapturerSession::ReloadCaptureSessionSoftLink()
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     bool hasSession = false;
     auto pipes = AudioPipeManager::GetPipeManager()->GetPipeList();
-    if (pipes.empty()) {
-        AUDIO_ERR_LOG("pipes invalid");
-        return ERR_INVALID_OPERATION;
-    }
+    CHECK_AND_RETURN_RET_LOG(!pipes.empty(), ERROR, "pipes invalid");
     std::shared_ptr<AudioStreamDescriptor> targetStream = nullptr;
     for (auto pipe : pipes) {
         if (pipe == nullptr || pipe->streamDescriptors_.empty()) {
