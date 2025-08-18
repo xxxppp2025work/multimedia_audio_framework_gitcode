@@ -167,7 +167,7 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
     }
     
     AUDIO_INFO_LOG("StreamClientState for Capturer::CreateCapturer sourceType:%{public}d, capturerFlags:%{public}d, "
-        "AppInfo:[%{public}d] [%{public}s] [%{public}s], ", sourceType, capturerOptions.capturerInfo.capturerFlags,
+        "AppInfo:[%{public}d] [%{public}s] [%{public}s] ", sourceType, capturerOptions.capturerInfo.capturerFlags,
         appInfo.appUid, appInfo.appTokenId == 0 ? "T" : "F", appInfo.appFullTokenId == 0 ? "T" : "F");
 
     AudioStreamType audioStreamType = FindStreamTypeBySourceType(sourceType);
