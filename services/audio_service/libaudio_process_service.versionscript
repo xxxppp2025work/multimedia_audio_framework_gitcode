@@ -80,9 +80,9 @@
     *SaveRenderWhitelist*;
     *InRenderWhitelist*;
     *HpaeCapturerStreamImpl*;
-    *UpdateSwitchStreamMap;
-    *SendInterruptEventToAudioServer;
-    *SendInterruptEventToAudioService;
+    *UpdateSwitchStreamMap*;
+    *SendInterruptEventToAudioServer*;
+    *SendInterruptEventToAudioService*;
   local:
     *;
 };

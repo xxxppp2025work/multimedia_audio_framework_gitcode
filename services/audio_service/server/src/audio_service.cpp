@@ -64,10 +64,10 @@ static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
 };
 
 const std::set<int32_t> NEED_NOT_VERIFY_BACKGROUND_CAPTURE_LIST = {
-NOTNEED_SYSTEM_APP,
-NOTNEED_EXEMPTION_SA,
-NOTNEED_EXEMPTION_SOURCETYPE,
-NOTNEED_MICROPHONE_BACKGROUND_PERMISSION
+    NOTNEED_SYSTEM_APP,
+    NOTNEED_EXEMPTION_SA,
+    NOTNEED_EXEMPTION_SOURCETYPE,
+    NOTNEED_MICROPHONE_BACKGROUND_PERMISSION
 };
 
 const std::set<int32_t> ALLOWED_BACKGROUND_CAPTURE_LIST = {
@@ -442,27 +442,23 @@ bool AudioService::NeedVerifyBackgroundCapture(uint32_t sessionId, AudioProcessC
     if (PermissionUtil::IsNotNeedBackgroundCaptureSAList(config.callerUid)) {
         AUDIO_INFO_LOG("Stream:%{public}u Result:not need Reason:internal sa[%{public}d]",
             sessionId, callerUid);
-        InsertBackgroundCaptureMap(sessionId, NOTNEED_EXEMPTION_SA);
         return false;
     }
     if (PermissionUtil::IsNotNeedBackgroundCaptureSourceList(sourceType)) {
         AUDIO_INFO_LOG("Stream:%{public}u Result:not need Reason:special sourceType[%{public}d]",
             sessionId, sourceType);
-        InsertBackgroundCaptureMap(sessionId, NOTNEED_EXEMPTION_SOURCETYPE);
         return false;
     }
     if (PermissionUtil::VerifyIsSystemApp()) {
         AUDIO_INFO_LOG("Stream:%{public}u Result:not need Reason:system app", sessionId);
-        InsertBackgroundCaptureMap(sessionId, NOTNEED_SYSTEM_APP);
         return false;
     }
     if (PermissionUtil::VerifyMicrophoneBackgroundPermission(tokenId)) {
         AUDIO_INFO_LOG("Stream:%{public}u Result:not need "
             "Reason:has permission[MICROPHONE_BACKGROUND_PERMISSION]", sessionId);
-        InsertBackgroundCaptureMap(sessionId, NOTNEED_MICROPHONE_BACKGROUND_PERMISSION);
         return false;
     }
-    
+
     AUDIO_INFO_LOG("stream:%{public}u need check backgroud capture", sessionId);
     return true;
 }
@@ -554,11 +550,11 @@ bool AudioService::IsAllowedUsingMicrophone(uint32_t sessionId, AudioProcessConf
     } else {
         if (NeedVerifyBackgroundCapture(sessionId, config)) {
             backCapState = VerifyBackgroundCapture(sessionId, config);
-            InsertBackgroundCaptureMap(sessionId, backCapState);
+            UpdateBackgroundCaptureMap(sessionId, backCapState);
             CHECK_AND_RETURN_RET_LOG(!ALLOWED_BACKGROUND_CAPTURE_LIST.count(backCapState),
                 true, "check alloewd");
         } else {
-            InsertBackgroundCaptureMap(sessionId, backCapState);
+            UpdateBackgroundCaptureMap(sessionId, backCapState);
             AUDIO_INFO_LOG("stream:%{public}u result:not need Reason:%{public}d", sessionId, backCapState);
             return true;
         }
