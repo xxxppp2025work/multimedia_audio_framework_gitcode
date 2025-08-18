@@ -2511,8 +2511,8 @@ bool AudioInterruptService::ShouldAudioServerProcessInruptEvent(const InterruptE
  
 #ifdef FEATURE_APPGALLERY
     //CLIENT_TYPE_GAME will be muted or unmuted, need not process in FEATURE_APPGALLERY
-    if (interruptClients_.find(streamId) != interruptClients_.end() &&
-        interruptClients_[it.streamId] != nullptr) {
+    auto it = interruptClients_.find(audioInterrupt.streamId);
+    if (it != interruptClients_.end() && it->second != nullptr) {
         uint32_t uid = interruptClients_[audioInterrupt.streamId]->GetCallingUid();
         ClientType clientType = ClientTypeManager::GetInstance()->GetClientTypeByUid(uid);
         CHECK_AND_RETURN_RET_LOG(clientType != CLIENT_TYPE_GAME, false, "clientType is Game");

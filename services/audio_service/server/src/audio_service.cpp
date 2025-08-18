@@ -577,21 +577,19 @@ bool AudioService::IsInInterruptEventMap(const uint32_t sessionId,
 }
 
 bool AudioService::UpdateInterruptEventMap(const uint32_t sessionId,
-    const InterruptEventInternal &interruptEvent)
+    InterruptEventInternal interruptEvent)
 {
     std::lock_guard<std::mutex> lock(audioStreamInterruptEventMutex_);
     auto iter = audioStreamInterruptEventMap_.find(sessionId);
     if (iter == audioStreamInterruptEventMap_.end()) {
         audioStreamInterruptEventMap_[sessionId] = interruptEvent;
         AUDIO_INFO_LOG("Inserted sessionId:%{public}u, hintType:%{public}d", sessionId, interruptEvent.hintType);
-    } else if (iter->second.hintType == INTERRUPT_HINT_NONE ||
-        (iter->second.hintType == INTERRUPT_HINT_PAUSE && interruptEvent.hintType == INTERRUPT_HINT_RESUME) ||
+    } else if ((iter->second.hintType == INTERRUPT_HINT_PAUSE && interruptEvent.hintType == INTERRUPT_HINT_RESUME) ||
         (iter->second.hintType == INTERRUPT_HINT_RESUME && interruptEvent.hintType == INTERRUPT_HINT_PAUSE)) {
-        AUDIO_WARNING_LOG("Updated sessionId:%{public}u, hintType:%{public}d",
-            sessionId, interruptEvent.hintType);
+        AUDIO_WARNING_LOG("Updated sessionId:%{public}u, interruptEvent:NONE "
+            "hintType:%{public}d", sessionId, interruptEvent.hintType);
         interruptEvent.hintType = INTERRUPT_HINT_NONE;
         iter->second = interruptEvent;
-        AUDIO_WARNING_LOG("Updated sessionId:%{public}u, hintType: PAUSE and RESUME", sessionId);
     } else {
         iter->second = interruptEvent;
         AUDIO_INFO_LOG("Updated sessionId:%{public}u, hintType:%{public}d", sessionId, interruptEvent.hintType);
@@ -625,7 +623,7 @@ bool AudioService::NeedRemoveInterruptEventAndBackCap(uint32_t sessionId)
     BackgroundCaptureState backCapState = DENIED_INVALID;
     if (IsInInterruptEventMap(sessionId, interruptEvent) && IsInBackgroudCaptureMap(sessionId, backCapState)) {
         if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE) {
-            AUDIO_WARNING_LOG ("Pause Intertrupt Event need not reset")
+            AUDIO_WARNING_LOG ("Pause Intertrupt Event need not reset");
             RemoveInterruptEventMap(sessionId);
             return false;
         }
@@ -643,7 +641,7 @@ void AudioService::SendInterruptEventToAudioService(uint32_t sessionId,
     InterruptEventInternal interruptEvent)
 {
     interruptEvent.eventTimestamp = ClockTime::GetCurNano();
-    AUDIO_INFO_LOG("Recive InterruptEvent:[%{public}] from InterruptService")
+    AUDIO_INFO_LOG("Recive InterruptEvent:[%{public}d] from InterruptService", interruptEvent.hintType);
     UpdateInterruptEventMap(sessionId, interruptEvent);
 }
 

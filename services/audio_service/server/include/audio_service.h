@@ -147,7 +147,7 @@ public:
     void RemoveSwitchStreamMap(uint32_t sessionId);
 
     bool IsInInterruptEventMap(const uint32_t sessionId, InterruptEventInternal &interruptEvent);
-    bool UpdateInterruptEventMap(const uint32_t sessionId, const InterruptEventInternal &interruptEvent);
+    bool UpdateInterruptEventMap(const uint32_t sessionId, InterruptEventInternal interruptEvent);
     bool RemoveInterruptEventMap(const uint32_t sessionIdt);
 
     bool IsInBackgroudCaptureMap(uint32_t sessionId, BackgroundCaptureState &backCapState);
