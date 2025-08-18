@@ -231,8 +231,12 @@ bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
         tokenId,
         capturerState,
     };
-    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-        CHECK_AND_RETURN_RET_LOG(CheckBGCapturer(), false, "Verify failed");
+    if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
+        AudioService::GetInstance()->UpdateBackgroundCaptureMap(sessionId_, ALLOWED_SWITCH_STREAM_START);
+        AudioService::GetInstance()->UpdateSwitchStreamMap(sessionId_, SWITCH_STATE_STARTED);
+    } else {
+        CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance()->IsAllowedUsingMicrophone(
+            sessionId_, processConfig_), false, "Verify failed");
     }
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
 
@@ -262,6 +266,11 @@ bool AudioProcessInServer::TurnOffMicIndicator(CapturerState capturerState)
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
 
+    if (AudioService::GetInstance()->NeedRemoveInterruptEventAndBackCap(sessionId_)) {
+        AudioService::GetInstance()->RemoveBackgroundCaptureMap(sessionId_);
+        AudioService::GetInstance()->RemoveInterruptEventMap(sessionId_);
+    }
+    
     if (isMicIndicatorOn_) {
         PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
         AUDIO_INFO_LOG("Turn off micIndicator of stream:%{public}d from on after NotifyPrivacyStop!", sessionId_);
@@ -835,8 +844,8 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
                 HandleStreamStatusToCapturerState(streamStatus_->load())
             };
             AUDIO_INFO_LOG("Insert fast record stream:%{public}u uid:%{public}d tokenId:%{public}u "
-                "into switchStreamRecord because restoreStatus:NEED_RESTORE",
-                sessionId_, info.callerUid, info.appTokenId);
+                "restoreStatus:NEED_RESTORE", sessionId_, info.callerUid, info.appTokenId);
+            AudioService::GetInstance()->UpdateSwitchStreamMap(sessionId_, SWITCH_STATE_WAITING);
             SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
         }
 

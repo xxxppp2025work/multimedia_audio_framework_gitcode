@@ -154,6 +154,7 @@ struct InterruptEventInternal : public Parcelable {
     InterruptHint hintType = INTERRUPT_HINT_NONE;
     float duckVolume = 1.0f;
     bool callbackToApp = true;
+    int64_t eventTimestamp = 0;
 
     InterruptEventInternal() = default;
 
@@ -164,6 +165,7 @@ struct InterruptEventInternal : public Parcelable {
         forceType = forcetype;
         hintType = hinttype;
         duckVolume = duckvolume;
+        eventTimestamp = 0;
     }
 
     bool Marshalling(Parcel &parcel) const override

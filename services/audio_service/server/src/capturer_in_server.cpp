@@ -521,19 +521,22 @@ bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
         tokenId,
         capturerState,
     };
-    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-        CHECK_AND_RETURN_RET_LOG(CheckBGCapture(), false, "Verify failed");
+    if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
+        AudioService::GetInstance()->UpdateBackgroundCaptureMap(
+            streamIndex_, ALLOWED_SWITCH_STREAM_START);
+        AudioService::GetInstance()->UpdateSwitchStreamMap(streamIndex_, SWITCH_STATE_STARTED);
+    } else {
+        CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance()->IsAllowedUsingMicrophone(
+            streamIndex_, processConfig_), false, "Verify failed");
     }
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
 
     if (isMicIndicatorOn_) {
-        AUDIO_WARNING_LOG("MicIndicator of stream:%{public}d is already on."
-            "No need to call NotifyPrivacyStart!", streamIndex_);
+        AUDIO_WARNING_LOG("MicIndicator of stream:%{public}d is already on", streamIndex_);
     } else {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, streamIndex_),
             false, "NotifyPrivacyStart failed!");
-        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off "
-            "after NotifyPrivacyStart success!", streamIndex_);
+        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d", streamIndex_);
         isMicIndicatorOn_ = true;
     }
     return true;
@@ -551,6 +554,11 @@ bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
         capturerState,
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
+
+    if (AudioService::GetInstance()->NeedRemoveInterruptEventAndBackCap(streamIndex_)) {
+        AudioService::GetInstance()->RemoveBackgroundCaptureMap(streamIndex_);
+        AudioService::GetInstance()->RemoveInterruptEventMap(streamIndex_);
+    }
 
     if (isMicIndicatorOn_) {
         PermissionUtil::NotifyPrivacyStop(tokenId, streamIndex_);
@@ -904,10 +912,9 @@ RestoreStatus CapturerInServer::RestoreSession(RestoreInfo restoreInfo)
             HandleStreamStatusToCapturerState(status_)
         };
         AUDIO_INFO_LOG("Insert fast record stream:%{public}u uid:%{public}d tokenId:%{public}u "
-            "into switchStreamRecord because restoreStatus:NEED_RESTORE",
-            streamIndex_, info.callerUid, info.appTokenId);
+            "restoreStatus:NEED_RESTORE", streamIndex_, info.callerUid, info.appTokenId);
+        AudioService::GetInstance()->UpdateSwitchStreamMap(streamIndex_, SWITCH_STATE_WAITING);
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
-
         audioServerBuffer_->SetRestoreInfo(restoreInfo);
     }
     return restoreStatus;
