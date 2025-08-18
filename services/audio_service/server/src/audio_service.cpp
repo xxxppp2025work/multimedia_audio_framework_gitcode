@@ -587,11 +587,11 @@ bool AudioService::UpdateInterruptEventMap(const uint32_t sessionId,
     } else if (iter->second.hintType == INTERRUPT_HINT_NONE ||
         (iter->second.hintType == INTERRUPT_HINT_PAUSE && interruptEvent.hintType == INTERRUPT_HINT_RESUME) ||
         (iter->second.hintType == INTERRUPT_HINT_RESUME && interruptEvent.hintType == INTERRUPT_HINT_PAUSE)) {
-        AUDIO_WARNNING_LOG("Updated sessionId:%{public}u, hintType:%{public}d",
+        AUDIO_WARNING_LOG("Updated sessionId:%{public}u, hintType:%{public}d",
             sessionId, interruptEvent.hintType);
         interruptEvent.hintType = INTERRUPT_HINT_NONE;
         iter->second = interruptEvent;
-        AUDIO_WARNNING_LOG("Updated sessionId:%{public}u, hintType: PAUSE and RESUME", sessionId);
+        AUDIO_WARNING_LOG("Updated sessionId:%{public}u, hintType: PAUSE and RESUME", sessionId);
     } else {
         iter->second = interruptEvent;
         AUDIO_INFO_LOG("Updated sessionId:%{public}u, hintType:%{public}d", sessionId, interruptEvent.hintType);
