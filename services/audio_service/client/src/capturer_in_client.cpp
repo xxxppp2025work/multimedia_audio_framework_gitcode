@@ -57,7 +57,7 @@ namespace AudioStandard {
 namespace {
 static const size_t MAX_CLIENT_READ_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 9; // 9S
-static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
+static constexpr int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t LOGLITMITTIMES = 20;
 const uint64_t DEFAULT_BUF_DURATION_IN_USEC = 20000; // 20ms
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
@@ -95,14 +95,12 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     if (operation == UPDATE_STREAM) {
         AUDIO_DEBUG_LOG("OnOperationHandled() UPDATE_STREAM result:%{public}" PRId64".", result);
         // notify write if blocked
-        readDataCV_.notify_all();
         return SUCCESS;
     }
 
     if (operation == BUFFER_OVERFLOW) {
         AUDIO_WARNING_LOG("recv overflow %{public}d", overflowCount_);
         // in plan next: do more to reduce overflow
-        readDataCV_.notify_all();
         return SUCCESS;
     }
 
@@ -1224,7 +1222,7 @@ bool CapturerInClientInner::StopAudioStream()
 
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
         state_ = STOPPING;
-        readDataCV_.notify_all();
+        clientBuffer_->WakeFutex();
         AUDIO_INFO_LOG("Stop begin in callback mode sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     }
 
@@ -1248,6 +1246,16 @@ bool CapturerInClientInner::StopAudioStream()
 
     AUDIO_INFO_LOG("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("STOPPED");
+    return true;
+}
+
+bool CapturerInClientInner::SafeWakeFutex()
+{
+    if (clientBuffer_ == nullptr) {
+        return false;
+    }
+
+    clientBuffer_->WakeFutex();
     return true;
 }
 
@@ -1286,7 +1294,7 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
             cbBufferQueue_.PushNoWait({nullptr, 0, 0});
         }
         cbThreadCv_.notify_all();
-        readDataCV_.notify_all();
+        SafeWakeFutex();
         if (callbackLoop_.joinable()) {
             callbackLoop_.join();
         }
@@ -1440,13 +1448,13 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
                 return readSize; // Return buffer immediately
             }
             // wait for server read some data
-            std::unique_lock<std::mutex> readLock(readDataMutex_);
-            bool isTimeout = !readDataCV_.wait_for(readLock,
-                std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-                    return clientBuffer_->GetCurWriteFrame() > clientBuffer_->GetCurReadFrame() || state_ != RUNNING;
+            constexpr auto timeoutInNano = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS)).count();
+            FutexCode futexRet = clientBuffer_->WaitFor(timeoutInNano, [this] {
+                return clientBuffer_->GetCurWriteFrame() > clientBuffer_->GetCurReadFrame() || state_ != RUNNING;
             });
             CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "State is not running");
-            CHECK_AND_RETURN_RET_LOG(isTimeout == false, ERROR, "Wait timeout");
+            CHECK_AND_RETURN_RET_LOG(futexRet == FUTEX_SUCCESS, ERROR, "Wait timeout");
         }
     }
     return readSize;
