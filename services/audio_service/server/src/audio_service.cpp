@@ -471,7 +471,7 @@ BackgroundCaptureState AudioService::VerifyBackgroundCapture(uint32_t sessionId,
     bool res = PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId);
     if (res) {
         AUDIO_INFO_LOG("Stream:%{public}u Result:allowed Reason:app in foreground", sessionId);
-        backCapState = ALLOWED_APP_IN_FOREGORND;
+        backCapState = ALLOWED_APP_IN_FOREGROUND;
         return backCapState;
     } else {
         backCapState = DENIED_APP_IN_BACKGROUND;
@@ -480,7 +480,7 @@ BackgroundCaptureState AudioService::VerifyBackgroundCapture(uint32_t sessionId,
             UpdateForegroundState(tokenId, true);
             res = PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId);
             UpdateForegroundState(tokenId, false);
-            backCapState = res ? ALLOWED_WHITE_LIST_FOREGROUND : DENIED_APP_IN_BACKGROUND;
+            backCapState = res ? ALLOWED_EXEMPTION_FOREGROUND_APP : DENIED_APP_IN_BACKGROUND;
         }
     }
     AUDIO_INFO_LOG("Stream:%{public}u Result:%{public}s Reason:%{public}d",
