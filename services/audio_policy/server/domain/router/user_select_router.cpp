@@ -46,7 +46,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
 shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
     shared_ptr<AudioDeviceDescriptor> perDev_ =
-        AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
+        AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice(clientUID);
     CHECK_AND_RETURN_RET_LOG(perDev_ != nullptr, make_shared<AudioDeviceDescriptor>(), "perDev is null");
     vector<shared_ptr<AudioDeviceDescriptor>> callDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_OUTPUT_DEVICES);
