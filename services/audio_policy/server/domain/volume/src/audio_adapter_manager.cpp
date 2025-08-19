@@ -3344,7 +3344,7 @@ void AudioAdapterManager::HandleHearingAidVolume(AudioStreamType streamType)
 
 void SaveA2dpAbsVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel)
 {
-    VolumeDataMaintainer_.SaveVolume(type, streamType, volumeLevel);
+    volumeDataMaintainer_.SaveVolume(type, streamType, volumeLevel);
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
