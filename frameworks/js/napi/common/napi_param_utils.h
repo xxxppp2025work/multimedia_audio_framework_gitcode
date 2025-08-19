@@ -38,6 +38,7 @@ const int ARGS_ZERO = 0;
 const int ARGS_ONE = 1;
 const int ARGS_TWO = 2;
 const int ARGS_THREE = 3;
+const int ARGS_FOUR = 4;
 
 const int PARAM0 = 0;
 const int PARAM1 = 1;
