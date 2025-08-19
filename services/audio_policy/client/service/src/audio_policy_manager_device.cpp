@@ -31,7 +31,7 @@ using namespace std;
 const unsigned int TIME_OUT_SECONDS = 10;
 
 int32_t AudioPolicyManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors, const int32_t audioDeviceSelectMode)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
@@ -43,7 +43,7 @@ int32_t AudioPolicyManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         return -1;
     }
 
-    return gsp->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors, audioDeviceSelectMode);
+    return gsp->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
 }
 
 std::string AudioPolicyManager::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
@@ -130,7 +130,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetDevic
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPreferredOutputDeviceDescriptors(
-    AudioRendererInfo &rendererInfo, bool forceNoBTPermission, const int32_t uid)
+    AudioRendererInfo &rendererInfo, bool forceNoBTPermission)
 {
     AudioXCollie audioXCollie("AudioPolicyManager::GetPreferredOutputDeviceDescriptors", TIME_OUT_SECONDS,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
@@ -140,7 +140,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPrefe
         AUDIO_ERR_LOG("GetPreferredOutputDeviceDescriptors: audio policy manager proxy is NULL.");
         return deviceInfo;
     }
-    gsp->GetPreferredOutputDeviceDescriptors(rendererInfo, forceNoBTPermission, deviceInfo, uid);
+    gsp->GetPreferredOutputDeviceDescriptors(rendererInfo, forceNoBTPermission, deviceInfo);
     return deviceInfo;
 }
 
@@ -288,7 +288,7 @@ int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId, De
 }
 
 int32_t AudioPolicyManager::SetPreferredOutputDeviceChangeCallback(const AudioRendererInfo &rendererInfo,
-    const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback, const int32_t uid)
+    const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::SetPreferredOutputDeviceChangeCallback");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
@@ -306,7 +306,7 @@ int32_t AudioPolicyManager::SetPreferredOutputDeviceChangeCallback(const AudioRe
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->AddPreferredOutputDeviceChangeCallback(rendererInfo, callback);
         rendererInfos_.push_back(rendererInfo);
-        SetCallbackRendererInfo(rendererInfo, uid);
+        SetCallbackRendererInfo(rendererInfo);
         size_t callbackSize = audioPolicyClientStubCB_->GetPreferredOutputDeviceChangeCallbackSize();
         if (callbackSize == 1) {
             callbackChangeInfos_[CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE].isEnable = true;

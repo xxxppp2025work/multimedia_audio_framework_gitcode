@@ -46,10 +46,10 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetDevices(
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetPreferredOutputDeviceDescriptors(
-    AudioRendererInfo &rendererInfo, std::string networkId, const int32_t uid)
+    AudioRendererInfo &rendererInfo, std::string networkId)
 {
     std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
-    return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
+    return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetPreferredInputDeviceDescriptors(

@@ -158,21 +158,9 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredMediaRenderDevi
     return devDesc;
 }
 
-shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevice(const int32_t clientUid)
+shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevice()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (clientUid != -1) {
-        if (!forcedDeviceMapList_.empty()) {
-            for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
-                if (SYSTEM_UID == it->begin()->first) {
-                    AUDIO_INFO_LOG("deviceType: %{public}d",
-                        it->begin()->second->deviceType_);
-                    return make_shared<AudioDeviceDescriptor>(it->begin()->second);
-                }
-            }
-        }
-        return std::make_shared<AudioDeviceDescriptor>();
-    }
     if (ownerUid_ == 0) {
         if (!forcedDeviceMapList_.empty()) {
             AUDIO_INFO_LOG("ownerUid_: 0, deviceType: %{public}d, Uid: %{public}d",
