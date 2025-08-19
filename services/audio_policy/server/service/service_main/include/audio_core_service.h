@@ -523,7 +523,7 @@ private:
     AudioIOHandleMap& audioIOHandleMap_;
     AudioA2dpDevice& audioA2dpDevice_;
     AudioEcManager& audioEcManager_;
-    AudioPolicyConfigManager& policyConfigMananger_;
+    AudioPolicyConfigManager& policyConfigManager_;
     AudioAffinityManager &audioAffinityManager_;
     SleAudioDeviceManager &sleAudioDeviceManager_;
     std::shared_ptr<AudioPipeSelector> audioPipeSelector_;

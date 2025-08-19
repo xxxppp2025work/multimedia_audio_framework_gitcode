@@ -75,7 +75,7 @@ AudioCoreService::AudioCoreService()
       audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
       audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
       audioEcManager_(AudioEcManager::GetInstance()),
-      policyConfigMananger_(AudioPolicyConfigManager::GetInstance()),
+      policyConfigManager_(AudioPolicyConfigManager::GetInstance()),
       audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
       sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance()),
       audioPipeSelector_(AudioPipeSelector::GetPipeSelector()),
@@ -311,7 +311,7 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
 
     if (streamDesc->newDeviceDescs_.back()->deviceType_ == DEVICE_TYPE_REMOTE_CAST ||
         streamDesc->newDeviceDescs_.back()->networkId_ != LOCAL_NETWORK_ID) {
-        auto remoteOffloadStreamPropSize = policyConfigMananger_.GetStreamPropInfoSize("remote",
+        auto remoteOffloadStreamPropSize = policyConfigManager_.GetStreamPropInfoSize("remote",
             "offload_distributed_output");
         streamDesc->audioFlag_ = IsRemoteOffloadActive(remoteOffloadStreamPropSize,
             streamDesc->rendererInfo_.streamUsage) ? AUDIO_OUTPUT_FLAG_LOWPOWER : AUDIO_OUTPUT_FLAG_NORMAL;
@@ -481,7 +481,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
         CheckAndSetCurrentOutputDevice(streamDesc->newDeviceDescs_.front(), streamDesc->sessionId_);
         std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
-        if (policyConfigMananger_.GetUpdateRouteSupport()) {
+        if (policyConfigManager_.GetUpdateRouteSupport()) {
             UpdateOutputRoute(streamDesc);
         }
     } else {
@@ -1336,7 +1336,7 @@ DirectPlaybackMode AudioCoreService::GetDirectPlaybackSupport(const AudioStreamI
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioRouterCenter_.FetchOutputDevices(
         streamUsage, getuid(), "GetDirectPlaybackSupport");
     CHECK_AND_RETURN_RET_LOG(!descs.empty(), DIRECT_PLAYBACK_NOT_SUPPORTED, "find output device failed");
-    return policyConfigMananger_.GetDirectPlaybackSupport(descs.front(), streamInfo);
+    return policyConfigManager_.GetDirectPlaybackSupport(descs.front(), streamInfo);
 }
 
 #ifdef BLUETOOTH_ENABLE
@@ -1379,17 +1379,17 @@ void AudioCoreService::BluetoothServiceCrashedCallback(pid_t pid, pid_t uid)
 void AudioCoreService::UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
     const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices)
 {
-    policyConfigMananger_.UpdateStreamPropInfo(adapterName, pipeName, deviceStreamInfo, supportDevices);
+    policyConfigManager_.UpdateStreamPropInfo(adapterName, pipeName, deviceStreamInfo, supportDevices);
 }
 
 void AudioCoreService::ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName)
 {
-    policyConfigMananger_.ClearStreamPropInfo(adapterName, pipeName);
+    policyConfigManager_.ClearStreamPropInfo(adapterName, pipeName);
 }
 
 uint32_t AudioCoreService::GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName)
 {
-    return policyConfigMananger_.GetStreamPropInfoSize(adapterName, pipeName);
+    return policyConfigManager_.GetStreamPropInfoSize(adapterName, pipeName);
 }
 
 int32_t AudioCoreService::CaptureConcurrentCheck(uint32_t sessionId)
