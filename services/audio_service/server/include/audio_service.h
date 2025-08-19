@@ -142,6 +142,27 @@ public:
 #endif
     void RenderersCheckForAudioWorkgroup(int32_t pid);
 
+    bool IsInSwitchStreamMap(uint32_t sessionId, SwitchState &switchState);
+    bool UpdateSwitchStreamMap(uint32_t sessionId, SwitchState switchState);
+    void RemoveSwitchStreamMap(uint32_t sessionId);
+
+    bool IsInInterruptEventMap(const uint32_t sessionId, InterruptEventInternal &interruptEvent);
+    bool UpdateInterruptEventMap(const uint32_t sessionId, InterruptEventInternal interruptEvent);
+    bool RemoveInterruptEventMap(const uint32_t sessionIdt);
+
+    bool IsInBackgroudCaptureMap(uint32_t sessionId, BackgroundCaptureState &backCapState);
+
+    void UpdateBackgroundCaptureMap(const uint32_t sessionId, const BackgroundCaptureState backCapState);
+    void RemoveBackgroundCaptureMap(const uint32_t sessionId);
+    bool NeedRemoveInterruptEventAndBackCap(uint32_t sessionId);
+
+    bool NeedVerifyBackgroundCapture(uint32_t sessionId, AudioProcessConfig config);
+    BackgroundCaptureState VerifyBackgroundCapture(uint32_t sessionId, AudioProcessConfig config);
+    BackgroundCaptureState UpdateVerifyBackgroundCapture(uint32_t sessionId, AudioProcessConfig config);
+    bool IsAllowedUsingMicrophone(uint32_t sessionId, AudioProcessConfig config);
+    
+    void SendInterruptEventToAudioService(uint32_t sessionId, InterruptEventInternal interruptEvent);
+
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);
@@ -187,6 +208,12 @@ private:
     std::mutex foregroundSetMutex_;
     std::set<std::string> foregroundSet_;
     std::set<uint32_t> foregroundUidSet_;
+    std::mutex audioSwitchStreamMutex_;
+    std::map<uint32_t, SwitchState> audioSwitchStreamMap_;
+    std::mutex audioStreamInterruptEventMutex_;
+    std::map<uint32_t, InterruptEventInternal> audioStreamInterruptEventMap_;
+    std::mutex audioStreamBackCapMutex_;
+    std::map<uint32_t, BackgroundCaptureState> audioStreamBackCapMap_;
     std::mutex processListMutex_;
     std::mutex releaseEndpointMutex_;
     std::condition_variable releaseEndpointCV_;
