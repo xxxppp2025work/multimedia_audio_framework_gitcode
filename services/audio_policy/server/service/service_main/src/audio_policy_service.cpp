@@ -293,9 +293,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetPrefe
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredOutputDeviceDescInner(
-    AudioRendererInfo &rendererInfo, std::string networkId, const int32_t uid)
+    AudioRendererInfo &rendererInfo, std::string networkId)
 {
-    return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
+    return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDeviceDescInner(

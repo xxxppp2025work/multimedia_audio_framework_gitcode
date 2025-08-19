@@ -26,7 +26,6 @@ namespace AudioStandard {
 
 const std::string PREFERRED_OUTPUT_DEVICE_CALLBACK_NAME = "preferredOutputDeviceChangeForRendererInfo";
 const std::string PREFER_OUTPUT_DEVICE_CALLBACK_NAME = "preferOutputDeviceChangeForRendererInfo";
-const std::string PREFER_OUTPUT_DEVICE_FOR_UID_CALLBACK_NAME = "preferOutputDeviceChangeForRendererInfoForUid";
 const std::string PREFERRED_INPUT_DEVICE_CALLBACK_NAME  = "preferredInputDeviceChangeForCapturerInfo";
 
 class NapiAudioPreferredOutputDeviceChangeCallback : public AudioPreferredOutputDeviceChangeCallback {

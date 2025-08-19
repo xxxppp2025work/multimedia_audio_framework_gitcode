@@ -1747,8 +1747,7 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
 
 // LCOV_EXCL_START
 int32_t AudioPolicyServer::SelectOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter,
-    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors,
-    const int32_t audioDeviceSelectMode)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "SelectOutputDevice: No system permission");
@@ -1762,7 +1761,7 @@ int32_t AudioPolicyServer::SelectOutputDevice(const sptr<AudioRendererFilter> &a
         targetOutputDevice.push_back(newDeviceDescriptor);
     }
 
-    return eventEntry_->SelectOutputDevice(audioRendererFilter, targetOutputDevice, audioDeviceSelectMode);
+    return eventEntry_->SelectOutputDevice(audioRendererFilter, targetOutputDevice);
 }
 
 int32_t AudioPolicyServer::GetSelectedDeviceInfo(int32_t uid, int32_t pid, int32_t streamTypeIn,
@@ -1943,10 +1942,10 @@ int32_t AudioPolicyServer::VerifyVoiceCallPermission(
 // LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRendererInfo &rendererInfo,
-    bool forceNoBTPermission, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs, const int32_t uid)
+    bool forceNoBTPermission, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
     AudioRendererInfo newRendererInfo = rendererInfo;
-    deviceDescs = audioDeviceLock_.GetPreferredOutputDeviceDescriptors(newRendererInfo, LOCAL_NETWORK_ID, uid);
+    deviceDescs = audioDeviceLock_.GetPreferredOutputDeviceDescriptors(newRendererInfo, LOCAL_NETWORK_ID);
 
     bool hasBTPermission = false;
     if (!forceNoBTPermission) {
@@ -1993,10 +1992,10 @@ int32_t AudioPolicyServer::SetClientCallbacksEnable(int32_t callbackchangeIn, bo
     }
 }
 
-int32_t AudioPolicyServer::SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid)
+int32_t AudioPolicyServer::SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SetCallbackRendererInfo(rendererInfo, uid);
+        audioPolicyServerHandler_->SetCallbackRendererInfo(rendererInfo);
     }
     return SUCCESS;
 }
