@@ -1001,9 +1001,6 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
         }
         // Check if split stream. If true, fetch output device and return.
         CHECK_AND_RETURN_RET(ContinueAfterSplit(restoreInfo), true, "Stream split");
-        // Check if continue to switch after some concede operation.
-        CHECK_AND_RETURN_RET_LOG(ContinueAfterConcede(targetClass, restoreInfo),
-            true, "No need for switch");
         oldStream = audioStream_;
     }
     // ahead join callbackLoop and do not hold rendererMutex_ when waiting for callback
@@ -2040,7 +2037,7 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetCapturerInfo(info.capturerInfo);
     int32_t res = audioStream->SetAudioStreamInfo(info.params, rendererProxyObj_);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "SetAudioStreamInfo failed");
-    audioStream->SetDefaultOutputDevice(info.defaultOutputDevice);
+    audioStream->SetDefaultOutputDevice(info.defaultOutputDevice, true);
     audioStream->SetRenderMode(info.renderMode);
     callbackLoopTid_ = audioStream->GetCallbackLoopTid();
     audioStream->SetAudioEffectMode(info.effectMode);
@@ -2261,7 +2258,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
             switchInfo.sessionId = switchInfo.params.originalSessionId;
             streamDesc->sessionId_ = switchInfo.params.originalSessionId;
         }
-        streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_FORCED_NORMAL;
+        streamDesc->rendererInfo_.forceToNormal = true;
         streamDesc->routeFlag_ = AUDIO_FLAG_NONE;
         int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag,
             switchInfo.params.originalSessionId, networkId);
@@ -2294,32 +2291,6 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
 
     isFastRenderer_ = IAudioStream::IsFastStreamClass(targetClass);
     return switchResult;
-}
-
-bool AudioRendererPrivate::ContinueAfterConcede(IAudioStream::StreamClass &targetClass, RestoreInfo restoreInfo)
-{
-    CHECK_AND_RETURN_RET(restoreInfo.restoreReason == STREAM_CONCEDED, true);
-    targetClass = IAudioStream::PA_STREAM;
-    uint32_t sessionId = sessionID_;
-    GetAudioStreamIdInner(sessionId);
-    AudioPipeType pipeType = PIPE_TYPE_NORMAL_OUT;
-    audioStream_->GetAudioPipeType(pipeType);
-    AUDIO_INFO_LOG("session %{public}u concede from pipeType %{public}d", sessionID_, rendererInfo_.pipeType);
-    rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
-    rendererInfo_.isOffloadAllowed = false;
-    audioStream_->SetRendererInfo(rendererInfo_);
-    if (pipeType == PIPE_TYPE_OFFLOAD) {
-        UnsetOffloadModeInner();
-        AudioPolicyManager::GetInstance().MoveToNewPipe(sessionId, PIPE_TYPE_NORMAL_OUT);
-        audioStream_->SetRestoreStatus(NO_NEED_FOR_RESTORE);
-        return false;
-    }
-    if ((pipeType == PIPE_TYPE_LOWLATENCY_OUT && audioStream_->GetStreamClass() != IAudioStream::PA_STREAM) ||
-        pipeType == PIPE_TYPE_DIRECT_MUSIC) {
-        return true;
-    }
-    audioStream_->SetRestoreStatus(NO_NEED_FOR_RESTORE);
-    return false;
 }
 
 bool AudioRendererPrivate::ContinueAfterSplit(RestoreInfo restoreInfo)
@@ -2932,12 +2903,12 @@ int32_t AudioRendererPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
     AUDIO_INFO_LOG("Create fast Stream fail, play by normal stream.");
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
     isFastRenderer_ = false;
-    rendererInfo_.rendererFlags = AUDIO_FLAG_FORCED_NORMAL;
 
     // Create stream desc and pipe
     std::shared_ptr<AudioStreamDescriptor> streamDesc = ConvertToStreamDescriptor(audioStreamParams);
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
     std::string networkId = LOCAL_NETWORK_ID;
+    streamDesc->rendererInfo_.forceToNormal = true;
     int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag,
         audioStreamParams.originalSessionId, networkId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");

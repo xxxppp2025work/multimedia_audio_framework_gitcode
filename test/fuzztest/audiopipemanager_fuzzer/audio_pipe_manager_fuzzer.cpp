@@ -64,6 +64,7 @@ vector<AudioFlag> AudioFlagVec = {
     AUDIO_INPUT_FLAG_VOIP,
     AUDIO_INPUT_FLAG_VOIP_FAST,
     AUDIO_INPUT_FLAG_WAKEUP,
+    AUDIO_INPUT_FLAG_AI,
     AUDIO_FLAG_MAX,
 };
 
@@ -289,7 +290,8 @@ void GetProcessDeviceInfoBySessionIdFuzzTest()
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
 
     uint32_t targetSessionId = GetData<uint32_t>();
-    audioPipeManager->GetProcessDeviceInfoBySessionId(targetSessionId);
+    AudioStreamInfo info;
+    audioPipeManager->GetProcessDeviceInfoBySessionId(targetSessionId, info);
 }
 
 void GetAllOutputStreamDescsFuzzTest()

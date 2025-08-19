@@ -91,7 +91,6 @@ constexpr uid_t UID_NEARLINK_SA = 7030;
 constexpr uid_t UID_PENCIL_PROCESS_SA = 7555;
 constexpr uid_t UID_RESOURCE_SCHEDULE_SERVICE = 1096;
 constexpr uid_t UID_AVSESSION_SERVICE = 6700;
-constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
 const char* MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
 const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
 const char* USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
@@ -830,6 +829,7 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     SubscribeCommonEvent("usual.event.DATA_SHARE_READY");
     SubscribeCommonEvent("usual.event.dms.rotation_changed");
     SubscribeCommonEvent("usual.event.bluetooth.remotedevice.NAME_UPDATE");
+    SubscribeCommonEvent("usual.event.nearlink.remotedevice.NAME_UPDATE");
     SubscribeCommonEvent("usual.event.SCREEN_ON");
     SubscribeCommonEvent("usual.event.SCREEN_OFF");
     SubscribeCommonEvent("usual.event.SCREEN_LOCKED");
@@ -887,10 +887,11 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
         AUDIO_INFO_LOG("Set rotation to audioeffectchainmanager is %{public}d", rotate);
         AudioServerProxy::GetInstance().SetRotationToEffectProxy(rotate);
-    } else if (action == "usual.event.bluetooth.remotedevice.NAME_UPDATE") {
+    } else if (action == "usual.event.bluetooth.remotedevice.NAME_UPDATE" ||
+        action == "usual.event.nearlink.remotedevice.NAME_UPDATE") {
         std::string deviceName  = want.GetStringParam("remoteName");
         std::string macAddress = want.GetStringParam("deviceAddr");
-        eventEntry_->OnReceiveBluetoothEvent(macAddress, deviceName);
+        eventEntry_->OnReceiveUpdateDeviceNameEvent(macAddress, deviceName);
     } else if (action == "usual.event.SCREEN_ON") {
         AUDIO_INFO_LOG("receive SCREEN_ON action, control audio focus if need");
         audioDeviceCommon_.SetFirstScreenOn();
@@ -2270,6 +2271,7 @@ int32_t AudioPolicyServer::SetMicrophoneMutePersistent(bool isMute, int32_t type
     bool hasPermission = VerifyPermission(MICROPHONE_CONTROL_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(hasPermission, ERR_PERMISSION_DENIED,
         "MICROPHONE_CONTROL_PERMISSION permission denied");
+    CHECK_AND_RETURN_RET_LOG(POLICY_TYPE_MAP.count(type), ERR_OPERATION_FAILED, "type invalid");
     WatchTimeout guard("PrivacyKit::SetMutePolicy:SetMicrophoneMutePersistent");
     bool originalMicrophoneMute = false;
     IsMicrophoneMute(originalMicrophoneMute);
@@ -3157,6 +3159,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
     }
 
     AudioZoneService::GetInstance().UnRegisterAudioZoneClient(pid);
+    AudioZoneService::GetInstance().ReleaseAudioZoneByClientPid(pid);
 }
 
 int32_t AudioPolicyServer::ResumeStreamState()
@@ -3669,11 +3672,6 @@ int32_t AudioPolicyServer::UnsetAvailableDeviceChangeCallback(int32_t /*clientId
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::OffloadStopPlaying(const AudioInterrupt &audioInterrupt)
-{
-    return audioPolicyService_.OffloadStopPlaying(std::vector<int32_t>(1, audioInterrupt.streamId));
-}
-
 // LCOV_EXCL_START
 int32_t AudioPolicyServer::ConfigDistributedRoutingRole(
     const std::shared_ptr<AudioDeviceDescriptor> &descriptor, int32_t typeIn)
@@ -4061,11 +4059,12 @@ int32_t AudioPolicyServer::RegisterAudioZoneClient(const sptr<IRemoteObject> &ob
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::CreateAudioZone(const std::string &name, const AudioZoneContext &context, int32_t &zoneId)
+int32_t AudioPolicyServer::CreateAudioZone(const std::string &name, const AudioZoneContext &context, int32_t &zoneId,
+    int32_t pid)
 {
     CHECK_AND_RETURN_RET_LOG(!name.empty(), ERR_INVALID_PARAM, "audio zone name is empty");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
-    zoneId = AudioZoneService::GetInstance().CreateAudioZone(name, context);
+    zoneId = AudioZoneService::GetInstance().CreateAudioZone(name, context, static_cast<pid_t>(pid));
     return SUCCESS;
 }
 
@@ -4486,11 +4485,6 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id)
     audioPolicyService_.NotifyAccountsChanged(id);
     SendVolumeKeyEventToRssWhenAccountsChanged();
     RegisterDefaultVolumeTypeListener();
-}
-
-int32_t AudioPolicyServer::MoveToNewPipe(uint32_t sessionId, int32_t pipeType)
-{
-    return audioOffloadStream_.MoveToNewPipe(sessionId, static_cast<AudioPipeType>(pipeType));
 }
 
 void AudioPolicyServer::CheckHibernateState(bool hibernate)
@@ -5143,6 +5137,65 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
         DATASHARE_SERVICE_TIMEOUT_SECONDS);
     CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "Create dataShare failed, datashare or library error.");
     dataShareHelper->Release();
+    return SUCCESS;
+}
+
+void AudioPolicyServer::SetVoiceMuteState(uint32_t sessionId, bool isMute)
+{
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    return coreService_->SetVoiceMuteState(sessionId, isMute);
+}
+
+int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t volumeDegree, int32_t volumeFlag,
+    int32_t uid)
+{
+    AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    if (!IsVolumeTypeValid(streamType)) {
+        return ERR_NOT_SUPPORTED;
+    }
+
+    bool adjustable = false;
+    IsVolumeUnadjustable(adjustable);
+    if (adjustable) {
+        AUDIO_ERR_LOG("Unadjustable device, not allow set degree");
+        return ERR_OPERATION_FAILED;
+    }
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    bool flag = volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI;
+    int32_t volumeLevel = VolumeUtils::VolumeDegreeToLevel(volumeDegree);
+    int32_t callingUid =  uid != 0 ? uid : IPCSkeleton::GetCallingUid();
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(callingUid);
+    SetSystemVolumeLevelInternal(streamType, volumeLevel, flag, zoneId);
+
+    return SetSystemVolumeDegreeInner(streamType, volumeDegree, flag, uid);
+}
+
+int32_t AudioPolicyServer::SetSystemVolumeDegreeInner(AudioStreamType streamType, int32_t volumeDegree,
+    bool volumeFlag, int32_t uid)
+{
+    int32_t ret = audioVolumeManager_.SetSystemVolumeDegree(streamType, volumeDegree, volumeFlag);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Update volume degree failed, err:%{public}d", ret);
+    }
+    return ret;
+}
+
+int32_t AudioPolicyServer::GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree)
+{
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    AudioStreamType newStreamType = static_cast<AudioStreamType>(streamType);
+    volumeDegree = audioVolumeManager_.GetSystemVolumeDegree(newStreamType);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::GetMinVolumeDegree(int32_t volumeType, int32_t &volumeDegree)
+{
+    volumeDegree = audioVolumeManager_.GetMinVolumeDegree(static_cast<AudioVolumeType>(volumeType));
     return SUCCESS;
 }
 } // namespace AudioStandard

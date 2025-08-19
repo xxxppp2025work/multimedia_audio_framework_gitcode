@@ -135,7 +135,6 @@ private:
     static constexpr int32_t ZONEID_INVALID = -1;
     static constexpr float DUCK_FACTOR = 0.2f;
     static constexpr int32_t DEFAULT_APP_PID = -1;
-    static constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
     static constexpr int32_t STREAM_DEFAULT_PRIORITY = 100;
 
     using InterruptIterator = std::list<std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator>;
@@ -330,6 +329,9 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &activeInterrupt);
     void ReportRecordGetFocusFail(const AudioInterrupt &incomingInterrupt,
         const AudioInterrupt &activeInterrupt, int32_t reason);
+    void HandleVoiceCallAndTranscriptionFocus(
+        std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap,
+        const AudioInterrupt &currentInterrupt, const AudioInterrupt &newInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;

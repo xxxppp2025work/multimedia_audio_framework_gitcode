@@ -239,6 +239,10 @@ static void SetAudioSceneForAllSource(AudioScene audioScene)
     if (primarySource != nullptr && primarySource->IsInited()) {
         primarySource->SetAudioScene(audioScene);
     }
+    std::shared_ptr<IAudioCaptureSource> aiSource = GetSourceByProp(HDI_ID_TYPE_AI);
+    if (aiSource != nullptr && aiSource->IsInited()) {
+        aiSource->SetAudioScene(audioScene);
+    }
 #ifdef SUPPORT_LOW_LATENCY
     std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
     if (fastSource != nullptr && fastSource->IsInited()) {
@@ -284,6 +288,10 @@ static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &sourc
         fastVoipSource->UpdateActiveDevice(type);
     }
 #endif
+    std::shared_ptr<IAudioCaptureSource> aiSource = GetSourceByProp(HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT);
+    if (aiSource != nullptr && aiSource->IsInited()) {
+        aiSource->UpdateActiveDevice(type);
+    }
 }
 
 // std::vector<StringPair> -> std::vector<std::pair<std::string, std::string>>
@@ -899,6 +907,9 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
         parmKey = AudioParamKey::MMI;
     } else if (key == "perf_info") {
         parmKey = AudioParamKey::PERF_INFO;
+    } else if (key == "mute_call") {
+        deviceManager->SetAudioParameter("primary", parmKey, "", key + "=" + value);
+        return SUCCESS;
     } else {
         AUDIO_ERR_LOG("key %{public}s is invalid for hdi interface", key.c_str());
         return SUCCESS;
@@ -2391,6 +2402,10 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
         }
 #endif
         if (type == HDI_ID_TYPE_BLUETOOTH) {
+            return info == HDI_ID_INFO_DEFAULT;
+        }
+
+        if (type == HDI_ID_TYPE_AI) {
             return info == HDI_ID_INFO_DEFAULT;
         }
         return false;

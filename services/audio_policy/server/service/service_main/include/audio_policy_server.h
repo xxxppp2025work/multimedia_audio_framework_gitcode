@@ -449,7 +449,8 @@ public:
 
     int32_t RegisterAudioZoneClient(const sptr<IRemoteObject> &object) override;
 
-    int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context, int32_t &zoneId) override;
+    int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context, int32_t &zoneId,
+        int32_t pid) override;
 
     int32_t ReleaseAudioZone(int32_t zoneId) override;
 
@@ -537,8 +538,6 @@ public:
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetAudioDeviceAnahsCallback() override;
-
-    int32_t MoveToNewPipe(uint32_t sessionId, int32_t pipeType) override;
 
     int32_t InjectInterruption(const std::string &networkId, const InterruptEvent &event) override;
 
@@ -678,6 +677,10 @@ public:
     int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t command) override;
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) override;
     int32_t CallRingtoneLibrary();
+    void SetVoiceMuteState(uint32_t sessionId, bool isMute);
+    int32_t SetSystemVolumeDegree(int32_t streamType, int32_t volumeDegree, int32_t volumeFlag, int32_t uid) override;
+    int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
+    int32_t GetMinVolumeDegree(int32_t volumeType, int32_t &volumeDegree) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();
@@ -686,6 +689,9 @@ protected:
     int32_t GetApiTargetVersion();
 
 private:
+    int32_t SetSystemVolumeDegreeInner(AudioStreamType streamType, int32_t volumeDegree,
+        bool isUpdateUi, int32_t uid);
+
     friend class AudioInterruptService;
 
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
@@ -755,7 +761,6 @@ private:
     // Permission and privacy
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
     bool VerifyBluetoothPermission();
-    int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
     int32_t SetAudioSceneInternal(AudioScene audioScene, const int32_t uid = INVALID_UID,
         const int32_t pid = INVALID_PID);
     bool VerifySessionId(uint32_t sessionId, uint32_t clientUid);

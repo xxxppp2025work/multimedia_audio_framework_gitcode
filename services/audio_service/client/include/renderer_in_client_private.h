@@ -200,7 +200,7 @@ public:
     bool RestoreAudioStream(bool needStoreState = true) override;
     void JoinCallbackLoop() override;
 
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) override;
     FastStatus GetFastStatus() override;
     DeviceType GetDefaultOutputDevice() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
@@ -295,6 +295,7 @@ private:
     bool CheckBufferValid(const BufferDesc &bufDesc);
 
     bool IsRestoreNeeded();
+    void RecordDropPosition(size_t dataLength);
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -441,6 +442,8 @@ private:
     };
     std::vector<uint64_t> lastSwitchPosition_ = {0, 0};
     std::vector<uint64_t> lastSwitchPositionWithSpeed_ = {0, 0};
+    std::atomic<uint64_t> dropPosition_ = 0;
+    std::atomic<uint64_t> dropHdiPosition_ = 0;
 
     struct WrittenFramesWithSpeed {
         uint64_t writtenFrames = 0;
