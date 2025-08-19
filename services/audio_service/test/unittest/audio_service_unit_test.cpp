@@ -3204,5 +3204,53 @@ HWTEST(AudioServiceUnitTest, ConfigCoreServiceProvider_003, TestSize.Level1)
     EXPECT_EQ(ret, ERR_INVALID_OPERATION);
 }
 
+/**
+ * @tc.name  : Test SendInterruptEventToAudioService API
+ * @tc.type  : FUNC
+ * @tc.number: SendInterruptEventToAudioService_001,
+ * @tc.desc  : Test SendInterruptEventToAudioService interface.
+ */
+HWTEST(AudioServiceUnitTest, SendInterruptEventToAudioService_001, TestSize.Level1)
+{
+    InterruptEventInternal interruptEvent = { };
+    interruptEvent.hintType = INTERRUPT_HINT_RESUME;
+    int32_t sessionId = 13579;
+    AudioService::GetInstance()->SendInterruptEventToAudioService(sessionId, interruptEvent);
+    std::lock_guard<std::mutex> lock(resumeInterruptEventMutex_);
+    auto iter = resumeInterruptEventMap_.find(sessionId);
+    EXPECT_NE(iter != resumeInterruptEventMap_.end(), true);
+    resumeInterruptEventMap_.erase[sessionId];
+}
+/**
+ * @tc.name  : Test SendInterruptEventToAudioService API
+ * @tc.type  : FUNC
+ * @tc.number: SendInterruptEventToAudioService_002,
+ * @tc.desc  : Test SendInterruptEventToAudioService interface.
+ */
+HWTEST(AudioServiceUnitTest, SendInterruptEventToAudioService_002, TestSize.Level1)
+{
+    InterruptEventInternal interruptEvent = { };
+    interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
+    int32_t sessionId = 24678;
+    AudioService::GetInstance()->SendInterruptEventToAudioService(sessionId, interruptEvent);
+    std::lock_guard<std::mutex> lock(pasueInterruptEventMutex_);
+    auto iter = pauseInterruptEventMap_.find(sessionId);
+    EXPECT_NE(iter != pauseInterruptEventMap_.end(), true);
+    resumeInterruptEventMap_.erase[sessionId];
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
+
+void AudioService::SendInterruptEventToAudioService(uint32_t sessionId,
+    InterruptEventInternal interruptEvent)
+{
+    interruptEvent.eventTimestamp = ClockTime::GetCurNano();
+    AUDIO_INFO_LOG("Recive InterruptEvent:[%{public}d] from InterruptService", interruptEvent.hintType);
+    if (interruptEvent.hintType == INTERRUPT_HINT_RESUME) {
+        UpdateResumeInterruptEventMap(sessionId, interruptEvent);
+    }
+    if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE) {
+        UpdatePauseInterruptEventMap(sessionId, interruptEvent);
+    }
+}
