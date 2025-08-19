@@ -3373,6 +3373,11 @@ void AudioAdapterManager::HandleHearingAidVolume(AudioStreamType streamType)
     }
 }
 
+void SaveA2dpAbsVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel)
+{
+    volumeDataMaintainer_.SaveVolume(type, streamType, volumeLevel);
+}
+
 int32_t AudioAdapterManager::SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree)
 {
     Trace trace("streamType:" + std::to_string(streamType) + ", volumeDegree:" + std::to_string(volumeDegree));

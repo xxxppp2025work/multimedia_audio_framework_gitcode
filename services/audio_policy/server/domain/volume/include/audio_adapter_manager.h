@@ -306,6 +306,7 @@ public:
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void HandleDistributedDeviceVolume();
     void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
+    void SaveA2dpAbsVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel);
 
     int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree);
     int32_t GetSystemVolumeDegree(AudioStreamType streamType);
