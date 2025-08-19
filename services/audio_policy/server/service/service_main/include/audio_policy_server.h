@@ -156,7 +156,7 @@ public:
     void MapExternalToInternalDeviceType(AudioDeviceDescriptor &desc);
 
     int32_t SelectOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter,
-        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors, const int32_t audioDeviceSelectMode = 0) override;
 
     int32_t GetSelectedDeviceInfo(int32_t uid, int32_t pid, int32_t streamType, std::string &info) override;
 
@@ -334,7 +334,7 @@ public:
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
     int32_t GetPreferredOutputDeviceDescriptors(const AudioRendererInfo &rendererInfo, bool forceNoBTPermission,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs) override;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs, const int32_t uid = -1) override;
 
     int32_t GetPreferredInputDeviceDescriptors(const AudioCapturerInfo &captureInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs) override;
@@ -347,7 +347,7 @@ public:
 
     int32_t SetClientCallbacksEnable(int32_t callbackchange, bool enable) override;
 
-    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo) override;
+    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = -1) override;
 
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
 
