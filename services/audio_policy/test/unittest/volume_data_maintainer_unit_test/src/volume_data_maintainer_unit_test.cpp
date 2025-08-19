@@ -999,5 +999,19 @@ HWTEST(VolumeDataMaintainerUnitTest, SetAppStreamMuted_001, TestSize.Level1)
     EXPECT_EQ(volumeDataMaintainer->IsAppStreamMuted(appUid, streamType), false);
     EXPECT_EQ(volumeDataMaintainer->IsAppStreamMuted(appUid, anotherStreamType), false);
 }
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer.
+ * @tc.number: GetMuteStatusInternal_001.
+ * @tc.desc  : Test GetMuteStatusInternal.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetMuteStatusInternal_001, TestSize.Level1)
+{
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
+    DeviceType deviceTypeRet = DEVICE_TYPE_SPEAKER;
+    AudioStreamType streamTypeRet = STREAM_VOICE_CALL_ASSISTANT;
+    auto ret = volumeDataMaintainerRet->GetMuteStatusInternal(deviceTypeRet, streamTypeRet);
+    EXPECT_EQ(ret, true);
+}
 } // AudioStandardnamespace
 } // OHOSnamespace

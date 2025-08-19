@@ -557,6 +557,9 @@ bool VolumeDataMaintainer::GetMuteStatus(DeviceType deviceType, AudioStreamType 
 bool VolumeDataMaintainer::GetMuteStatusInternal(DeviceType deviceType, AudioStreamType streamType,
     std::string networkId)
 {
+    if (streamType == STREAM_VOICE_CALL_ASSISTANT) {
+        return true;
+    }
     std::string muteKey = GetMuteKeyForDataShare(deviceType, streamType, networkId);
     if (!muteKey.compare("")) {
         WriteVolumeDbAccessExceptionEvent(
