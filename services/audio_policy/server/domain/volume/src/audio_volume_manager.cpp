@@ -374,7 +374,6 @@ int32_t AudioVolumeManager::HandleA2dpAbsVolume(AudioStreamType streamType, int3
     vol.volumeInt = static_cast<uint32_t>(volumeLevel);
     vol.volumeFloat = audioPolicyManager_.GetSystemVolumeInDb(streamType, volumeLevel, curOutputDeviceType);
     SetSharedVolume(streamType, curOutputDeviceType, vol);
-    audioPolicyManager_.SaveA2dpAbsVolume(curOutputDeviceType, streamType, volumeLevel);
 #ifdef BLUETOOTH_ENABLE
     if (result == SUCCESS) {
         // set to avrcp device
@@ -528,6 +527,7 @@ int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int
 int32_t AudioVolumeManager::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volumeLevel,
     bool internalCall)
 {
+    audioPolicyManager_.SaveA2dpAbsVolume(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC, volumeLevel);
     if (audioA2dpDevice_.SetA2dpDeviceVolumeLevel(macAddress, volumeLevel) == false) {
         return ERROR;
     }
