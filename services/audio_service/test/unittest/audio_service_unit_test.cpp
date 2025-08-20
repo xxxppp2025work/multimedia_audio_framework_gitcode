@@ -3218,7 +3218,7 @@ HWTEST(AudioServiceUnitTest, SendInterruptEventToAudioService_001, TestSize.Leve
     AudioService::GetInstance()->SendInterruptEventToAudioService(sessionId, interruptEvent);
     std::lock_guard<std::mutex> lock(resumeInterruptEventMutex_);
     auto iter = resumeInterruptEventMap_.find(sessionId);
-    EXPECT_NE(iter != resumeInterruptEventMap_.end(), true);
+    EXPECT_EQ(iter != resumeInterruptEventMap_.end(), true);
     resumeInterruptEventMap_.erase[sessionId];
 }
 /**
@@ -3235,8 +3235,32 @@ HWTEST(AudioServiceUnitTest, SendInterruptEventToAudioService_002, TestSize.Leve
     AudioService::GetInstance()->SendInterruptEventToAudioService(sessionId, interruptEvent);
     std::lock_guard<std::mutex> lock(pasueInterruptEventMutex_);
     auto iter = pauseInterruptEventMap_.find(sessionId);
-    EXPECT_NE(iter != pauseInterruptEventMap_.end(), true);
+    EXPECT_EQ(iter != pauseInterruptEventMap_.end(), true);
     resumeInterruptEventMap_.erase[sessionId];
+}
+
+/**
+ * @tc.name  : Test resumeInterruptEventMap_ API
+ * @tc.type  : FUNC
+ * @tc.number: resumeInterruptEventMap_001,
+ * @tc.desc  : Test resumeInterruptEventMap_001 interface.
+ */
+HWTEST(AudioServiceUnitTest, resumeInterruptEventMap_001, TestSize.Level1)
+{
+    InterruptEventInternal interruptEvent = { };
+    interruptEvent.hintType = INTERRUPT_HINT_RESUME;
+    int32_t sessionId = 123456;
+
+    std::lock_guard<std::mutex> lock(pasueInterruptEventMutex_);
+    auto iter = resumeInterruptEventMap_.find(sessionId);
+    EXPECT_EQ(iter == resumeInterruptEventMap_.end(), true);
+    lock.unlock();
+
+    AudioService::GetInstance()->UpdateResumeInterruptEventMap(sessionId, interruptEvent);
+    std::lock_guard<std::mutex> lock(pasueInterruptEventMutex_);
+    auto iter = resumeInterruptEventMap_.find(sessionId);
+    EXPECT_NE(iter != pauseInterruptEventMap_.end(), true);
+    lock.unlock();
 }
 
 } // namespace AudioStandard
