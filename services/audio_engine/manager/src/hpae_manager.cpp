@@ -34,6 +34,7 @@ namespace AudioStandard {
 namespace HPAE {
 namespace {
 constexpr uint32_t DEFAULT_SUSPEND_TIME_IN_MS = 3000;  // 3s to stop hdi
+constexpr uint32_t FADED_OUT_UPDATE_TIME_MAX = 60; // 60 ms
 static inline const std::unordered_set<SourceType> INNER_SOURCE_TYPE_SET = {
     SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_REMOTE_CAST};
 }  // namespace
@@ -909,6 +910,7 @@ bool HpaeManager::MovingSinkStateChange(uint32_t sessionId, const std::shared_pt
         if (movingIds_[sessionId] == HPAE_SESSION_RELEASED) {
             rendererIdSinkNameMap_.erase(sessionId);
             rendererIdStreamInfoMap_.erase(sessionId);
+            rendererIdFadedOutMap_.erase(sessionId);
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSinkInputByIndexOrNameCb(SUCCESS);
             }
@@ -1096,11 +1098,31 @@ void HpaeManager::HandleUpdateStatus(
         // maybe dosomething while move sink inputs
         return;
     }
-    auto it = streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY ? rendererIdStreamInfoMap_.find(sessionId)
-                                                             : capturerIdStreamInfoMap_.find(sessionId);
-    if (it != rendererIdStreamInfoMap_.end() && it != capturerIdStreamInfoMap_.end()) {
+    if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
+        auto it = rendererIdStreamInfoMap_.find(sessionId);
+        CHECK_AND_RETURN(it == rendererIdStreamInfoMap_.end());
+        if (status == HPAE_SESSION_STOPPED || status == HPAE_SESSION_PAUSED) {
+            std::unique_lock<std::mutex> lock(mutex_);
+            CHECK_AND_RETURN(!rendererIdFadedOutMap_[sessionId]);
+            rendererIdFadedOutMap_[sessionId] = true;
+        }
+        UpdateStatus(it->second.statusCallback, operation, sessionId);
+    } else {
+        auto it = capturerIdStreamInfoMap_.find(sessionId);
+        CHECK_AND_RETURN(it == capturerIdStreamInfoMap_.end());
         UpdateStatus(it->second.statusCallback, operation, sessionId);
     }
+}
+
+void HpaeManager::ScheduleDelayedFadedOutUpdate(uint32_t sessionId, HpaeSessionState status, IOperation operation)
+{
+    auto weakThis = weak_from_this();
+    std::thread([weakThis, sessionId, status, operation]() {
+        std::this_thread::sleep_for(std::chrono::milliseconds(FADED_OUT_UPDATE_TIME_MAX));
+        if (auto sharedThis = weakThis.lock()) {
+            sharedThis->HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, status, operation);
+        }
+    }).detach();
 }
 
 void HpaeManager::UpdateStatus(const std::weak_ptr<IStreamStatusCallback> &callback,
@@ -1341,6 +1363,7 @@ int32_t HpaeManager::DestroyStream(HpaeStreamClassType streamClassType, uint32_t
             }
             rendererIdSinkNameMap_.erase(sessionId);
             rendererIdStreamInfoMap_.erase(sessionId);
+            rendererIdFadedOutMap_.erase(sessionId);
             sinkInputs_.erase(sessionId);
             idPreferSinkNameMap_.erase(sessionId);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
@@ -1472,6 +1495,8 @@ int32_t HpaeManager::Pause(HpaeStreamClassType streamClassType, uint32_t session
                 "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Pause(sessionId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_PAUSING;
+            rendererIdFadedOutMap_[sessionId] = false;
+            ScheduleDelayedFadedOutUpdate(sessionId, HPAE_SESSION_PAUSED, OPERATION_PAUSED);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
             AUDIO_INFO_LOG("capturer Pause sessionId: %{public}u deviceName:%{public}s",
@@ -1598,6 +1623,8 @@ int32_t HpaeManager::Stop(HpaeStreamClassType streamClassType, uint32_t sessionI
                 "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Stop(sessionId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_STOPPING;
+            rendererIdFadedOutMap_[sessionId] = false;
+            ScheduleDelayedFadedOutUpdate(sessionId, HPAE_SESSION_STOPPED, OPERATION_STOPPED);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
             AUDIO_INFO_LOG("capturer Stop sessionId: %{public}u deviceName:%{public}s",

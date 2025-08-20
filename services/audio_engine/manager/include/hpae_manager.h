@@ -235,6 +235,7 @@ private:
     bool ShouldNotSkipProcess(const HpaeStreamClassType &streamType, const uint32_t &sessionId);
     bool CheckMoveSinkInput(uint32_t sinkInputId, const std::string &sinkName);
     bool CheckMoveSourceOutput(uint32_t sourceOutputId, const std::string &sourceName);
+    void ScheduleDelayedFadedOutUpdate(uint32_t sessionId, HpaeSessionState status, IOperation operation);
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
@@ -254,9 +255,11 @@ private:
     std::string coreSink_ = "";
     std::unordered_map<std::string, uint32_t> sourceNameSourceIdMap_;
     std::unordered_map<uint32_t, std::string> sourceIdSourceNameMap_;
+    std::unordered_map<uint32_t, bool> rendererIdFadedOutMap_;
     std::string defaultSource_ = "Built_in_mic";
     std::atomic<int32_t> sinkSourceIndex_ = 0;
     std::atomic<bool> isInit_ = false;
+    std::mutex mutex_;
 
     HpaeNoLockQueue hpaeNoLockQueue_;
 
