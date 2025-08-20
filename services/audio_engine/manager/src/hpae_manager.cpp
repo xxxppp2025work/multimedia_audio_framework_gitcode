@@ -1100,7 +1100,7 @@ void HpaeManager::HandleUpdateStatus(
     }
     if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
         auto it = rendererIdStreamInfoMap_.find(sessionId);
-        CHECK_AND_RETURN(it == rendererIdStreamInfoMap_.end());
+        CHECK_AND_RETURN(it != rendererIdStreamInfoMap_.end());
         if (status == HPAE_SESSION_STOPPED || status == HPAE_SESSION_PAUSED) {
             std::unique_lock<std::mutex> lock(mutex_);
             CHECK_AND_RETURN(!rendererIdFadedOutMap_[sessionId]);
@@ -1109,7 +1109,7 @@ void HpaeManager::HandleUpdateStatus(
         UpdateStatus(it->second.statusCallback, operation, sessionId);
     } else {
         auto it = capturerIdStreamInfoMap_.find(sessionId);
-        CHECK_AND_RETURN(it == capturerIdStreamInfoMap_.end());
+        CHECK_AND_RETURN(it != capturerIdStreamInfoMap_.end());
         UpdateStatus(it->second.statusCallback, operation, sessionId);
     }
 }
