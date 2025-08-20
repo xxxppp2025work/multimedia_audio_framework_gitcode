@@ -3255,7 +3255,7 @@ HWTEST(AudioServiceUnitTest, resumeInterruptEventMap_001, TestSize.Level1)
     auto iter = resumeInterruptEventMap_.find(sessionId);
     EXPECT_EQ(iter == resumeInterruptEventMap_.end(), true);
     lock.unlock();
-    // test Remove when sessionId not in map
+    // test Update when sessionId not in map
     AudioService::GetInstance()->UpdateResumeInterruptEventMap(sessionId, interruptEvent);
     std::lock_guard<std::mutex> lock1(resumeInterruptEventMutex_);
     auto iter = resumeInterruptEventMap_.find(sessionId);
