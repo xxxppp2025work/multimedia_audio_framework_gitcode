@@ -19,6 +19,7 @@
 #include "audio_ring_cache.h"
 #include "audio_process_config.h"
 #include "linear_pos_time_model.h"
+#include "audio_service.h"
 #include "oh_audio_buffer.h"
 #include <thread>
 #include <gtest/gtest.h>
