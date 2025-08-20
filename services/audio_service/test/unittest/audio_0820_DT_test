@@ -1,634 +1,781 @@
-/services/audio_service/test/unittest/format_converter_unit_test.cpp
-/**
- * @tc.name  : Test FormatConverter API
- * @tc.type  : FUNC
- * @tc.number: F32MonoToS16Stereo_002
- * @tc.desc  : Test FormatConverter interface.
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-HWTEST_F(FormatConverterUnitTest, F32MonoToS16Stereo_002, TestSize.Level1)
+ 
+#ifndef STANDALONE_MODE_MANAGER_UNIT_TEST_H
+#define STANDALONE_MODE_MANAGER_UNIT_TEST_H
+ 
+#include "gtest/gtest.h"
+#include "audio_interrupt_service.h"
+#include "standalone_mode_manager.h"
+namespace OHOS {
+namespace AudioStandard {
+ 
+class StandaloneModeManagerUnitTest : public testing::Test {
+public:
+    // SetUpTestCase: Called before all test cases
+    static void SetUpTestCase(void);
+    // TearDownTestCase: Called after all test case
+    static void TearDownTestCase(void);
+    // SetUp: Called before each test cases
+    void SetUp(void);
+    // TearDown: Called after each test cases
+    void TearDown(void);
+};
+} // namespace AudioStandard
+} // namespace OHOS
+#endif // STANDALONE_MODE_MANAGER_UNIT_TEST_H
+
+
+
+
+
+
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_045
+* @tc.desc  : Test AudioInterruptService_045
+*/
+HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_045, TestSize.Level1)
 {
-    BufferDesc srcDesc;
-    BufferDesc dstDesc;
-    int32_t ret = -1;
-    uint8_t srcBuffer[4] = {0};
-    uint8_t dstBuffer[4] = {0};
-
-    srcDesc.bufLength = 4;
-    srcDesc.buffer = nullptr;
-    dstDesc.bufLength = 4;
-    dstDesc.buffer = dstBuffer;
-
-    ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-
-    srcDesc.bufLength = 4;
-    srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = 4;
-    dstDesc.buffer = nullptr;
-
-    ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-
-    srcDesc.bufLength = 5;
-    srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = 5;
-    dstDesc.buffer = dstBuffer;
-
-    ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+ 
+    int32_t fakePid = 123;
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.pid = fakePid;
+    incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    AudioSessionStrategy audioSessionStrategy;
+    InterruptEventInternal interruptEvent;
+    audioSessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+    audioInterruptService->sessionService_ = AudioSessionService::GetAudioSessionService();
+    audioInterruptService->sessionService_->sessionMap_[fakePid] = nullptr;
+    auto ret = audioInterruptService->ActivateAudioSession(1, fakePid, audioSessionStrategy, true);
+    audioInterruptService->ResumeFocusByStreamId(fakePid, interruptEvent);
+    EXPECT_EQ(ERROR, ret);
 }
 
+
+
+
+
+
 /**
- * @tc.name  : Test FormatConverter API
- * @tc.type  : FUNC
- * @tc.number: F32MonoToS16Stereo_CapMax_001
- * @tc.desc  : Test FormatConverter interface.
+ * @tc.name  : Test AudioInterruptService.
+ * @tc.number: AudioInterruptService_RemoveExistingFocus_001
+ * @tc.desc  : Test RemoveExistingFocus.
  */
-HWTEST_F(FormatConverterUnitTest, F32MonoToS16Stereo_CapMax_001, TestSize.Level1)
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_RemoveExistingFocus_001, TestSize.Level1)
 {
-    BufferDesc srcDesc;
-    BufferDesc dstDesc;
-    int32_t ret = -1;
-    uint8_t srcBuffer[4] = {2};
-    uint8_t dstBuffer[4] = {0};
-
-    srcDesc.bufLength = 4;
-    srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = 4;
-    dstDesc.buffer = dstBuffer;
-
-    ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, 0);
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->zonesMap_.clear();
+    int32_t appUid = 1;
+    auto audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt audioInterrupt1;
+    audioInterrupt1.sessionId = 100;
+    audioInterrupt1.uid = 1;
+    std::unordered_set<int32_t> uidActivedSessions;
+    audioInterruptZone->audioFocusInfoList.clear();
+    audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt1, AudioFocuState{PAUSE});
+    EXPECT_EQ(interruptServiceTest->zonesMap_.find(0), interruptServiceTest->zonesMap_.end());
+    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
+    interruptServiceTest->zonesMap_[1] = audioInterruptZone;
+    interruptServiceTest->zonesMap_[2] = std::make_shared<AudioInterruptZone>();
+    interruptServiceTest->RemoveExistingFocus(appUid, uidActivedSessions);
+}
+ 
+/**
+ * @tc.name  : Test AudioInterruptService.
+ * @tc.number: AudioInterruptService_ResumeFocusByStreamId_001
+ * @tc.desc  : Test ResumeFocusByStreamId.
+ */
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_ResumeFocusByStreamId_001, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    InterruptEventInternal interruptEvent;
+    interruptServiceTest->ResumeFocusByStreamId(0, interruptEvent);
+    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
+    auto retStatus = interruptServiceTest->SetAudioInterruptCallback(0, 0,
+        sptr<RemoteObjectTestStub>::MakeSptr(), 0);
+    EXPECT_EQ(retStatus, SUCCESS);
+    interruptServiceTest->ResumeFocusByStreamId(0, interruptEvent);
 }
 
+
+
+
+
+    ret = interruptService->ActivateAudioSession(0, incomingInterrupt.pid, strategyTest, true);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = interruptService->CanMixForSession(
+
+
+
+
+
+ 
 /**
- * @tc.name  : Test FormatConverter API
- * @tc.type  : FUNC
- * @tc.number: F32MonoToS16Stereo_CapMax_002
- * @tc.desc  : Test FormatConverter interface.
+ * @tc.name  : Test AudioInterruptUnitTest.
+ * @tc.number: SetAppConcurrencyMode_001
+ * @tc.desc  : Test SetAppConcurrencyMode.
  */
-HWTEST_F(FormatConverterUnitTest, F32MonoToS16Stereo_CapMax_002, TestSize.Level1)
+HWTEST(AudioInterruptUnitTest, SetAppConcurrencyMode_001, TestSize.Level1)
 {
-    BufferDesc srcDesc;
-    BufferDesc dstDesc;
-    int32_t ret = -1;
-    uint8_t srcBuffer[4] = {-2};
-    uint8_t dstBuffer[4] = {0};
-
-    srcDesc.bufLength = 4;
-    srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = 4;
-    dstDesc.buffer = dstBuffer;
-
-    ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, 0);
-}
-
-/**
- * @tc.name  : Test FormatConverter API
- * @tc.type  : FUNC
- * @tc.number: F32StereoToS16Stereo_002
- * @tc.desc  : Test FormatConverter interface.
- */
-HWTEST_F(FormatConverterUnitTest, F32StereoToS16Stereo_002, TestSize.Level1)
-{
-    BufferDesc srcDesc;
-    BufferDesc dstDesc;
-    int32_t ret = -1;
-    uint8_t srcBuffer[8] = {0};
-    uint8_t dstBuffer[4] = {0};
-
-    srcDesc.bufLength = 4;
-    srcDesc.buffer = nullptr;
-    dstDesc.bufLength = 2;
-    dstDesc.buffer = dstBuffer;
-
-    ret = FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-
-    srcDesc.bufLength = 4;
-    srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = 2;
-    dstDesc.buffer = nullptr;
-
-    ret = FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-
-    srcDesc.bufLength = 6;
-    srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = 3;
-    dstDesc.buffer = dstBuffer;
-
-    ret = FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-}
-
-/**
- * @tc.name  : Test FormatConverter API
- * @tc.type  : FUNC
- * @tc.number: S16StereoToF32Mono_002
- * @tc.desc  : Test FormatConverter interface.
- */
-HWTEST_F(FormatConverterUnitTest, S16StereoToF32Mono_002, TestSize.Level1)
-{
-    BufferDesc srcDesc;
-    BufferDesc dstDesc;
-    int32_t ret = -1;
-    uint8_t srcBuffer[8] = {0};
-    uint8_t dstBuffer[4] = {0};
-
-    srcDesc.bufLength = 4;
-    srcDesc.buffer = nullptr;
-    dstDesc.bufLength = 4;
-    dstDesc.buffer = dstBuffer;
-
-    ret = FormatConverter::S16StereoToF32Mono(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-
-    srcDesc.bufLength = 4;
-    srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = 4;
-    dstDesc.buffer = nullptr;
-
-    ret = FormatConverter::S16StereoToF32Mono(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-}
-
-/**
- * @tc.name  : Test FormatConverter API
- * @tc.type  : FUNC
- * @tc.number: S16MonoToS32Stereo_001
- * @tc.desc  : Test FormatConverter interface.
- */
-HWTEST_F(FormatConverterUnitTest, S16MonoToS32Stereo_001, TestSize.Level1)
-{
-    BufferDesc srcDesc;
-    BufferDesc dstDesc;
-    int32_t ret = -1;
-    uint8_t srcBuffer[8] = {0};
-    uint8_t dstBuffer[4] = {0};
-
-    srcDesc.bufLength = 2;
-    srcDesc.buffer = nullptr;
-    dstDesc.bufLength = 8;
-    dstDesc.buffer = dstBuffer;
-
-    ret = FormatConverter::S16MonoToS32Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-
-    srcDesc.bufLength = 2;
-    srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = 8;
-    dstDesc.buffer = nullptr;
-
-    ret = FormatConverter::S16MonoToS32Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-
-    srcDesc.bufLength = 4;
-    srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = 8;
-    dstDesc.buffer = dstBuffer;
-
-    ret = FormatConverter::S16MonoToS32Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-}
-
-/**
- * @tc.name  : Test FormatConverter API
- * @tc.type  : FUNC
- * @tc.number: S32StereoToS16Stereo_001
- * @tc.desc  : Test FormatConverter interface.
- */
-HWTEST_F(FormatConverterUnitTest, S32StereoToS16Stereo_001, TestSize.Level1)
-{
-    BufferDesc srcDesc;
-    BufferDesc dstDesc;
-    int32_t ret = -1;
-    uint8_t srcBuffer[8] = {0};
-    uint8_t dstBuffer[4] = {0};
-
-    srcDesc.bufLength = 8;
-    srcDesc.buffer = nullptr;
-    dstDesc.bufLength = 4;
-    dstDesc.buffer = dstBuffer;
-
-    ret = FormatConverter::S32StereoToS16Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-
-    srcDesc.bufLength = 8;
-    srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = 4;
-    dstDesc.buffer = nullptr;
-
-    ret = FormatConverter::S32StereoToS16Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-}
-
-/**
- * @tc.name  : Test FormatConverter API
- * @tc.type  : FUNC
- * @tc.number: S32MonoToS16Stereo_001
- * @tc.desc  : Test FormatConverter interface.
- */
-HWTEST_F(FormatConverterUnitTest, S32MonoToS16Stereo_001, TestSize.Level1)
-{
-    BufferDesc srcDesc;
-    BufferDesc dstDesc;
-    int32_t ret = -1;
-    uint8_t srcBuffer[8] = {0};
-    uint8_t dstBuffer[4] = {0};
-
-    srcDesc.bufLength = 4;
-    srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = 4;
-    dstDesc.buffer = dstBuffer;
-
-    ret = FormatConverter::S32MonoToS16Stereo(srcDesc, dstDesc);
-    EXPECT_EQ(ret, 0);
-}
-
-/**
- * @tc.name  : Test FormatConverter API
- * @tc.type  : FUNC
- * @tc.number: S16StereoToS16Mono_001
- * @tc.desc  : Test FormatConverter interface.
- */
-HWTEST_F(FormatConverterUnitTest, S16StereoToS16Mono_001, TestSize.Level1)
-{
-    BufferDesc srcDesc;
-    BufferDesc dstDesc;
-    int32_t ret = -1;
-    uint8_t srcBuffer[8] = {0};
-    uint8_t dstBuffer[4] = {0};
-
-    srcDesc.bufLength = 8;
-    srcDesc.buffer = nullptr;
-    dstDesc.bufLength = 4;
-    dstDesc.buffer = dstBuffer;
-
-    ret = FormatConverter::S16StereoToS16Mono(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-
-    srcDesc.bufLength = 8;
-    srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = 4;
-    dstDesc.buffer = nullptr;
-
-    ret = FormatConverter::S16StereoToS16Mono(srcDesc, dstDesc);
-    EXPECT_EQ(ret, -1);
-
-    srcDesc.bufLength = 8;
-    srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = 4;
-    dstDesc.buffer = dstBuffer;
-
-    ret = FormatConverter::S16StereoToS16Mono(srcDesc, dstDesc);
-    EXPECT_EQ(ret, 0);
-}
-
-/services/audio_service/test/unittest/client/capturer_in_client_unit_test.cpp
-/**
- * @tc.name  : Test OnOperationHandled API
- * @tc.type  : FUNC
- * @tc.number: OnOperationHandled_002
- * @tc.desc  : Test OnOperationHandled interface.
- */
-HWTEST(CapturerInClientUnitTest, OnOperationHandled_002, TestSize.Level1)
-{
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
-        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Operation operation = Operation::RESTORE_SESSION;
-    int64_t result = 1;
-    capturerInClientInner_->audioStreamTracker_ = nullptr;
-    int32_t ret = capturerInClientInner_->OnOperationHandled(operation, result);
+    sptr<AudioPolicyServer> server = GetPolicyServerTest();
+    ASSERT_TRUE(server != nullptr);
+    int32_t uid = 0;
+    int32_t mode = 0;
+    auto ret = server->SetAppConcurrencyMode(uid, mode);
     EXPECT_EQ(ret, SUCCESS);
+    server->interruptService_ = nullptr;
+    ret = server->SetAppConcurrencyMode(uid, mode);
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    EXPECT_EQ(ret, ERR_UNKNOWN);
 }
-
+ 
 /**
- * @tc.name  : Test GetFrameCount API
- * @tc.type  : FUNC
- * @tc.number: GetFrameCount_002
- * @tc.desc  : Test GetFrameCount interface.
+ * @tc.name  : Test AudioInterruptUnitTest.
+ * @tc.number: SetAppSilentOnDisplay_001
+ * @tc.desc  : Test SetAppSilentOnDisplay.
  */
-HWTEST(CapturerInClientUnitTest, GetFrameCount_002, TestSize.Level1)
+HWTEST(AudioInterruptUnitTest, SetAppSilentOnDisplay_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
-        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    uint32_t frameCount = -111;
-    capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
-
-    int32_t result = capturerInClientInner->GetFrameCount(frameCount);
-    EXPECT_EQ(result, SUCCESS);
-}
-
-/**
- * @tc.name  : Test Clear API
- * @tc.type  : FUNC
- * @tc.number: Clear_002
- * @tc.desc  : Test Clear interface.
- */
-HWTEST(CapturerInClientUnitTest, Clear_002, TestSize.Level1)
-{
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
-        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->capturerMode_ = CAPTURE_MODE_NORMAL;
-    capturerInClientInner_->cbBuffer_.reset(new uint8_t[VALUE_TEN]);
-    int32_t ret = capturerInClientInner_->Clear();
-    EXPECT_EQ(ret, ERR_INCORRECT_MODE);
-}
-
-/**
- * @tc.name  : Test StopAudioStream API
- * @tc.type  : FUNC
- * @tc.number: StopAudioStream_004
- * @tc.desc  : Test StopAudioStream interface.
- */
-HWTEST(CapturerInClientUnitTest, StopAudioStream_004, TestSize.Level1)
-{
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
-        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner->state_ = State::PAUSED;
-    capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
-    capturerInClientInner->ipcStream_ = std::make_shared<IpcStreamTest>().get();
-    bool result = capturerInClientInner->StopAudioStream();
-    EXPECT_EQ(capturerInClientInner->state_, State::INVALID);
-    EXPECT_EQ(result, false);
-}
-
-/**
- * @tc.name  : Test Read API
- * @tc.type  : FUNC
- * @tc.number: Read_002
- * @tc.desc  : Test Read interface.
- */
-HWTEST(CapturerInClientUnitTest, Read_002, TestSize.Level1)
-{
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
-        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->state_ = State::NEW;
-    size_t userSize = 16;
-    uint8_t buffer = 0;
-    bool isBlockingRead = false;
-    capturerInClientInner_->readLogTimes_ = VALUE_TEN;
-    int32_t ret = capturerInClientInner_->Read(buffer, userSize, isBlockingRead);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
-}
-
-services/audio_service/test/unittest/audio_service_common_unit_test.cpp
-/**
-* @tc.name  : Test GetTimeOfPos API
-* @tc.type  : FUNC
-* @tc.number: GetTimeOfPos_001
-* @tc.desc  : Test GetTimeOfPos interface.
-*/
-HWTEST(AudioServiceCommonUnitTest, GetTimeOfPos_001, TestSize.Level1)
-{
-    g_linearPosTimeModel = std::make_unique<LinearPosTimeModel>();
-
-    uint64_t posInFrame = 20;
-    int64_t invalidTime = -1;
-    g_linearPosTimeModel->stampFrame_ = 0;
-    g_linearPosTimeModel->sampleRate_ = 0;
-    int64_t retPos = g_linearPosTimeModel->GetTimeOfPos(posInFrame);
-    EXPECT_EQ(invalidTime, retPos);
-}
-
-/**
-* @tc.name  : Test GetTimeOfPos API
-* @tc.type  : FUNC
-* @tc.number: GetTimeOfPos_002
-* @tc.desc  : Test GetTimeOfPos interface.
-*/
-HWTEST(AudioServiceCommonUnitTest, GetTimeOfPos_002, TestSize.Level1)
-{
-    g_linearPosTimeModel = std::make_unique<LinearPosTimeModel>();
-
-    uint64_t posInFrame = 1;
-    int64_t invalidTime = -1;
-    g_linearPosTimeModel->stampFrame_ = 10;
-    g_linearPosTimeModel->sampleRate_ = 0;
-    int64_t retPos = g_linearPosTimeModel->GetTimeOfPos(posInFrame);
-    EXPECT_EQ(invalidTime, retPos);
-}
-
-/**
-* @tc.name  : Test Init API
-* @tc.type  : FUNC
-* @tc.number: Init_001
-* @tc.desc  : Test Init interface.
-*/
-HWTEST(AudioServiceCommonUnitTest, Init_001, TestSize.Level1)
-{
-    const size_t testMaxSize = 16 * 1024 * 1024 + 1;
-    size_t testSize = 3840;
-    std::unique_ptr<AudioRingCache> ringCache = AudioRingCache::Create(testSize);
-    EXPECT_NE(nullptr, ringCache);
-    ringCache->cacheTotalSize_ = testMaxSize;
-    bool result = ringCache->Init();
-    EXPECT_EQ(result, false);
-}
-
-/**
-* @tc.name  : Test Init API
-* @tc.type  : FUNC
-* @tc.number: Init_002
-* @tc.desc  : Test Init interface.
-*/
-HWTEST(AudioServiceCommonUnitTest, Init_002, TestSize.Level1)
-{
-    size_t testSize = 3840;
-    std::unique_ptr<AudioRingCache> ringCache = AudioRingCache::Create(testSize);
-    EXPECT_NE(nullptr, ringCache);
-    ringCache->cacheTotalSize_ = -1;
-    bool result = ringCache->Init();
-    EXPECT_EQ(result, false);
-}
-
-/**
-* @tc.name  : Test Create API
-* @tc.type  : FUNC
-* @tc.number: Create_001
-* @tc.desc  : Test Create interface.
-*/
-HWTEST(AudioServiceCommonUnitTest, Create_001, TestSize.Level1)
-{
-    size_t testSize = 3840;
-    size_t cacheSize = 16 * 1024 * 1024 + 1;
-    std::unique_ptr<AudioRingCache> ringCache = AudioRingCache::Create(testSize);
-    EXPECT_NE(nullptr, ringCache);
-    std::unique_ptr<AudioRingCache> result = ringCache->Create(cacheSize);
-    EXPECT_EQ(result, nullptr);
-}
-
-/services/audio_service/test/unittest/audio_group_manager_unit_test.cpp
-/**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: SetVolume_004
-* @tc.desc  : Test cross ring cache.
-*/
-HWTEST(AudioGroupManagerUnitTest, SetVolume_004, TestSize.Level1)
-{
-    AudioGroupManager audioGroupManager(1);
-    int32_t ret = audioGroupManager.SetVolume(STREAM_ALL, 0, 0, 123);
-    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
-}
-
-/**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: SetVolume_005
-* @tc.desc  : Test cross ring cache.
-*/
-HWTEST(AudioGroupManagerUnitTest, SetVolume_005, TestSize.Level1)
-{
-    AudioGroupManager audioGroupManager(1);
-    int32_t ret = audioGroupManager.SetVolume(STREAM_DEFAULT, 0, 0, 123);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-}
-
-/**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: SetVolume_006
-* @tc.desc  : Test cross ring cache.
-*/
-HWTEST(AudioGroupManagerUnitTest, SetVolume_006, TestSize.Level1)
-{
-    AudioGroupManager audioGroupManager(1);
-    audioGroupManager.connectType_ = CONNECT_TYPE_DISTRIBUTED;
-    int32_t ret = audioGroupManager.SetVolume(STREAM_DEFAULT, 0, 0, 123);
+    sptr<AudioPolicyServer> server = GetPolicyServerTest();
+    ASSERT_TRUE(server != nullptr);
+    int32_t displayId = 1;
+    auto ret = server->SetAppSilentOnDisplay(displayId);
     EXPECT_EQ(ret, SUCCESS);
+    server->interruptService_ = nullptr;
+    ret = server->SetAppSilentOnDisplay(displayId);
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    EXPECT_EQ(ret, ERR_UNKNOWN);
+}
+ 
+/**
+* @tc.name  : Test AudioInterruptUnitTest.
+* @tc.number: AudioPolicyServer_009
+* @tc.desc  : Test DeactivateAudioInterrupt.
+*/
+HWTEST(AudioInterruptUnitTest, AudioPolicyServer_001, TestSize.Level1)
+{
+    auto policyServerTest = GetPolicyServerTest();
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
+ 
+    AudioInterrupt audioInterrupt;
+    int32_t zoneID = 456;
+    pid_t pid = 1;
+    pid_t uid = 1;
+    int32_t strategy = 0;
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    int32_t result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID);
+    EXPECT_EQ(result, ERR_UNKNOWN);
+    EXPECT_EQ(policyServerTest->ActivateAudioSession(strategy), SUCCESS);
+    server->RegisteredStreamListenerClientDied(pid, uid);
 }
 
-/**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: GetVolume_004
-* @tc.desc  : Test cross ring cache.
-*/
-HWTEST(AudioGroupManagerUnitTest, GetVolume_004, TestSize.Level1)
-{
-    AudioGroupManager audioGroupManager(1);
-    int32_t ret = audioGroupManager.GetVolume(STREAM_ACCESSIBILITY, 123);
-    EXPECT_EQ(ret, 5);
-}
 
+
+
+#include "audio_errors.h"
+#include "standalone_mode_manager_unit_test.h"
+#include "audio_session_info.h"
+#include "audio_bundle_manager.h"
+#include "audio_volume.h"
+#include "audio_interrupt_service.h"
+using namespace testing::ext;
+ 
+namespace OHOS {
+namespace AudioStandard {
+ 
+void StandaloneModeManagerUnitTest::SetUpTestCase(void) {}
+void StandaloneModeManagerUnitTest::TearDownTestCase(void) {}
+void StandaloneModeManagerUnitTest::SetUp(void) {}
+void StandaloneModeManagerUnitTest::TearDown(void) {}
+ 
+static int32_t STANDALONE_MOED = 5;
+ 
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: GetVolume_005
-* @tc.desc  : Test cross ring cache.
+* @tc.name  : Test CheckAndRecordStandaloneApp.
+* @tc.number: StandaloneModeManagerUnitTest_001.
+* @tc.desc  : Test CheckAndRecordStandaloneApp.
 */
-HWTEST(AudioGroupManagerUnitTest, GetVolume_005, TestSize.Level1)
+HWTEST_F(StandaloneModeManagerUnitTest,StandaloneModeManagerUnitTest_001, TestSize.Level1)
 {
-    AudioGroupManager audioGroupManager(1);
-    audioGroupManager.connectType_ = CONNECT_TYPE_DISTRIBUTED;
-    int32_t ret = audioGroupManager.GetVolume(STREAM_ACCESSIBILITY, 123);
+    int32_t appUid = 1;
+    bool isOnlyRecordUid = false;
+    int32_t sessionId = 1;
+    int32_t ownerPid = 1;
+    int32_t displayId = 1;
+    int32_t mode = STANDALONE_MOED;
+    std::shared_ptr<AudioInterruptService> interruptService =
+        std::make_shared<AudioInterruptService>();
+    StandaloneModeManager::GetInstance().Init(interruptService);
+    StandaloneModeManager::GetInstance().EraseDeactivateAudioStream(
+        appUid, sessionId);
+    bool ret = StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(
+        appUid, isOnlyRecordUid, sessionId);
+    EXPECT_EQ(ret, false);
+    StandaloneModeManager::GetInstance().SetAppSilentOnDisplay(ownerPid, displayId);
+    ret = StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(
+        appUid, isOnlyRecordUid, sessionId);
+    EXPECT_EQ(ret, false);
+    ownerPid = 1;
+    StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(ownerPid);
+}
+ 
+/**
+* @tc.name  : Test SetAppSilentOnDisplay.
+* @tc.number: StandaloneModeManagerUnitTest_002.
+* @tc.desc  : Test SetAppSilentOnDisplay.
+*/
+HWTEST_F(StandaloneModeManagerUnitTest, StandaloneModeManagerUnitTest_002, TestSize.Level1)
+{
+    int32_t ownerPid = 1;
+    int32_t displayId = 1;
+    int32_t appUid = 1;
+    int32_t mode = STANDALONE_MOED;
+    std::shared_ptr<AudioInterruptService> interruptService =
+        std::make_shared<AudioInterruptService>();
+    StandaloneModeManager::GetInstance().Init(interruptService);
+    auto ret = StandaloneModeManager::GetInstance().SetAppSilentOnDisplay(ownerPid, displayId);
     EXPECT_EQ(ret, 0);
-}
-
-/**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: GetMaxVolume_004
-* @tc.desc  : Test cross ring cache.
-*/
-HWTEST(AudioGroupManagerUnitTest, GetMaxVolume_004, TestSize.Level1)
-{
-    AudioGroupManager audioGroupManager(1);
-    audioGroupManager.connectType_ = CONNECT_TYPE_DISTRIBUTED;
-    int32_t ret = audioGroupManager.GetMaxVolume(STREAM_ULTRASONIC);
+    displayId = -1;
+    ret = StandaloneModeManager::GetInstance().SetAppSilentOnDisplay(ownerPid, displayId);
     EXPECT_EQ(ret, 0);
+    ownerPid = 0;
+    ret = StandaloneModeManager::GetInstance().SetAppSilentOnDisplay(ownerPid, displayId);
+    EXPECT_EQ(ret, 0);
+    ownerPid = 1;
+    StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(ownerPid);
 }
-
+ 
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: IsStreamMute_003
-* @tc.desc  : Test cross ring cache.
+* @tc.name  : Test SetAppConcurrencyMode.
+* @tc.number: StandaloneModeManagerUnitTest_003
+* @tc.desc  : Test SetAppConcurrencyMode.
 */
-HWTEST(AudioGroupManagerUnitTest, IsStreamMute_003, TestSize.Level1)
+HWTEST_F(StandaloneModeManagerUnitTest, StandaloneModeManagerUnitTest_003, TestSize.Level1)
 {
-    AudioGroupManager audioGroupManager(1);
-    audioGroupManager.connectType_ = ConnectType::CONNECT_TYPE_LOCAL;
-    bool isMute = false;
-    int32_t ret = audioGroupManager.IsStreamMute(AudioStreamType::STREAM_ACCESSIBILITY, isMute);
-    EXPECT_EQ(ret, SUCCESS);
+    int32_t ownerPid = 1;
+    int32_t appUid = 1;
+    int32_t mode = STANDALONE_MOED;
+    int32_t sessionId = 1;
+    std::shared_ptr<AudioInterruptService> interruptService =
+        std::make_shared<AudioInterruptService>();
+    auto ret = StandaloneModeManager::GetInstance().SetAppConcurrencyMode(ownerPid, appUid, mode);
+    EXPECT_EQ(ret, 0);
+    StandaloneModeManager::GetInstance().EraseDeactivateAudioStream(appUid, sessionId);
+    StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(appUid, false, sessionId);
+    mode = 0;
+    ret = StandaloneModeManager::GetInstance().SetAppConcurrencyMode(ownerPid, appUid, mode);
+    EXPECT_EQ(ret, 0);
+    StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(appUid, false, sessionId);
+    StandaloneModeManager::GetInstance().EraseDeactivateAudioStream(appUid, sessionId);
+    mode = 1;
+    ret = StandaloneModeManager::GetInstance().SetAppConcurrencyMode(ownerPid, appUid, mode);
+    EXPECT_EQ(ret, 0);
+    ownerPid = 0;
+    ret = StandaloneModeManager::GetInstance().SetAppConcurrencyMode(ownerPid, appUid, mode);
+    EXPECT_EQ(ret, -1);
+    ownerPid = 1;
+    StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(ownerPid);
 }
-
+ 
 /**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: IsStreamMute_004
-* @tc.desc  : Test cross ring cache.
+* @tc.name  : Test ResumeAllStandaloneApp.
+* @tc.number: StandaloneModeManagerUnitTest_004
+* @tc.desc  : Test ResumeAllStandaloneApp.
 */
-HWTEST(AudioGroupManagerUnitTest, IsStreamMute_004, TestSize.Level1)
+HWTEST_F(StandaloneModeManagerUnitTest, StandaloneModeManagerUnitTest_004, TestSize.Level1)
 {
-    AudioGroupManager audioGroupManager(1);
-    audioGroupManager.connectType_ = ConnectType::CONNECT_TYPE_LOCAL;
-    bool isMute = false;
-    int32_t ret = audioGroupManager.IsStreamMute(AudioStreamType::STREAM_ALL, isMute);
-    EXPECT_EQ(ret, SUCCESS);
+    int32_t ownerPid = 1;
+    int32_t appUid = 1;
+    int32_t displayId = 1;
+    int32_t sessionId = 1;
+    bool isOnlyRecordUid = false;
+    int32_t mode = STANDALONE_MOED;
+    std::shared_ptr<AudioInterruptService> interruptService =
+        std::make_shared<AudioInterruptService>();
+    auto ret = StandaloneModeManager::GetInstance().SetAppSilentOnDisplay(ownerPid, displayId);
+    EXPECT_EQ(ret, 0);
+    StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(
+        appUid, isOnlyRecordUid, sessionId);
+    ownerPid = 0;
+    StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(ownerPid);
+    ownerPid = 1;
+    StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(ownerPid);
 }
-
-/frameworks/native/toneplayer/test/unittest/audio_toneplayer_unit_test.cpp
+ 
 /**
- * @tc.name  : Test TonePlayerImpl API
- * @tc.type  : FUNC
- * @tc.number: TonePlayerImpl_025
- * @tc.desc  : Test CheckToneStopped interface.
- */
-HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_025, TestSize.Level4)
+* @tc.name  : Test ResumeAllStandaloneApp.
+* @tc.number: StandaloneModeManagerUnitTest_005
+* @tc.desc  : Test ResumeAllStandaloneApp.
+*/
+HWTEST_F(StandaloneModeManagerUnitTest, StandaloneModeManagerUnitTest_005, TestSize.Level1)
 {
-    AudioRendererInfo rendererInfo = {};
-    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
-    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
-    rendererInfo.rendererFlags = 0;
-
-    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
-    EXPECT_NE(toneplayer, nullptr);
-
-    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
-    EXPECT_NE(toneplayer->toneInfo_, nullptr);
-
-    toneplayer->toneState_ = TonePlayerImpl::TONE_STARTING;
-    toneplayer->currSegment_ = 0;
-    toneplayer->totalSample_ = 9000;
-    toneplayer->maxSample_ = 8000;
-    toneplayer->toneInfo_->segments[1].duration = 1;
-
-    bool ret = toneplayer->CheckToneStopped();
-    EXPECT_EQ(ret, true);
+    auto standaloneModeManager = new StandaloneModeManager();
+    EXPECT_NE(standaloneModeManager, nullptr);
+    delete standaloneModeManager;
 }
-
+ 
 /**
- * @tc.name  : Test TonePlayerImpl API
- * @tc.type  : FUNC
- * @tc.number: TonePlayerImpl_026
- * @tc.desc  : Test CheckToneStopped interface.
- */
-HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_026, TestSize.Level4)
+* @tc.name  : Test ResumeAllStandaloneApp.
+* @tc.number: StandaloneModeManagerUnitTest_006
+* @tc.desc  : Test ResumeAllStandaloneApp.
+*/
+HWTEST_F(StandaloneModeManagerUnitTest, StandaloneModeManagerUnitTest_006, TestSize.Level1)
 {
-    AudioRendererInfo rendererInfo = {};
-    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
-    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
-    rendererInfo.rendererFlags = 0;
-
-    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
-    EXPECT_NE(toneplayer, nullptr);
-
-    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
-    EXPECT_NE(toneplayer->toneInfo_, nullptr);
-
-    toneplayer->toneState_ = TonePlayerImpl::TONE_STARTING;
-    toneplayer->currSegment_ = 0;
-    toneplayer->totalSample_ = 8000;
-    toneplayer->maxSample_ = 8000;
-    toneplayer->toneInfo_->segments[1].duration = 0;
-
-    bool ret = toneplayer->CheckToneStopped();
-    EXPECT_EQ(ret, true);
+    int32_t appUid = 1;
+    StandaloneModeManager::GetInstance().interruptService_ = nullptr;
+    EXPECT_EQ(StandaloneModeManager::GetInstance().interruptService_, nullptr);
+    StandaloneModeManager::GetInstance().RemoveExistingFocus(appUid);
+    StandaloneModeManager::GetInstance().ExitStandaloneAndResumeFocus(appUid);
 }
+ 
+} // namespace AudioStandard
+} // namespace OHOS
+
+
+
+
+int32_t AudioSystemManager::SetAppConcurrencyMode(const int32_t appUid, const int32_t mode)
+{
+    bool ret = PermissionUtil::VerifyIsSystemApp();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED,
+        "SetAppConcurrencyMode: No system permission");
+    ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
+        "SetAppConcurrencyMode: No system permission");
+    return AudioPolicyManager::GetInstance().SetAppConcurrencyMode(appUid, mode);
+}
+ 
+int32_t AudioSystemManager::SetAppSilentOnDisplay(const int32_t displayId)
+{
+    bool ret = PermissionUtil::VerifyIsSystemApp();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED,
+        "SetAppSilentOnDisplay: No system permission");
+    ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
+        "SetAppSilentOnDisplay: No system permission");
+    return AudioPolicyManager::GetInstance().SetAppSilentOnDisplay(displayId);
+}
+
+
+
+
+
+"fuzztest/standalonemodemanager_fuzzer:fuzztest",
+
+
+
+    AudioPolicyManager::GetInstance().SetAppConcurrencyMode(appUid, mode);
+    AudioPolicyManager::GetInstance().SetAppSilentOnDisplay(displayId);
+
+
+
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+ 
+import("//build/ohos.gni")
+import("//build/test.gni")
+import("../../../accessibility.gni")
+import("../../../appgallery.gni")
+import("../../../av_session.gni")
+import("../../../bluetooth_part.gni")
+import("../../../config.gni")
+ 
+ohos_fuzztest("StandaloneModeManagerFuzzTest") {
+  module_out_path = "audio_framework/audio_framework_route"
+  fuzz_config_file = "../standalonemodemanager_fuzzer"
+ 
+  include_dirs = [
+    "../../../services/audio_policy/server/include",
+    "../../../services/audio_policy/server/domain/zone/include",
+    "../../../services/audio_policy/server/src",
+    "../../../services/audio_policy/server/src/interface",
+    "../../../services/audio_policy/server/infra/async_action_handler/include",
+    "../../../services/audio_policy/server/domain/interrupt/include",
+    "../../../services/audio_policy/server/src/service/service",
+    "../../../services/audio_policy/client/include",
+    "../../../services/audio_policy/client/src",
+    "../../../services/audio_policy/client/proxy",
+    "../../../services/audio_policy/common/include",
+    "../../../frameworks/native/audiopolicy/include",
+  ]
+ 
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+    "-fno-access-control",
+  ]
+ 
+  sources = [
+    "standalone_mode_manager_fuzzer.cpp",
+  ]
+ 
+  cflags_cc = [ "-std=c++20" ]
+ 
+  deps = [
+    "../../../services/audio_policy:audio_policy_service_static",
+    "../../../services/audio_policy:audio_policy_service",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_service/idl:audio_framework_interface",
+  ]
+  external_deps = [
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:app_manager",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "ability_runtime:wantagent_innerkits",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "background_task_mgr:bgtaskmgr_innerkits",
+    "bluetooth:btframework",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_5.0",
+    "eventhandler:libeventhandler",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+ 
+  configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
+ 
+  defines = []
+  if (audio_framework_enable_unittest_debug) {
+    defines += [ "INTERRUPT_UNITTEST" ]
+  }
+ 
+  if (audio_framework_feature_double_pnp_detect) {
+    defines += [ "AUDIO_DOUBLE_PNP_DETECT" ]
+  }
+ 
+  if (build_variant == "user") {
+    defines += [ "AUDIO_BUILD_VARIANT_USER" ]
+  } else if (build_variant == "root") {
+    defines += [ "AUDIO_BUILD_VARIANT_ROOT" ]
+  }
+ 
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
+ 
+  if (audio_framework_feature_support_os_account) {
+    defines += [ "SUPPORT_USER_ACCOUNT" ]
+  }
+ 
+  if (audio_framework_feature_dtmf_tone) {
+    defines += [ "FEATURE_DTMF_TONE" ]
+  }
+ 
+  if (audio_framework_feature_usb_audio) {
+    defines += [ "USB_ENABLE" ]
+    external_deps += [ "usb_manager:usbsrv_client" ]
+  }
+ 
+  if (audio_framework_config_policy_enable) {
+    defines += [ "USE_CONFIG_POLICY" ]
+    external_deps += [ "config_policy:configpolicy_util" ]
+  }
+ 
+  if (appgallery_part_enable == true) {
+    defines += [ "FEATURE_APPGALLERY" ]
+  }
+ 
+  if (bluetooth_part_enable == true) {
+    deps +=
+        [ "../../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
+    external_deps += [ "bluetooth:btframework" ]
+  }
+ 
+  if (avsession_part_enable == true) {
+    external_deps += [
+      "ability_base:want",
+      "ability_runtime:wantagent_innerkits",
+      "av_session:avsession_client",
+      "input:libmmi-client",
+    ]
+  }
+ 
+  if (audio_framework_feature_input) {
+    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
+    external_deps += [ "input:libmmi-client" ]
+  }
+ 
+  if (audio_framework_feature_device_manager) {
+    defines += [ "FEATURE_DEVICE_MANAGER" ]
+    external_deps += [ "device_manager:devicemanagersdk" ]
+  }
+ 
+  if (accessibility_enable == true) {
+    cflags += [ "-DACCESSIBILITY_ENABLE" ]
+  }
+ 
+  if (bluetooth_part_enable == true) {
+    cflags += [ "-DBLUETOOTH_ENABLE" ]
+  }
+ 
+  if (avsession_part_enable == true) {
+    cflags += [ "-DAVSESSION_ENABLE" ]
+  }
+}
+ 
+group("fuzztest") {
+  testonly = true
+  deps = [ ":StandaloneModeManagerFuzzTest" ]
+}
+
+
+
+
+
+
+
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) 2024 Huawei Device Co., Ltd.
+ 
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+ 
+          http://www.apache.org/licenses/LICENSE-2.0
+ 
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<fuzz_config>
+  <fuzztest>
+    <!-- maximum length of a test input -->
+    <max_len>1000</max_len>
+    <!-- maximum total time in seconds to run the fuzzer -->
+    <max_total_time>300</max_total_time>
+    <!-- memory usage limit in Mb -->
+    <rss_limit_mb>4096</rss_limit_mb>
+  </fuzztest>
+</fuzz_config>
+
+
+
+
+
+/*
+* Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+ 
+#include "standalone_mode_manager.h"
+#include "audio_interrupt_service.h"
+#include "audio_session_info.h"
+#include "audio_bundle_manager.h"
+#include "audio_volume.h"
+using namespace std;
+ 
+namespace OHOS {
+namespace AudioStandard {
+ 
+static const uint8_t* RAW_DATA = nullptr;
+static size_t g_dataSize = 0;
+static size_t g_pos;
+const size_t THRESHOLD = 10;
+typedef void (*TestPtr)();
+ 
+template<class T>
+uint32_t GetArrLength(T& arr)
+{
+    if (arr == nullptr) {
+        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
+        return 0;
+    }
+    return sizeof(arr) / sizeof(arr[0]);
+}
+ 
+template<class T>
+T GetData()
+{
+    T object {};
+    size_t objectSize = sizeof(object);
+    if (g_dataSize < g_pos) {
+        return object;
+    }
+    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
+        return object;
+    }
+    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
+    if (ret != EOK) {
+        return {};
+    }
+    g_pos += objectSize;
+    return object;
+}
+ 
+void StandaloneModeManagerInItFuzzTest()
+{
+    std::shared_ptr<AudioInterruptService> interruptService =
+        std::make_shared<AudioInterruptService>();
+    StandaloneModeManager::GetInstance().Init(interruptService);
+}
+ 
+void StandaloneModeManagerCheckAndRecordStandaloneAppFuzzTest()
+{
+    std::shared_ptr<AudioInterruptService> interruptService =
+        std::make_shared<AudioInterruptService>();
+    StandaloneModeManager::GetInstance().Init(interruptService);
+    int32_t appUid = GetData<int32_t>();
+    int32_t sessionId = GetData<int32_t>();
+    bool isOnlyRecordUid = GetData<bool>();
+    StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(appUid,
+        isOnlyRecordUid, sessionId);
+}
+ 
+void StandaloneModeManagerSetAppSilentOnDisplayFuzzTest()
+{
+    std::shared_ptr<AudioInterruptService> interruptService =
+        std::make_shared<AudioInterruptService>();
+    StandaloneModeManager::GetInstance().Init(interruptService);
+    int32_t ownerPid = GetData<int32_t>();
+    int32_t displayId = GetData<int32_t>();
+    StandaloneModeManager::GetInstance().SetAppSilentOnDisplay(ownerPid, displayId);
+}
+ 
+void StandaloneModeManagerSetAppConcurrencyModeFuzzTest()
+{
+    std::shared_ptr<AudioInterruptService> interruptService =
+        std::make_shared<AudioInterruptService>();
+    StandaloneModeManager::GetInstance().Init(interruptService);
+    int32_t ownerPid = GetData<int32_t>();
+    int32_t appUid = GetData<int32_t>();
+    int32_t mode = GetData<int32_t>();
+    StandaloneModeManager::GetInstance().SetAppConcurrencyMode(ownerPid, appUid, mode);
+}
+ 
+void StandaloneModeManagerEraseDeactivateAudioStreamFuzzTest()
+{
+    std::shared_ptr<AudioInterruptService> interruptService =
+        std::make_shared<AudioInterruptService>();
+    StandaloneModeManager::GetInstance().Init(interruptService);
+    int32_t appUid = GetData<int32_t>();
+    int32_t sessionId = GetData<int32_t>();
+    StandaloneModeManager::GetInstance().EraseDeactivateAudioStream(appUid, sessionId);
+}
+ 
+void StandaloneModeManagerResumeAllStandaloneAppFuzzTest()
+{
+    std::shared_ptr<AudioInterruptService> interruptService =
+        std::make_shared<AudioInterruptService>();
+    StandaloneModeManager::GetInstance().Init(interruptService);
+    int32_t appUid = GetData<int32_t>();
+    StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(appUid);
+}
+ 
+TestPtr g_testPtrs[] = {
+    StandaloneModeManagerInItFuzzTest,
+    StandaloneModeManagerCheckAndRecordStandaloneAppFuzzTest,
+    StandaloneModeManagerSetAppSilentOnDisplayFuzzTest,
+    StandaloneModeManagerSetAppConcurrencyModeFuzzTest,
+    StandaloneModeManagerEraseDeactivateAudioStreamFuzzTest,
+    StandaloneModeManagerResumeAllStandaloneAppFuzzTest,
+};
+ 
+void FuzzTest(const uint8_t* rawData, size_t size)
+{
+    if (rawData == nullptr) {
+        return;
+    }
+ 
+    RAW_DATA = rawData;
+    g_dataSize = size;
+    g_pos = 0;
+ 
+    uint32_t code = GetData<uint32_t>();
+    uint32_t len = GetArrLength(g_testPtrs);
+    if (len > 0) {
+        g_testPtrs[code % len]();
+    } else {
+        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
+    }
+    return;
+}
+ 
+} // namespace AudioStandard
+} // namesapce OHOS
+ 
+/* Fuzzer entry point */
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+{
+    if (size < OHOS::AudioStandard::THRESHOLD) {
+        return 0;
+    }
+    OHOS::AudioStandard::FuzzTest(data, size);
+    return 0;
+}
+
+
+
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    int32_t result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID
 
 
