@@ -3203,6 +3203,5 @@ HWTEST(AudioServiceUnitTest, ConfigCoreServiceProvider_003, TestSize.Level1)
     int32_t ret = coreServiceHandler.ConfigCoreServiceProvider(coreServiceProvider);
     EXPECT_EQ(ret, ERR_INVALID_OPERATION);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
