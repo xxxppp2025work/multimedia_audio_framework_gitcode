@@ -3212,14 +3212,17 @@ HWTEST(AudioServiceUnitTest, ConfigCoreServiceProvider_003, TestSize.Level1)
  */
 HWTEST(AudioServiceUnitTest, SendInterruptEventToAudioService_001, TestSize.Level1)
 {
+    AudioService *audioService = AudioService::GetInstance();
+    EXPECT_NE(audioService, nullptr);
+
     InterruptEventInternal interruptEvent = { };
     interruptEvent.hintType = INTERRUPT_HINT_RESUME;
     int32_t sessionId = 13579;
-    AudioService::GetInstance()->SendInterruptEventToAudioService(sessionId, interruptEvent);
-    std::lock_guard<std::mutex> lock(resumeInterruptEventMutex_);
-    auto iter = resumeInterruptEventMap_.find(sessionId);
-    EXPECT_EQ(iter != resumeInterruptEventMap_.end(), true);
-    resumeInterruptEventMap_.erase[sessionId];
+    audioService->SendInterruptEventToAudioService(sessionId, interruptEvent);
+    std::lock_guard<std::mutex> lock(audioService->resumeInterruptEventMutex_);
+    auto iter = audioService->resumeInterruptEventMap_.find(sessionId);
+    EXPECT_EQ(iter != audioService->resumeInterruptEventMap_.end(), true);
+    audioService->resumeInterruptEventMap_.erase[sessionId];
 }
 /**
  * @tc.name  : Test SendInterruptEventToAudioService API
@@ -3229,14 +3232,17 @@ HWTEST(AudioServiceUnitTest, SendInterruptEventToAudioService_001, TestSize.Leve
  */
 HWTEST(AudioServiceUnitTest, SendInterruptEventToAudioService_002, TestSize.Level1)
 {
+    AudioService *audioService = AudioService::GetInstance();
+    EXPECT_NE(audioService, nullptr);
+
     InterruptEventInternal interruptEvent = { };
     interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
     int32_t sessionId = 24678;
-    AudioService::GetInstance()->SendInterruptEventToAudioService(sessionId, interruptEvent);
-    std::lock_guard<std::mutex> lock(pasueInterruptEventMutex_);
-    auto iter = pauseInterruptEventMap_.find(sessionId);
-    EXPECT_EQ(iter != pauseInterruptEventMap_.end(), true);
-    resumeInterruptEventMap_.erase[sessionId];
+    audioService->SendInterruptEventToAudioService(sessionId, interruptEvent);
+    std::lock_guard<std::mutex> lock(audioService->pasueInterruptEventMutex_);
+    auto iter = audioService->pauseInterruptEventMap_.find(sessionId);
+    EXPECT_EQ(iter != audioService->pauseInterruptEventMap_.end(), true);
+    audioService->resumeInterruptEventMap_.erase[sessionId];
 }
 
 /**
@@ -3247,41 +3253,80 @@ HWTEST(AudioServiceUnitTest, SendInterruptEventToAudioService_002, TestSize.Leve
  */
 HWTEST(AudioServiceUnitTest, resumeInterruptEventMap_001, TestSize.Level1)
 {
+    AudioService *audioService = AudioService::GetInstance();
+    EXPECT_NE(audioService, nullptr);
+
     InterruptEventInternal interruptEvent = { };
     interruptEvent.hintType = INTERRUPT_HINT_RESUME;
     int32_t sessionId = 123456;
 
-    std::lock_guard<std::mutex> lock(resumeInterruptEventMutex_);
-    auto iter = resumeInterruptEventMap_.find(sessionId);
-    EXPECT_EQ(iter == resumeInterruptEventMap_.end(), true);
+    std::lock_guard<std::mutex> lock(audioService->resumeInterruptEventMutex_);
+    auto iter = audioService->resumeInterruptEventMap_.find(sessionId);
+    EXPECT_EQ(iter == audioService->resumeInterruptEventMap_.end(), true);
     lock.unlock();
     // test Update when sessionId not in map
-    AudioService::GetInstance()->UpdateResumeInterruptEventMap(sessionId, interruptEvent);
-    std::lock_guard<std::mutex> lock1(resumeInterruptEventMutex_);
-    auto iter = resumeInterruptEventMap_.find(sessionId);
-    EXPECT_EQ(iter != resumeInterruptEventMap_.end(), true);
+    audioService->UpdateResumeInterruptEventMap(sessionId, interruptEvent);
+    std::lock_guard<std::mutex> lock1(audioService->resumeInterruptEventMutex_);
+    auto iter = audioService->resumeInterruptEventMap_.find(sessionId);
+    EXPECT_EQ(iter != audioService->resumeInterruptEventMap_.end(), true);
     lock1.unlock();
     // test Update when sessionId in map
     interruptEvent.hintType = INTERRUPT_HINT_MUTE;
-    AudioService::GetInstance()->UpdateResumeInterruptEventMap(sessionId, interruptEvent);
-    std::lock_guard<std::mutex> lock2(resumeInterruptEventMutex_);
-    auto iter = resumeInterruptEventMap_.find(sessionId);
-    EXPECT_EQ(iter != resumeInterruptEventMap_.end(), true);
+    audioService->UpdateResumeInterruptEventMap(sessionId, interruptEvent);
+    std::lock_guard<std::mutex> lock2(audioService->resumeInterruptEventMutex_);
+    auto iter = audioService->resumeInterruptEventMap_.find(sessionId);
+    EXPECT_EQ(iter != audioService->resumeInterruptEventMap_.end(), true);
     EXPECT_EQ(iter->second.hintType, INTERRUPT_HINT_MUTE);
     lock2.unlock();
 
     // test Remove when sessionId in map
-    AudioService::GetInstance()->RemoveResumeInterruptEventMap(sessionId);
-    std::lock_guard<std::mutex> lock3(resumeInterruptEventMutex_);
-    auto iter = resumeInterruptEventMap_.find(sessionId);
-    EXPECT_EQ(iter == resumeInterruptEventMap_.end(), true);
-    lock3.unlock();
+    bool res = audioService->RemoveResumeInterruptEventMap(sessionId);
+    EXPECT_EQ(res, true);
     // test Remove when sessionId not in map
-    AudioService::GetInstance()->RemoveResumeInterruptEventMap(sessionId);
-    std::lock_guard<std::mutex> lock4(resumeInterruptEventMutex_);
-    auto iter = resumeInterruptEventMap_.find(sessionId);
-    EXPECT_EQ(iter == resumeInterruptEventMap_.end(), false);
-    lock4.unlock();
+    res = audioService->RemoveResumeInterruptEventMap(sessionId);
+    EXPECT_EQ(res, false);
+}
+
+/**
+ * @tc.name  : Test pauseInterruptEventMap_ API
+ * @tc.type  : FUNC
+ * @tc.number: pauseInterruptEventMap_001,
+ * @tc.desc  : Test pauseInterruptEventMap_001 interface.
+ */
+HWTEST(AudioServiceUnitTest, pauseInterruptEventMap_001, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    EXPECT_NE(audioService, nullptr);
+
+    InterruptEventInternal interruptEvent = { };
+    interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
+    int32_t sessionId = 246810;
+
+    std::lock_guard<std::mutex> lock(audioService->pauseInterruptEventMutex_);
+    auto iter = audioService->pauseInterruptEventMap_.find(sessionId);
+    EXPECT_EQ(iter == audioService->pauseInterruptEventMap_.end(), true);
+    lock.unlock();
+    // test Update when sessionId not in map
+    audioService->UpdatePauseInterruptEventMap(sessionId, interruptEvent);
+    std::lock_guard<std::mutex> lock1(audioService->pauseInterruptEventMutex_);
+    auto iter = audioService->pauseInterruptEventMap_.find(sessionId);
+    EXPECT_EQ(iter != audioService->pauseInterruptEventMap_.end(), true);
+    lock1.unlock();
+    // test Update when sessionId in map
+    interruptEvent.hintType = INTERRUPT_HINT_MUTE;
+    audioService->UpdatePauseInterruptEventMap(sessionId, interruptEvent);
+    std::lock_guard<std::mutex> lock2(audioService->pauseInterruptEventMutex_);
+    auto iter = audioService->pauseInterruptEventMap_.find(sessionId);
+    EXPECT_EQ(iter != audioService->pauseInterruptEventMap_.end(), true);
+    EXPECT_EQ(iter->second.hintType, INTERRUPT_HINT_MUTE);
+    lock2.unlock();
+
+    // test Remove when sessionId in map
+    bool res = audioService->RemovePauseInterruptEventMap(sessionId);
+    EXPECT_EQ(res, true);
+    // test Remove when sessionId not in map
+    res = audioService->RemovePauseInterruptEventMap(sessionId);
+    EXPECT_EQ(res, false);
 }
 
 } // namespace AudioStandard
