@@ -1359,10 +1359,10 @@ int32_t AudioSystemManager::SetAppConcurrencyMode(const int32_t appUid, const in
     return AudioPolicyManager::GetInstance().SetAppConcurrencyMode(appUid, mode);
 }
 
-int32_t AudioSystemManager::SetAppSlientOnDisplay(const int32_t displayId)
+int32_t AudioSystemManager::SetAppSilentOnDisplay(const int32_t displayId)
 {
     AUDIO_DEBUG_LOG("stub implementation");
-    return AudioPolicyManager::GetInstance().SetAppSlientOnDisplay(displayId);
+    return AudioPolicyManager::GetInstance().SetAppSilentOnDisplay(displayId);
 }
 
 int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const

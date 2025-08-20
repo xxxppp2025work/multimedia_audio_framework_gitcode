@@ -878,7 +878,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 20
      */
-    int32_t SetAppSlientOnDisplay(const int32_t displayId);
+    int32_t SetAppSilentOnDisplay(const int32_t displayId);
 
     /**
      * @brief Deactivactivate audio Interrupt

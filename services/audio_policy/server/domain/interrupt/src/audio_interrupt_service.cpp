@@ -2758,7 +2758,7 @@ void AudioInterruptService::RemoveExistingFocus(
         return;
     }
 
-    for (auto itZone : zonesMap_) {
+    for (const auto& itZone : zonesMap_) {
         bool isNeedRefresh = false;
         auto audioFocusInfoList = itZone.second->audioFocusInfoList;
         for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end();) {
