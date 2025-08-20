@@ -3251,30 +3251,38 @@ HWTEST(AudioServiceUnitTest, resumeInterruptEventMap_001, TestSize.Level1)
     interruptEvent.hintType = INTERRUPT_HINT_RESUME;
     int32_t sessionId = 123456;
 
-    std::lock_guard<std::mutex> lock(pasueInterruptEventMutex_);
+    std::lock_guard<std::mutex> lock(resumeInterruptEventMutex_);
     auto iter = resumeInterruptEventMap_.find(sessionId);
     EXPECT_EQ(iter == resumeInterruptEventMap_.end(), true);
     lock.unlock();
-
+    // test Remove when sessionId not in map
     AudioService::GetInstance()->UpdateResumeInterruptEventMap(sessionId, interruptEvent);
-    std::lock_guard<std::mutex> lock(pasueInterruptEventMutex_);
+    std::lock_guard<std::mutex> lock1(resumeInterruptEventMutex_);
     auto iter = resumeInterruptEventMap_.find(sessionId);
-    EXPECT_NE(iter != pauseInterruptEventMap_.end(), true);
-    lock.unlock();
+    EXPECT_EQ(iter != resumeInterruptEventMap_.end(), true);
+    lock1.unlock();
+    // test Update when sessionId in map
+    interruptEvent.hintType = INTERRUPT_HINT_MUTE;
+    AudioService::GetInstance()->UpdateResumeInterruptEventMap(sessionId, interruptEvent);
+    std::lock_guard<std::mutex> lock2(resumeInterruptEventMutex_);
+    auto iter = resumeInterruptEventMap_.find(sessionId);
+    EXPECT_EQ(iter != resumeInterruptEventMap_.end(), true);
+    EXPECT_EQ(iter->second.hintType, INTERRUPT_HINT_MUTE);
+    lock2.unlock();
+
+    // test Remove when sessionId in map
+    AudioService::GetInstance()->RemoveResumeInterruptEventMap(sessionId);
+    std::lock_guard<std::mutex> lock3(resumeInterruptEventMutex_);
+    auto iter = resumeInterruptEventMap_.find(sessionId);
+    EXPECT_EQ(iter == resumeInterruptEventMap_.end(), true);
+    lock3.unlock();
+    // test Remove when sessionId not in map
+    AudioService::GetInstance()->RemoveResumeInterruptEventMap(sessionId);
+    std::lock_guard<std::mutex> lock4(resumeInterruptEventMutex_);
+    auto iter = resumeInterruptEventMap_.find(sessionId);
+    EXPECT_EQ(iter == resumeInterruptEventMap_.end(), false);
+    lock4.unlock();
 }
 
 } // namespace AudioStandard
 } // namespace OHOS
-
-void AudioService::SendInterruptEventToAudioService(uint32_t sessionId,
-    InterruptEventInternal interruptEvent)
-{
-    interruptEvent.eventTimestamp = ClockTime::GetCurNano();
-    AUDIO_INFO_LOG("Recive InterruptEvent:[%{public}d] from InterruptService", interruptEvent.hintType);
-    if (interruptEvent.hintType == INTERRUPT_HINT_RESUME) {
-        UpdateResumeInterruptEventMap(sessionId, interruptEvent);
-    }
-    if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE) {
-        UpdatePauseInterruptEventMap(sessionId, interruptEvent);
-    }
-}
