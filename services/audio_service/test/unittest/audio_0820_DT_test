@@ -1,0 +1,634 @@
+/services/audio_service/test/unittest/format_converter_unit_test.cpp
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: F32MonoToS16Stereo_002
+ * @tc.desc  : Test FormatConverter interface.
+ */
+HWTEST_F(FormatConverterUnitTest, F32MonoToS16Stereo_002, TestSize.Level1)
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    int32_t ret = -1;
+    uint8_t srcBuffer[4] = {0};
+    uint8_t dstBuffer[4] = {0};
+
+    srcDesc.bufLength = 4;
+    srcDesc.buffer = nullptr;
+    dstDesc.bufLength = 4;
+    dstDesc.buffer = dstBuffer;
+
+    ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    srcDesc.bufLength = 4;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = 4;
+    dstDesc.buffer = nullptr;
+
+    ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    srcDesc.bufLength = 5;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = 5;
+    dstDesc.buffer = dstBuffer;
+
+    ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: F32MonoToS16Stereo_CapMax_001
+ * @tc.desc  : Test FormatConverter interface.
+ */
+HWTEST_F(FormatConverterUnitTest, F32MonoToS16Stereo_CapMax_001, TestSize.Level1)
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    int32_t ret = -1;
+    uint8_t srcBuffer[4] = {2};
+    uint8_t dstBuffer[4] = {0};
+
+    srcDesc.bufLength = 4;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = 4;
+    dstDesc.buffer = dstBuffer;
+
+    ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: F32MonoToS16Stereo_CapMax_002
+ * @tc.desc  : Test FormatConverter interface.
+ */
+HWTEST_F(FormatConverterUnitTest, F32MonoToS16Stereo_CapMax_002, TestSize.Level1)
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    int32_t ret = -1;
+    uint8_t srcBuffer[4] = {-2};
+    uint8_t dstBuffer[4] = {0};
+
+    srcDesc.bufLength = 4;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = 4;
+    dstDesc.buffer = dstBuffer;
+
+    ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: F32StereoToS16Stereo_002
+ * @tc.desc  : Test FormatConverter interface.
+ */
+HWTEST_F(FormatConverterUnitTest, F32StereoToS16Stereo_002, TestSize.Level1)
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    int32_t ret = -1;
+    uint8_t srcBuffer[8] = {0};
+    uint8_t dstBuffer[4] = {0};
+
+    srcDesc.bufLength = 4;
+    srcDesc.buffer = nullptr;
+    dstDesc.bufLength = 2;
+    dstDesc.buffer = dstBuffer;
+
+    ret = FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    srcDesc.bufLength = 4;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = 2;
+    dstDesc.buffer = nullptr;
+
+    ret = FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    srcDesc.bufLength = 6;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = 3;
+    dstDesc.buffer = dstBuffer;
+
+    ret = FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S16StereoToF32Mono_002
+ * @tc.desc  : Test FormatConverter interface.
+ */
+HWTEST_F(FormatConverterUnitTest, S16StereoToF32Mono_002, TestSize.Level1)
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    int32_t ret = -1;
+    uint8_t srcBuffer[8] = {0};
+    uint8_t dstBuffer[4] = {0};
+
+    srcDesc.bufLength = 4;
+    srcDesc.buffer = nullptr;
+    dstDesc.bufLength = 4;
+    dstDesc.buffer = dstBuffer;
+
+    ret = FormatConverter::S16StereoToF32Mono(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    srcDesc.bufLength = 4;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = 4;
+    dstDesc.buffer = nullptr;
+
+    ret = FormatConverter::S16StereoToF32Mono(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S16MonoToS32Stereo_001
+ * @tc.desc  : Test FormatConverter interface.
+ */
+HWTEST_F(FormatConverterUnitTest, S16MonoToS32Stereo_001, TestSize.Level1)
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    int32_t ret = -1;
+    uint8_t srcBuffer[8] = {0};
+    uint8_t dstBuffer[4] = {0};
+
+    srcDesc.bufLength = 2;
+    srcDesc.buffer = nullptr;
+    dstDesc.bufLength = 8;
+    dstDesc.buffer = dstBuffer;
+
+    ret = FormatConverter::S16MonoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    srcDesc.bufLength = 2;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = 8;
+    dstDesc.buffer = nullptr;
+
+    ret = FormatConverter::S16MonoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    srcDesc.bufLength = 4;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = 8;
+    dstDesc.buffer = dstBuffer;
+
+    ret = FormatConverter::S16MonoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S32StereoToS16Stereo_001
+ * @tc.desc  : Test FormatConverter interface.
+ */
+HWTEST_F(FormatConverterUnitTest, S32StereoToS16Stereo_001, TestSize.Level1)
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    int32_t ret = -1;
+    uint8_t srcBuffer[8] = {0};
+    uint8_t dstBuffer[4] = {0};
+
+    srcDesc.bufLength = 8;
+    srcDesc.buffer = nullptr;
+    dstDesc.bufLength = 4;
+    dstDesc.buffer = dstBuffer;
+
+    ret = FormatConverter::S32StereoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    srcDesc.bufLength = 8;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = 4;
+    dstDesc.buffer = nullptr;
+
+    ret = FormatConverter::S32StereoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S32MonoToS16Stereo_001
+ * @tc.desc  : Test FormatConverter interface.
+ */
+HWTEST_F(FormatConverterUnitTest, S32MonoToS16Stereo_001, TestSize.Level1)
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    int32_t ret = -1;
+    uint8_t srcBuffer[8] = {0};
+    uint8_t dstBuffer[4] = {0};
+
+    srcDesc.bufLength = 4;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = 4;
+    dstDesc.buffer = dstBuffer;
+
+    ret = FormatConverter::S32MonoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S16StereoToS16Mono_001
+ * @tc.desc  : Test FormatConverter interface.
+ */
+HWTEST_F(FormatConverterUnitTest, S16StereoToS16Mono_001, TestSize.Level1)
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    int32_t ret = -1;
+    uint8_t srcBuffer[8] = {0};
+    uint8_t dstBuffer[4] = {0};
+
+    srcDesc.bufLength = 8;
+    srcDesc.buffer = nullptr;
+    dstDesc.bufLength = 4;
+    dstDesc.buffer = dstBuffer;
+
+    ret = FormatConverter::S16StereoToS16Mono(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    srcDesc.bufLength = 8;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = 4;
+    dstDesc.buffer = nullptr;
+
+    ret = FormatConverter::S16StereoToS16Mono(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    srcDesc.bufLength = 8;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = 4;
+    dstDesc.buffer = dstBuffer;
+
+    ret = FormatConverter::S16StereoToS16Mono(srcDesc, dstDesc);
+    EXPECT_EQ(ret, 0);
+}
+
+/services/audio_service/test/unittest/client/capturer_in_client_unit_test.cpp
+/**
+ * @tc.name  : Test OnOperationHandled API
+ * @tc.type  : FUNC
+ * @tc.number: OnOperationHandled_002
+ * @tc.desc  : Test OnOperationHandled interface.
+ */
+HWTEST(CapturerInClientUnitTest, OnOperationHandled_002, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Operation operation = Operation::RESTORE_SESSION;
+    int64_t result = 1;
+    capturerInClientInner_->audioStreamTracker_ = nullptr;
+    int32_t ret = capturerInClientInner_->OnOperationHandled(operation, result);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test GetFrameCount API
+ * @tc.type  : FUNC
+ * @tc.number: GetFrameCount_002
+ * @tc.desc  : Test GetFrameCount interface.
+ */
+HWTEST(CapturerInClientUnitTest, GetFrameCount_002, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    uint32_t frameCount = -111;
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
+
+    int32_t result = capturerInClientInner->GetFrameCount(frameCount);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test Clear API
+ * @tc.type  : FUNC
+ * @tc.number: Clear_002
+ * @tc.desc  : Test Clear interface.
+ */
+HWTEST(CapturerInClientUnitTest, Clear_002, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner_->capturerMode_ = CAPTURE_MODE_NORMAL;
+    capturerInClientInner_->cbBuffer_.reset(new uint8_t[VALUE_TEN]);
+    int32_t ret = capturerInClientInner_->Clear();
+    EXPECT_EQ(ret, ERR_INCORRECT_MODE);
+}
+
+/**
+ * @tc.name  : Test StopAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: StopAudioStream_004
+ * @tc.desc  : Test StopAudioStream interface.
+ */
+HWTEST(CapturerInClientUnitTest, StopAudioStream_004, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->state_ = State::PAUSED;
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
+    capturerInClientInner->ipcStream_ = std::make_shared<IpcStreamTest>().get();
+    bool result = capturerInClientInner->StopAudioStream();
+    EXPECT_EQ(capturerInClientInner->state_, State::INVALID);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test Read API
+ * @tc.type  : FUNC
+ * @tc.number: Read_002
+ * @tc.desc  : Test Read interface.
+ */
+HWTEST(CapturerInClientUnitTest, Read_002, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner_->state_ = State::NEW;
+    size_t userSize = 16;
+    uint8_t buffer = 0;
+    bool isBlockingRead = false;
+    capturerInClientInner_->readLogTimes_ = VALUE_TEN;
+    int32_t ret = capturerInClientInner_->Read(buffer, userSize, isBlockingRead);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+}
+
+services/audio_service/test/unittest/audio_service_common_unit_test.cpp
+/**
+* @tc.name  : Test GetTimeOfPos API
+* @tc.type  : FUNC
+* @tc.number: GetTimeOfPos_001
+* @tc.desc  : Test GetTimeOfPos interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, GetTimeOfPos_001, TestSize.Level1)
+{
+    g_linearPosTimeModel = std::make_unique<LinearPosTimeModel>();
+
+    uint64_t posInFrame = 20;
+    int64_t invalidTime = -1;
+    g_linearPosTimeModel->stampFrame_ = 0;
+    g_linearPosTimeModel->sampleRate_ = 0;
+    int64_t retPos = g_linearPosTimeModel->GetTimeOfPos(posInFrame);
+    EXPECT_EQ(invalidTime, retPos);
+}
+
+/**
+* @tc.name  : Test GetTimeOfPos API
+* @tc.type  : FUNC
+* @tc.number: GetTimeOfPos_002
+* @tc.desc  : Test GetTimeOfPos interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, GetTimeOfPos_002, TestSize.Level1)
+{
+    g_linearPosTimeModel = std::make_unique<LinearPosTimeModel>();
+
+    uint64_t posInFrame = 1;
+    int64_t invalidTime = -1;
+    g_linearPosTimeModel->stampFrame_ = 10;
+    g_linearPosTimeModel->sampleRate_ = 0;
+    int64_t retPos = g_linearPosTimeModel->GetTimeOfPos(posInFrame);
+    EXPECT_EQ(invalidTime, retPos);
+}
+
+/**
+* @tc.name  : Test Init API
+* @tc.type  : FUNC
+* @tc.number: Init_001
+* @tc.desc  : Test Init interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, Init_001, TestSize.Level1)
+{
+    const size_t testMaxSize = 16 * 1024 * 1024 + 1;
+    size_t testSize = 3840;
+    std::unique_ptr<AudioRingCache> ringCache = AudioRingCache::Create(testSize);
+    EXPECT_NE(nullptr, ringCache);
+    ringCache->cacheTotalSize_ = testMaxSize;
+    bool result = ringCache->Init();
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test Init API
+* @tc.type  : FUNC
+* @tc.number: Init_002
+* @tc.desc  : Test Init interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, Init_002, TestSize.Level1)
+{
+    size_t testSize = 3840;
+    std::unique_ptr<AudioRingCache> ringCache = AudioRingCache::Create(testSize);
+    EXPECT_NE(nullptr, ringCache);
+    ringCache->cacheTotalSize_ = -1;
+    bool result = ringCache->Init();
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test Create API
+* @tc.type  : FUNC
+* @tc.number: Create_001
+* @tc.desc  : Test Create interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, Create_001, TestSize.Level1)
+{
+    size_t testSize = 3840;
+    size_t cacheSize = 16 * 1024 * 1024 + 1;
+    std::unique_ptr<AudioRingCache> ringCache = AudioRingCache::Create(testSize);
+    EXPECT_NE(nullptr, ringCache);
+    std::unique_ptr<AudioRingCache> result = ringCache->Create(cacheSize);
+    EXPECT_EQ(result, nullptr);
+}
+
+/services/audio_service/test/unittest/audio_group_manager_unit_test.cpp
+/**
+* @tc.name  : Test Audio API
+* @tc.type  : FUNC
+* @tc.number: SetVolume_004
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, SetVolume_004, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    int32_t ret = audioGroupManager.SetVolume(STREAM_ALL, 0, 0, 123);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+}
+
+/**
+* @tc.name  : Test Audio API
+* @tc.type  : FUNC
+* @tc.number: SetVolume_005
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, SetVolume_005, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    int32_t ret = audioGroupManager.SetVolume(STREAM_DEFAULT, 0, 0, 123);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
+/**
+* @tc.name  : Test Audio API
+* @tc.type  : FUNC
+* @tc.number: SetVolume_006
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, SetVolume_006, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.connectType_ = CONNECT_TYPE_DISTRIBUTED;
+    int32_t ret = audioGroupManager.SetVolume(STREAM_DEFAULT, 0, 0, 123);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test Audio API
+* @tc.type  : FUNC
+* @tc.number: GetVolume_004
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, GetVolume_004, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    int32_t ret = audioGroupManager.GetVolume(STREAM_ACCESSIBILITY, 123);
+    EXPECT_EQ(ret, 5);
+}
+
+/**
+* @tc.name  : Test Audio API
+* @tc.type  : FUNC
+* @tc.number: GetVolume_005
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, GetVolume_005, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.connectType_ = CONNECT_TYPE_DISTRIBUTED;
+    int32_t ret = audioGroupManager.GetVolume(STREAM_ACCESSIBILITY, 123);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test Audio API
+* @tc.type  : FUNC
+* @tc.number: GetMaxVolume_004
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, GetMaxVolume_004, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.connectType_ = CONNECT_TYPE_DISTRIBUTED;
+    int32_t ret = audioGroupManager.GetMaxVolume(STREAM_ULTRASONIC);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test Audio API
+* @tc.type  : FUNC
+* @tc.number: IsStreamMute_003
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, IsStreamMute_003, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.connectType_ = ConnectType::CONNECT_TYPE_LOCAL;
+    bool isMute = false;
+    int32_t ret = audioGroupManager.IsStreamMute(AudioStreamType::STREAM_ACCESSIBILITY, isMute);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test Audio API
+* @tc.type  : FUNC
+* @tc.number: IsStreamMute_004
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, IsStreamMute_004, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.connectType_ = ConnectType::CONNECT_TYPE_LOCAL;
+    bool isMute = false;
+    int32_t ret = audioGroupManager.IsStreamMute(AudioStreamType::STREAM_ALL, isMute);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/frameworks/native/toneplayer/test/unittest/audio_toneplayer_unit_test.cpp
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_025
+ * @tc.desc  : Test CheckToneStopped interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_025, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->toneState_ = TonePlayerImpl::TONE_STARTING;
+    toneplayer->currSegment_ = 0;
+    toneplayer->totalSample_ = 9000;
+    toneplayer->maxSample_ = 8000;
+    toneplayer->toneInfo_->segments[1].duration = 1;
+
+    bool ret = toneplayer->CheckToneStopped();
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_026
+ * @tc.desc  : Test CheckToneStopped interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_026, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->toneState_ = TonePlayerImpl::TONE_STARTING;
+    toneplayer->currSegment_ = 0;
+    toneplayer->totalSample_ = 8000;
+    toneplayer->maxSample_ = 8000;
+    toneplayer->toneInfo_->segments[1].duration = 0;
+
+    bool ret = toneplayer->CheckToneStopped();
+    EXPECT_EQ(ret, true);
+}
+
+
