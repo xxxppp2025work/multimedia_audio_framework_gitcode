@@ -25,6 +25,7 @@
 #include "audio_common_log.h"
 #include "audio_utils.h"
 #include "audio_utils_c.h"
+#include "xperf_service_client.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -211,11 +212,28 @@ std::string AudioPerformanceMonitor::GetRunningHapNames(AdapterType adapterType)
     return hapNames.str();
 }
 
+void AudioPerformanceMonitor::NotifyXperf(int32_t faultcode, uint32_t uid, uint32_t sessionId)
+{
+    auto timeNow = std::chrono::system_clock::now();
+    auto tmp = std::chrono::duration_cast<std::chrono::milliseconds>(timeNow.time_since_epoch());
+    int64_t curSystime = tmp.count();
+
+    // use std::format?
+    const std::string msg = "#UNIQUEID:" + std::to_string(sessionId) +
+    "#FAULT_ID:" + std::to_string(0) +
+    "#FAULT_CODE:" + std::to_string(faultcode) +
+    "#HAPPEN_TIME:" + std::to_string(curSystime);
+
+    // 3 is audio
+    OHOS::HiviewDFX::XperfServiceClient::GetInstance().NotifyToXperf(3, 3, msg);
+}
+
 void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t periodMs, AudioPipeType pipeType,
-    AdapterType adapterType, uint32_t uid)
+    AdapterType adapterType, uint32_t uid, uint32_t sessionId)
 {
     int64_t curRealTime = ClockTime::GetRealNano();
     std::string hapNames = "";
+    NotifyXperf(reasonCode, uid, sessionId);
     switch (reasonCode) {
         case SILENCE_EVENT:
             CHECK_AND_RETURN_LOG(curRealTime - silenceLastReportTime_ >= MIN_REPORT_INTERVAL_MS * AUDIO_NS_PER_MS,

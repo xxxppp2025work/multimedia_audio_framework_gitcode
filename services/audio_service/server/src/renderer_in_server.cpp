@@ -42,6 +42,7 @@
 #include "i_hpae_manager.h"
 #include "stream_dfx_manager.h"
 #include "audio_stream_enum.h"
+#include "xperf_service_client.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -969,6 +970,9 @@ int32_t RendererInServer::Start()
     if (ret == SUCCESS) {
         StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, true);
     }
+
+    NotifyXperfIfNeed(0);
+
     return ret;
 }
 
@@ -1112,6 +1116,7 @@ int32_t RendererInServer::Pause()
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE, isStandbyTmp);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(streamIndex_);
+    NotifyXperfIfNeed(1);
     return SUCCESS;
 }
 
@@ -1240,7 +1245,9 @@ int32_t RendererInServer::Stop()
         }
         status_ = I_STATUS_STOPPING;
     }
-    return StopInner();
+    int32_t ret = StopInner();
+    NotifyXperfIfNeed(1);
+    return ret;
 }
 
 int32_t RendererInServer::StopInner()
@@ -1331,6 +1338,7 @@ int32_t RendererInServer::Release(bool isSwitchStream)
     if (isDualToneEnabled_) {
         DisableDualTone();
     }
+    NotifyXperfIfNeed(2);
     return SUCCESS;
 }
 
@@ -2252,6 +2260,43 @@ void RendererInServer::InitDupBuffer(int32_t innerCapId)
         ReConfig(dupTotalSizeInFrame_ * dupByteSizePerFrame_, false);
     AUDIO_INFO_LOG("InitDupBuffer success, innerCapId: %{public}d, stream sessionId: %{public}u",
         innerCapId, streamIndex_);
+}
+
+bool RendererInServer::NeedNotifyXperf()
+{
+    if (processConfig_.rendererInfo.streamUsage == STREAM_USAGE_MEDIA) {
+        return true;
+    }
+
+    if (processConfig_.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
+        return true;
+    }
+
+    if (processConfig_.rendererInfo.streamUsage == STREAM_USAGE_MOVIE) {
+        return true;
+    }
+
+    return false;
+}
+
+void RendererInServer::NotifyXperfIfNeed(int32_t eventId)
+{
+    if (!NeedNotifyXperf()) {
+        return;
+    }
+    auto timeNow = std::chrono::system_clock::now();
+    auto tmp = std::chrono::duration_cast<std::chrono::milliseconds>(timeNow.time_since_epoch());
+    int64_t curSystime = tmp.count();
+
+    // use std::format?
+    const std::string msg = "#UNIQUEID:" + std::to_string(streamIndex_) +
+    "#PID:" + std::to_string(processConfig_.appInfo.appPid) +
+    "#BUNDLE_NAME:" + std::to_string(curSystime) +
+    "#HAPPEN_TIME:" + std::to_string(eventId) +
+    "#STATUS:" + std::to_string(eventId);
+
+    //3 is audio
+    OHOS::HiviewDFX::XperfServiceClient::GetInstance().NotifyToXperf(3, eventId, msg);
 }
 } // namespace AudioStandard
 } // namespace OHOS
