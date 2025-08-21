@@ -2029,7 +2029,6 @@ HWTEST_F(AudioEndpointPlusUnitTest, OnStart_001, TestSize.Level1)
     ret = audioEndpointInner->OnStart(firstProcessStream);
     EXPECT_EQ(ret, SUCCESS);
 
-    audioEndpointInner->endpointStatus_ = AudioEndpoint::IDEL;
     audioEndpointInner->isStarted_ = true;
     ret = audioEndpointInner->OnStart(firstProcessStream);
     EXPECT_EQ(ret, SUCCESS);
@@ -2039,7 +2038,6 @@ HWTEST_F(AudioEndpointPlusUnitTest, OnStart_001, TestSize.Level1)
     ret = audioEndpointInner->OnStart(firstProcessStream);
     EXPECT_EQ(ret, SUCCESS);
 
-    audioEndpointInner->endpointStatus_ = AudioEndpoint::UNLINKED;
     audioEndpointInner->isStarted_ = false;
     ret = audioEndpointInner->OnStart(firstProcessStream);
     EXPECT_EQ(ret, SUCCESS);
