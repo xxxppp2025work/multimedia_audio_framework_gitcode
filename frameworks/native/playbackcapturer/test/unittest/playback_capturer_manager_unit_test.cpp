@@ -147,7 +147,7 @@ HWTEST(PlaybackPlaybackCapturerManagerUnitTest, SetSupportStreamUsage_001, TestS
     PlaybackCapturerManager playbackCapturerManager02;
     usage.pop_back();
     playbackCapturerManager02.SetSupportStreamUsage(usage);
-    EXPECT_TRUE(playbackCapturerManager02.IsStreamSupportInnerCapturer(STREAM_USAGE_MEDIA));    
+    EXPECT_TRUE(playbackCapturerManager02.IsStreamSupportInnerCapturer(STREAM_USAGE_MEDIA));
 }
 
 /**
@@ -168,7 +168,7 @@ HWTEST(PlaybackPlaybackCapturerManagerUnitTest, IsStreamSupportInnerCapturer_001
     PlaybackCapturerManager secondPlaybackCapturerManager;
     usage.clear();
     secondPlaybackCapturerManager.SetSupportStreamUsage(usage);
-    EXPECT_TRUE(secondPlaybackCapturerManager.IsStreamSupportInnerCapturer(STREAM_USAGE_MEDIA));    
+    EXPECT_TRUE(secondPlaybackCapturerManager.IsStreamSupportInnerCapturer(STREAM_USAGE_MEDIA));
 }
 }
 }
