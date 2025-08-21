@@ -36,7 +36,7 @@ static int32_t STANDALONE_MOED = 5;
 * @tc.number: StandaloneModeManagerUnitTest_001.
 * @tc.desc  : Test CheckAndRecordStandaloneApp.
 */
-HWTEST_F(StandaloneModeManagerUnitTest,StandaloneModeManagerUnitTest_001, TestSize.Level1)
+HWTEST_F(StandaloneModeManagerUnitTest, StandaloneModeManagerUnitTest_001, TestSize.Level1)
 {
     int32_t appUid = 1;
     bool isOnlyRecordUid = false;
