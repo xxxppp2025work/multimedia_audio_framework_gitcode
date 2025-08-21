@@ -57,7 +57,8 @@ uint8_t dstBufferTest[8] = {0};
 
 class BufferDescTest {
 public:
-    BufferDescTest(uint8_t *buffersrc, uint8_t *bufferdst, size_t bufLengthsrc, size_t bufLengthdst) {
+    BufferDescTest(uint8_t *buffersrc, uint8_t *bufferdst, size_t bufLengthsrc, size_t bufLengthdst)
+    {
         srcDescTest.buffer = buffersrc;
         dstDescTest.buffer = bufferdst;
         srcDescTest.bufLength = bufLengthsrc;
