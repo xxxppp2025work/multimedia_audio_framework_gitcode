@@ -131,11 +131,11 @@ void FuzzTest(const uint8_t* rawData, size_t size)
     if (rawData == nullptr) {
         return;
     }
- 
+
     RAW_DATA = rawData;
     g_dataSize = size;
     g_pos = 0;
- 
+
     uint32_t code = GetData<uint32_t>();
     uint32_t len = GetArrLength(g_testPtrs);
     if (len > 0) {

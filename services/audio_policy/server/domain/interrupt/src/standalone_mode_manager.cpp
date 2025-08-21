@@ -89,7 +89,7 @@ void StandaloneModeManager::ExitStandaloneAndResumeFocus(const int32_t appUid)
         AUDIO_ERR_LOG("Exit Standalone Focus Not Find");
         return;
     }
- 
+
     auto standaloneAppSessionsList = activeZoneSessionsMap_[appUid];
     for (auto &sessionId : standaloneAppSessionsList) {
         InterruptEventInternal interruptEventResume {INTERRUPT_TYPE_BEGIN,
