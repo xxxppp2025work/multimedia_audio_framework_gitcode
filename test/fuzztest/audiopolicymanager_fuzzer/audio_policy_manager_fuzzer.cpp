@@ -177,8 +177,6 @@ void AudioPolicyManagerTwoFuzzTest()
     SourceType source = GetData<SourceType>();
     std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
     int32_t zoneId = GetData<int32_t>();
-    int32_t displayId = GetData<int32_t>();
-    int32_t mode = GetData<int32_t>();
     CallbackChange callbackChange = GetData<CallbackChange>();
     bool enable = GetData<bool>();
     bool block = GetData<bool>();
@@ -206,8 +204,6 @@ void AudioPolicyManagerTwoFuzzTest()
     AudioPolicyManager::GetInstance().SetCallbackCapturerInfo(capturerInfo);
     AudioPolicyManager::GetInstance().RegisterFocusInfoChangeCallback(clientId, callback);
     AudioPolicyManager::GetInstance().UnregisterFocusInfoChangeCallback(clientId);
-    AudioPolicyManager::GetInstance().SetAppConcurrencyMode(appUid, mode);
-    AudioPolicyManager::GetInstance().SetAppSilentOnDisplay(displayId);
 }
 
 void AudioPolicyManagerThreeFuzzTest()
@@ -225,6 +221,8 @@ void AudioPolicyManagerThreeFuzzTest()
     std::shared_ptr<AudioInterruptCallback> interruptCallback;
     uint32_t clientUid = GetData<int32_t>();
     int32_t zoneId = GetData<int32_t>();
+    int32_t displayId = GetData<int32_t>();
+    int32_t mode = GetData<int32_t>();
     std::shared_ptr<AudioQueryClientTypeCallback> audioQueryClientTypeCallback;
     std::shared_ptr<AudioQueryBundleNameListCallback> audioQueryBundleNameListCallback;
     AudioInterrupt audioInterrupt;
@@ -255,6 +253,8 @@ void AudioPolicyManagerThreeFuzzTest()
     AudioPolicyManager::GetInstance().DeactivatePreemptMode();
     AudioPolicyManager::GetInstance().SetAudioManagerInterruptCallback(clientId, interruptCallback);
     AudioPolicyManager::GetInstance().UnsetAudioManagerInterruptCallback(clientId);
+    AudioPolicyManager::GetInstance().SetAppConcurrencyMode(appUid, mode);
+    AudioPolicyManager::GetInstance().SetAppSilentOnDisplay(displayId);
 }
 
 void AudioPolicyManagerFourFuzzTest()

@@ -20,17 +20,17 @@
 #include "audio_volume.h"
 #include "audio_interrupt_service.h"
 using namespace testing::ext;
- 
+
 namespace OHOS {
 namespace AudioStandard {
- 
+
 void StandaloneModeManagerUnitTest::SetUpTestCase(void) {}
 void StandaloneModeManagerUnitTest::TearDownTestCase(void) {}
 void StandaloneModeManagerUnitTest::SetUp(void) {}
 void StandaloneModeManagerUnitTest::TearDown(void) {}
- 
+
 static int32_t STANDALONE_MOED = 5;
- 
+
 /**
 * @tc.name  : Test CheckAndRecordStandaloneApp.
 * @tc.number: StandaloneModeManagerUnitTest_001.
@@ -59,7 +59,7 @@ HWTEST_F(StandaloneModeManagerUnitTest,StandaloneModeManagerUnitTest_001, TestSi
     ownerPid = 1;
     StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(ownerPid);
 }
- 
+
 /**
 * @tc.name  : Test SetAppSilentOnDisplay.
 * @tc.number: StandaloneModeManagerUnitTest_002.
@@ -85,7 +85,7 @@ HWTEST_F(StandaloneModeManagerUnitTest, StandaloneModeManagerUnitTest_002, TestS
     ownerPid = 1;
     StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(ownerPid);
 }
- 
+
 /**
 * @tc.name  : Test SetAppConcurrencyMode.
 * @tc.number: StandaloneModeManagerUnitTest_003
@@ -117,7 +117,7 @@ HWTEST_F(StandaloneModeManagerUnitTest, StandaloneModeManagerUnitTest_003, TestS
     ownerPid = 1;
     StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(ownerPid);
 }
- 
+
 /**
 * @tc.name  : Test ResumeAllStandaloneApp.
 * @tc.number: StandaloneModeManagerUnitTest_004
@@ -142,7 +142,7 @@ HWTEST_F(StandaloneModeManagerUnitTest, StandaloneModeManagerUnitTest_004, TestS
     ownerPid = 1;
     StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(ownerPid);
 }
- 
+
 /**
 * @tc.name  : Test ResumeAllStandaloneApp.
 * @tc.number: StandaloneModeManagerUnitTest_005
@@ -154,7 +154,7 @@ HWTEST_F(StandaloneModeManagerUnitTest, StandaloneModeManagerUnitTest_005, TestS
     EXPECT_NE(standaloneModeManager, nullptr);
     delete standaloneModeManager;
 }
- 
+
 /**
 * @tc.name  : Test ResumeAllStandaloneApp.
 * @tc.number: StandaloneModeManagerUnitTest_006
@@ -168,6 +168,6 @@ HWTEST_F(StandaloneModeManagerUnitTest, StandaloneModeManagerUnitTest_006, TestS
     StandaloneModeManager::GetInstance().RemoveExistingFocus(appUid);
     StandaloneModeManager::GetInstance().ExitStandaloneAndResumeFocus(appUid);
 }
- 
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -2783,7 +2783,7 @@ void AudioInterruptService::ResumeFocusByStreamId(
     const int32_t streamId, const InterruptEventInternal interruptEventResume)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_INFO_LOG("Remove Focus By StreamId = %{public}d", streamId);
+    AUDIO_INFO_LOG("Resume Focus By StreamId = %{public}d", streamId);
     if (interruptClients_.find(streamId) != interruptClients_.end() && handler_ != nullptr) {
         handler_->SendInterruptEventWithStreamIdCallback(interruptEventResume, streamId);
     }

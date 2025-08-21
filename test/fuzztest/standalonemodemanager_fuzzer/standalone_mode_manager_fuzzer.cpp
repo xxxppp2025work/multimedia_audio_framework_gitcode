@@ -12,23 +12,23 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
- 
+
 #include "standalone_mode_manager.h"
 #include "audio_interrupt_service.h"
 #include "audio_session_info.h"
 #include "audio_bundle_manager.h"
 #include "audio_volume.h"
 using namespace std;
- 
+
 namespace OHOS {
 namespace AudioStandard {
- 
+
 static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
 typedef void (*TestPtr)();
- 
+
 template<class T>
 uint32_t GetArrLength(T& arr)
 {
@@ -38,7 +38,7 @@ uint32_t GetArrLength(T& arr)
     }
     return sizeof(arr) / sizeof(arr[0]);
 }
- 
+
 template<class T>
 T GetData()
 {
@@ -57,14 +57,14 @@ T GetData()
     g_pos += objectSize;
     return object;
 }
- 
+
 void StandaloneModeManagerInItFuzzTest()
 {
     std::shared_ptr<AudioInterruptService> interruptService =
         std::make_shared<AudioInterruptService>();
     StandaloneModeManager::GetInstance().Init(interruptService);
 }
- 
+
 void StandaloneModeManagerCheckAndRecordStandaloneAppFuzzTest()
 {
     std::shared_ptr<AudioInterruptService> interruptService =
@@ -76,7 +76,7 @@ void StandaloneModeManagerCheckAndRecordStandaloneAppFuzzTest()
     StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(appUid,
         isOnlyRecordUid, sessionId);
 }
- 
+
 void StandaloneModeManagerSetAppSilentOnDisplayFuzzTest()
 {
     std::shared_ptr<AudioInterruptService> interruptService =
@@ -86,7 +86,7 @@ void StandaloneModeManagerSetAppSilentOnDisplayFuzzTest()
     int32_t displayId = GetData<int32_t>();
     StandaloneModeManager::GetInstance().SetAppSilentOnDisplay(ownerPid, displayId);
 }
- 
+
 void StandaloneModeManagerSetAppConcurrencyModeFuzzTest()
 {
     std::shared_ptr<AudioInterruptService> interruptService =
@@ -97,7 +97,7 @@ void StandaloneModeManagerSetAppConcurrencyModeFuzzTest()
     int32_t mode = GetData<int32_t>();
     StandaloneModeManager::GetInstance().SetAppConcurrencyMode(ownerPid, appUid, mode);
 }
- 
+
 void StandaloneModeManagerEraseDeactivateAudioStreamFuzzTest()
 {
     std::shared_ptr<AudioInterruptService> interruptService =
@@ -107,7 +107,7 @@ void StandaloneModeManagerEraseDeactivateAudioStreamFuzzTest()
     int32_t sessionId = GetData<int32_t>();
     StandaloneModeManager::GetInstance().EraseDeactivateAudioStream(appUid, sessionId);
 }
- 
+
 void StandaloneModeManagerResumeAllStandaloneAppFuzzTest()
 {
     std::shared_ptr<AudioInterruptService> interruptService =
@@ -116,7 +116,7 @@ void StandaloneModeManagerResumeAllStandaloneAppFuzzTest()
     int32_t appUid = GetData<int32_t>();
     StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(appUid);
 }
- 
+
 TestPtr g_testPtrs[] = {
     StandaloneModeManagerInItFuzzTest,
     StandaloneModeManagerCheckAndRecordStandaloneAppFuzzTest,
@@ -125,7 +125,7 @@ TestPtr g_testPtrs[] = {
     StandaloneModeManagerEraseDeactivateAudioStreamFuzzTest,
     StandaloneModeManagerResumeAllStandaloneAppFuzzTest,
 };
- 
+
 void FuzzTest(const uint8_t* rawData, size_t size)
 {
     if (rawData == nullptr) {
@@ -145,10 +145,10 @@ void FuzzTest(const uint8_t* rawData, size_t size)
     }
     return;
 }
- 
+
 } // namespace AudioStandard
 } // namesapce OHOS
- 
+
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {

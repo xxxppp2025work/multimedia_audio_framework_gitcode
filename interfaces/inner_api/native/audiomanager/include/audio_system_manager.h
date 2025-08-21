@@ -871,9 +871,9 @@ public:
     int32_t SetAppConcurrencyMode(const int32_t appUid, const int32_t mode);
 
     /**
-     * @brief Set App Slient On Display
+     * @brief Set App Silent On Display
      *
-     * @param displayId app slient On display id
+     * @param displayId app silent On display id
      * @return Returns {@link SUCCESS} if seting is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 20

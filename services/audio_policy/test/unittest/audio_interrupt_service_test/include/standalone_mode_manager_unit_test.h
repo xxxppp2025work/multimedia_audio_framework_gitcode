@@ -12,16 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #ifndef STANDALONE_MODE_MANAGER_UNIT_TEST_H
 #define STANDALONE_MODE_MANAGER_UNIT_TEST_H
- 
+
 #include "gtest/gtest.h"
 #include "audio_interrupt_service.h"
 #include "standalone_mode_manager.h"
 namespace OHOS {
 namespace AudioStandard {
- 
+
 class StandaloneModeManagerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases

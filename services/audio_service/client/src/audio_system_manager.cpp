@@ -1355,13 +1355,23 @@ int32_t AudioSystemManager::ActivateAudioInterrupt(AudioInterrupt &audioInterrup
 
 int32_t AudioSystemManager::SetAppConcurrencyMode(const int32_t appUid, const int32_t mode)
 {
-    AUDIO_DEBUG_LOG("stub implementation");
+    bool ret = PermissionUtil::VerifyIsSystemApp();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED,
+        "SetAppConcurrencyMode: No system permission");
+    ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
+        "SetAppConcurrencyMode: No system permission");
     return AudioPolicyManager::GetInstance().SetAppConcurrencyMode(appUid, mode);
 }
 
 int32_t AudioSystemManager::SetAppSilentOnDisplay(const int32_t displayId)
 {
-    AUDIO_DEBUG_LOG("stub implementation");
+    bool ret = PermissionUtil::VerifyIsSystemApp();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED,
+        "SetAppSilentOnDisplay: No system permission");
+    ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
+        "SetAppSilentOnDisplay: No system permission");
     return AudioPolicyManager::GetInstance().SetAppSilentOnDisplay(displayId);
 }
 

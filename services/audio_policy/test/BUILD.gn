@@ -665,13 +665,6 @@ ohos_unittest("standalone_mode_manager_unit_test") {
     "samgr:samgr_proxy",
   ]
 
-  public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "libxml2:libxml2",
-    "openssl:libcrypto_shared",
-  ]
-
   sources = [
     "./unittest/audio_interrupt_service_test/src/standalone_mode_manager_unit_test.cpp",
   ]

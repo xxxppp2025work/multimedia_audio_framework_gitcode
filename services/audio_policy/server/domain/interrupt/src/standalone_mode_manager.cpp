@@ -15,7 +15,7 @@
 #ifndef LOG_TAG
 #define LOG_TAG "StandaloneModeManager"
 #endif
- 
+
 #include "standalone_mode_manager.h"
 #include "audio_log.h"
 #include "audio_session_info.h"
@@ -23,13 +23,13 @@
 #include "window_manager_lite.h"
 #include "audio_volume.h"
 #include "audio_interrupt_service.h"
- 
+
 namespace OHOS {
 namespace AudioStandard {
- 
+
 std::mutex StandaloneModeManager::instanceMutex;
 StandaloneModeManager* StandaloneModeManager::instance;
- 
+
 StandaloneModeManager &StandaloneModeManager::GetInstance()
 {
     std::lock_guard<std::mutex> lock(instanceMutex);
@@ -38,7 +38,7 @@ StandaloneModeManager &StandaloneModeManager::GetInstance()
     }
     return *instance;
 }
- 
+
 void StandaloneModeManager::Init(std::shared_ptr<AudioInterruptService> interruptService)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -46,12 +46,12 @@ void StandaloneModeManager::Init(std::shared_ptr<AudioInterruptService> interrup
         "interruptService is nullptr");
     interruptService_ = interruptService;
 }
- 
+
 StandaloneModeManager::~StandaloneModeManager()
 {
     CleanAllStandaloneInfo();
 }
- 
+
 int32_t StandaloneModeManager::SetAppSilentOnDisplay(const int32_t ownerPid, const int32_t displayId)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -65,7 +65,7 @@ int32_t StandaloneModeManager::SetAppSilentOnDisplay(const int32_t ownerPid, con
     }
     return 0;
 }
- 
+
 bool StandaloneModeManager::CheckOwnerPidPermissions(const int32_t ownerPid)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -78,7 +78,7 @@ bool StandaloneModeManager::CheckOwnerPidPermissions(const int32_t ownerPid)
     }
     return true;
 }
- 
+
 void StandaloneModeManager::ExitStandaloneAndResumeFocus(const int32_t appUid)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -98,7 +98,7 @@ void StandaloneModeManager::ExitStandaloneAndResumeFocus(const int32_t appUid)
     }
     activeZoneSessionsMap_.erase(appUid);
 }
- 
+
 void StandaloneModeManager::ResumeAllStandaloneApp(const int32_t appPid)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -115,7 +115,7 @@ void StandaloneModeManager::ResumeAllStandaloneApp(const int32_t appPid)
     }
     CleanAllStandaloneInfo();
 }
- 
+
 void StandaloneModeManager::CleanAllStandaloneInfo()
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -124,7 +124,7 @@ void StandaloneModeManager::CleanAllStandaloneInfo()
     isSetSilentDisplay_ = false;
     activeZoneSessionsMap_.clear();
 }
- 
+
 void StandaloneModeManager::RemoveExistingFocus(const int32_t appUid)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -139,7 +139,7 @@ void StandaloneModeManager::RemoveExistingFocus(const int32_t appUid)
         }
     }
 }
- 
+
 int32_t StandaloneModeManager::SetAppConcurrencyMode(const int32_t ownerPid,
     const int32_t appUid, const int32_t mode)
 {
@@ -163,7 +163,7 @@ int32_t StandaloneModeManager::SetAppConcurrencyMode(const int32_t ownerPid,
     }
     return 0;
 }
- 
+
 bool StandaloneModeManager::CheckAppOnVirtualScreenByUid(const int32_t appUid)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -187,7 +187,7 @@ bool StandaloneModeManager::CheckAppOnVirtualScreenByUid(const int32_t appUid)
     }
     return false;
 }
- 
+
 bool StandaloneModeManager::CheckAndRecordStandaloneApp(const int32_t appUid,
     const bool isOnlyRecordUid, const int32_t sessionId)
 {
@@ -207,7 +207,7 @@ bool StandaloneModeManager::CheckAndRecordStandaloneApp(const int32_t appUid,
     }
     return false;
 }
- 
+
 void StandaloneModeManager::RecordStandaloneAppSessionIdInfo(const int32_t appUid,
     const bool isOnlyRecordUid, const int32_t sessionId)
 {
@@ -219,7 +219,7 @@ void StandaloneModeManager::RecordStandaloneAppSessionIdInfo(const int32_t appUi
     }
     activeZoneSessionsMap_[appUid].insert(sessionId);
 }
- 
+
 void StandaloneModeManager::EraseDeactivateAudioStream(const int32_t appUid,
     const int32_t sessionId)
 {
@@ -232,6 +232,6 @@ void StandaloneModeManager::EraseDeactivateAudioStream(const int32_t appUid,
     }
     activeZoneSessionsMap_[appUid].erase(sessionId);
 }
- 
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -987,7 +987,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_RemoveExistingFocus_001, Te
     interruptServiceTest->zonesMap_[2] = std::make_shared<AudioInterruptZone>();
     interruptServiceTest->RemoveExistingFocus(appUid, uidActivedSessions);
 }
- 
+
 /**
  * @tc.name  : Test AudioInterruptService.
  * @tc.number: AudioInterruptService_ResumeFocusByStreamId_001

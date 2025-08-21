@@ -1355,7 +1355,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_045, TestSize.
 {
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
     ASSERT_NE(audioInterruptService, nullptr);
- 
+
     int32_t fakePid = 123;
     AudioInterrupt incomingInterrupt;
     incomingInterrupt.pid = fakePid;

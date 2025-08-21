@@ -12,20 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #ifndef ST_STANDALONE_MODE_MANAGER_H
 #define ST_STANDALONE_MODE_MANAGER_H
- 
+
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include "audio_info.h"
- 
+
 namespace OHOS {
 namespace AudioStandard {
- 
+
 static constexpr int32_t INVALID_ID = INT_MIN;
- 
+
 class AudioInterruptService;
 class StandaloneModeManager {
 private:
@@ -42,13 +42,13 @@ public:
     void EraseDeactivateAudioStream(const int32_t appUid,
         const int32_t sessionId);
     void ResumeAllStandaloneApp(const int32_t appPid);
- 
+
 private:
     StandaloneModeManager() = default;
     ~StandaloneModeManager();
     StandaloneModeManager(const StandaloneModeManager&) = delete;
     StandaloneModeManager &operator = (const StandaloneModeManager&) = delete;
- 
+
     void CleanAllStandaloneInfo();
     void RemoveExistingFocus(const int32_t appUid);
     bool CheckOwnerPidPermissions(const int32_t ownerPid);
@@ -56,7 +56,7 @@ private:
     bool CheckAppOnVirtualScreenByUid(const int32_t appUid);
     void RecordStandaloneAppSessionIdInfo(const int32_t appUid, const bool isOnlyRecordUid = true,
         const int32_t sessionId = -1);
- 
+
     std::recursive_mutex mutex_;
     std::shared_ptr<AudioInterruptService> interruptService_;
     int32_t ownerPid_ = INVALID_ID;
@@ -67,5 +67,5 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
- 
+
 #endif // ST_STANDALONE_MODE_MANAGER_H
