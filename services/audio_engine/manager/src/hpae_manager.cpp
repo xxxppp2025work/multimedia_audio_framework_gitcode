@@ -910,6 +910,7 @@ bool HpaeManager::MovingSinkStateChange(uint32_t sessionId, const std::shared_pt
         if (movingIds_[sessionId] == HPAE_SESSION_RELEASED) {
             rendererIdSinkNameMap_.erase(sessionId);
             rendererIdStreamInfoMap_.erase(sessionId);
+            canceledTimers_.erase(sessionId);
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSinkInputByIndexOrNameCb(SUCCESS);
             }
@@ -1103,10 +1104,7 @@ void HpaeManager::HandleUpdateStatus(
         CHECK_AND_RETURN_LOG(!(status == HPAE_SESSION_STOPPED && it->second.state != HPAE_SESSION_STOPPING) && 
             !(status == HPAE_SESSION_PAUSED && it->second.state != HPAE_SESSION_PAUSING), "stopped or paused");
         if (status == HPAE_SESSION_PAUSED || status == HPAE_SESSION_STOPPED) {
-            {
-                std::lock_guard<std::mutex> lock(timerCancelMutex_);
-                canceledTimers_.insert(sessionId);
-            }
+            canceledTimers_.insert(sessionId);
             timerCancelCv_.notify_all();
         }
         it->second.state = status;
@@ -1122,34 +1120,27 @@ void HpaeManager::ScheduleDelayedFadedOutUpdate(uint32_t sessionId, HpaeSessionS
 {
     auto weakThis = weak_from_this();
 
-    {
-        std::lock_guard<std::mutex> lock(timerCancelMutex_);
-        canceledTimers_.erase(sessionId);
-    }
+    canceledTimers_.erase(sessionId);
 
     std::thread([weakThis, sessionId, status, operation]() {
+        auto sharedThis = weakThis.lock();
+        CHECK_AND_RETURN_LOG(sharedThis != nullptr, "sharedThis is nullptr");
         AUDIO_INFO_LOG("ScheduleDelayedFadedOutUpdate sessionid:%{public}u "
                        "status:%{public}d operation:%{public}d",
             sessionId,
             status,
             operation);
-        auto sharedThis = weakThis.lock();
-        CHECK_AND_RETURN(sharedThis != nullptr);
         bool canceled = false;
     
         {
             std::unique_lock<std::mutex> lock(sharedThis->timerCancelMutex_);
-            if (sharedThis->timerCancelCv_.wait_for(
-                lock,
-                std::chrono::milliseconds(FADED_OUT_UPDATE_TIME_MAX),
+            canceled = sharedThis->timerCancelCv_.wait_for(lock, std::chrono::milliseconds(FADED_OUT_UPDATE_TIME_MAX),
                 [&]() {
                     return sharedThis->canceledTimers_.find(sessionId) != sharedThis->canceledTimers_.end();
-                })){
-                    canceled = true;
-                }
+                });
             sharedThis->canceledTimers_.erase(sessionId);
         }
-        CHECK_AND_RETURN(!canceled);
+        CHECK_AND_RETURN_LOG(!canceled, "Timer sessionid:%{public}u is canceled");
         auto request = [sharedThis, sessionId, status, operation]() {
             sharedThis->HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, status, operation);
         };
@@ -1396,6 +1387,7 @@ int32_t HpaeManager::DestroyStream(HpaeStreamClassType streamClassType, uint32_t
             }
             rendererIdSinkNameMap_.erase(sessionId);
             rendererIdStreamInfoMap_.erase(sessionId);
+            canceledTimers_.erase(sessionId);
             sinkInputs_.erase(sessionId);
             idPreferSinkNameMap_.erase(sessionId);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
