@@ -2035,5 +2035,31 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetDuckFactor_003, TestS
     int32_t ret = rendererInServer->SetDuckFactor(duckFactor);
     EXPECT_NE(SUCCESS, ret);
 }
+
+/**
+ * @tc.name  : Test SetDuckFactor API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerNeedNotifyXperf_001
+ * @tc.desc  : Test NeedNotifyXperf.
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServerNeedNotifyXperf_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+
+    auto oldStreamUsage = rendererInServer->processConfig_.rendererInfo.streamUsage;
+    rendererInServer->processConfig_.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    EXPECT_EQ(rendererInServer->NeedNotifyXperf(), true);
+
+    rendererInServer->processConfig_.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    EXPECT_EQ(rendererInServer->NeedNotifyXperf(), true);
+
+    rendererInServer->processConfig_.rendererInfo.streamUsage = STREAM_USAGE_MOVIE;
+    EXPECT_EQ(rendererInServer->NeedNotifyXperf(), true);
+
+    rendererInServer->processConfig_.rendererInfo.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
+    EXPECT_EQ(rendererInServer->NeedNotifyXperf(), false);
+
+    rendererInServer->processConfig_.rendererInfo.streamUsage = oldStreamUsage;
+}
 } // namespace AudioStandard
 } // namespace OHOS

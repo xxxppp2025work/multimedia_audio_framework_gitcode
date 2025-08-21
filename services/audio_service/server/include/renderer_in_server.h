@@ -149,6 +149,7 @@ public:
     int32_t SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId);
     void InitDupBuffer(int32_t innerCapId);
 
+    void NotifyXperfIfNeed(int32_t eventId);
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -184,6 +185,7 @@ private:
     int32_t DisableInnerCapHandle(int32_t innerCapId);
     int32_t InitDupStreamVolume(uint32_t dupStreamIndex);
     void ProcessManagerType();
+    bool NeedNotifyXperf();
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
