@@ -15,7 +15,6 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../appgallery.gni")
-import("../../../av_session.gni")
 import("../../../bluetooth_part.gni")
 import("../../../config.gni")
 
@@ -53,10 +52,10 @@ ohos_fuzztest("StandaloneModeManagerFuzzTest") {
   cflags_cc = [ "-std=c++20" ]
 
   deps = [
+    "../../../services/audio_service/idl:audio_framework_interface",
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_policy:audio_policy_service",
     "../../../services/audio_policy:audio_policy_client",
-    "../../../services/audio_service/idl:audio_framework_interface",
   ]
   external_deps = [
     "ability_base:session_info",
@@ -102,7 +101,7 @@ ohos_fuzztest("StandaloneModeManagerFuzzTest") {
   ]
 
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
- 
+
   defines = []
   if (audio_framework_enable_unittest_debug) {
     defines += [ "INTERRUPT_UNITTEST" ]
@@ -150,15 +149,6 @@ ohos_fuzztest("StandaloneModeManagerFuzzTest") {
     external_deps += [ "bluetooth:btframework" ]
   }
 
-  if (avsession_part_enable == true) {
-    external_deps += [
-      "ability_base:want",
-      "ability_runtime:wantagent_innerkits",
-      "av_session:avsession_client",
-      "input:libmmi-client",
-    ]
-  }
-
   if (audio_framework_feature_input) {
     defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
     external_deps += [ "input:libmmi-client" ]
@@ -177,9 +167,6 @@ ohos_fuzztest("StandaloneModeManagerFuzzTest") {
     cflags += [ "-DBLUETOOTH_ENABLE" ]
   }
 
-  if (avsession_part_enable == true) {
-    cflags += [ "-DAVSESSION_ENABLE" ]
-  }
 }
 
 group("fuzztest") {
