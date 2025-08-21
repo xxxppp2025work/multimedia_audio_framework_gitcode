@@ -3796,7 +3796,10 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
     }
 
     descs = eventEntry_->GetAvailableDevices(usage);
-
+    for (auto &desc : descs) {
+        AUDIO_INFO_LOG("GetAvailableDevices:id =%{public}d, displayName = %{public}s, deveiceType = %{public}d",
+            desc->deviceId, desc->displayName.c_str(), desc->deveiceType);
+    }
     if (!hasSystemPermission) {
         for (auto &desc : descs) {
             CHECK_AND_CONTINUE(desc != nullptr);
@@ -3820,7 +3823,10 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
             descs.push_back(make_shared<AudioDeviceDescriptor>(*dec));
         }
     }
-
+    for (auto &desc : descs) {
+        AUDIO_INFO_LOG("GetAvailableDevices:id =%{public}d, displayName = %{public}s, deveiceType = %{public}d",
+            desc->deviceId, desc->displayName.c_str(), desc->deveiceType);
+    }
     return SUCCESS;
 }
 

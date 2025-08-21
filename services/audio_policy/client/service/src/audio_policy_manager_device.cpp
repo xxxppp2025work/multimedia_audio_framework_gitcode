@@ -430,6 +430,10 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetAvail
         return descs;
     }
     gsp->GetAvailableDevices(usage, descs);
+    for (auto &desc : descs) {
+        AUDIO_INFO_LOG("GetAvailableDevices:id =%{public}d, displayName = %{public}s, deveiceType = %{public}d",
+            desc->deviceId, desc->displayName.c_str(), desc->deveiceType);
+    }
     return descs;
 }
 
