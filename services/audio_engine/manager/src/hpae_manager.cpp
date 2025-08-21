@@ -1100,7 +1100,7 @@ void HpaeManager::HandleUpdateStatus(
     if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
         auto it = rendererIdStreamInfoMap_.find(sessionId);
         CHECK_AND_RETURN(it != rendererIdStreamInfoMap_.end());
-        CHECK_AND_RETURN_LOG(!(status == HPAE_SESSION_STOPPED && it->second.state != HPAE_SESSION_STOPPING) || 
+        CHECK_AND_RETURN_LOG(!(status == HPAE_SESSION_STOPPED && it->second.state != HPAE_SESSION_STOPPING) && 
             !(status == HPAE_SESSION_PAUSED && it->second.state != HPAE_SESSION_PAUSING), "stopped or paused");
         if (status == HPAE_SESSION_PAUSED || status == HPAE_SESSION_STOPPED) {
             {
@@ -1128,6 +1128,11 @@ void HpaeManager::ScheduleDelayedFadedOutUpdate(uint32_t sessionId, HpaeSessionS
     }
 
     std::thread([weakThis, sessionId, status, operation]() {
+        AUDIO_INFO_LOG("ScheduleDelayedFadedOutUpdate sessionid:%{public}u "
+                       "status:%{public}d operation:%{public}d",
+            sessionId,
+            status,
+            operation);
         auto sharedThis = weakThis.lock();
         CHECK_AND_RETURN(sharedThis != nullptr);
         bool canceled = false;
@@ -1494,7 +1499,7 @@ int32_t HpaeManager::StartWithSyncId(HpaeStreamClassType streamClassType, uint32
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_RUNNING;
             UpdateStatus(rendererIdStreamInfoMap_[sessionId].statusCallback, OPERATION_STARTED, sessionId);
         } else {
-            AUDIO_WARNING_LOG("StartWithSyncId can not find sessionId streamClassType  %{public}d,"
+            AUDIO_WARNING_LOG("StartWithSyncId can not find sessionId streamClassType %{public}d,"
                 "sessionId %{public}u, syncId: %{public}d",
                 streamClassType, sessionId, syncId);
         }
