@@ -976,7 +976,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_RemoveExistingFocus_001, Te
     int32_t appUid = 1;
     auto audioInterruptZone = std::make_shared<AudioInterruptZone>();
     AudioInterrupt audioInterrupt1;
-    audioInterrupt1.sessionId = 100;
+    audioInterrupt1.streamId = 100;
     audioInterrupt1.uid = 1;
     std::unordered_set<int32_t> uidActivedSessions;
     audioInterruptZone->audioFocusInfoList.clear();
