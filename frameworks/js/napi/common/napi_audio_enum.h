@@ -123,6 +123,11 @@ public:
         LOOPBACK_MODE_HARDWARE = 0
     };
 
+    enum RenderTarget {
+        PLAYBACK = 0,
+        INJECT_TO_VOICE_COMMUNICATION_CAPTURE = 1
+    }
+
     static napi_value Init(napi_env env, napi_value exports);
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);

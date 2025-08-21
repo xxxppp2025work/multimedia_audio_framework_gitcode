@@ -38,6 +38,7 @@ interface IIpcStream {
     void GetLatency([out] unsigned long latency);
     void SetRate([in] int rate); // SetRenderRate
     void GetRate([out] int rate); // SetRenderRate
+    void SetTarget([in] int target); // SetRenderTarget
     void SetLowPowerVolume([in] float volume); // renderer only
     void GetLowPowerVolume([out] float volume); // renderer only
     void SetAudioEffectMode([in] int effectMode); // renderer only

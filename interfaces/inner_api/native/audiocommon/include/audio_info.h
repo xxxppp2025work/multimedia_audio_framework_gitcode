@@ -304,6 +304,14 @@ enum AudioRendererRate {
 };
 
 /**
+ * Enumerates the audio playback target.
+ */
+enum RenderTarget {
+    PLAYBACK = 0,
+    INJECT_TO_VOICE_COMMUNICATION_CAPTURE = 1
+}
+
+/**
 * media safe volume status
 */
 enum SafeStatus : int32_t {
