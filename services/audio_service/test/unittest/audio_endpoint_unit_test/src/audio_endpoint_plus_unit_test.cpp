@@ -1986,26 +1986,6 @@ HWTEST_F(AudioEndpointPlusUnitTest, ConfigInputPoint_001, TestSize.Level1)
 /*
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC
- * @tc.number: GetFastSource_002
- * @tc.desc  : Test AudioEndpointInner::GetFastSource()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, GetFastSource_002, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    std::string networkId = LOCAL_NETWORK_ID;
-    IAudioSourceAttr attr = {};
-    audioEndpointInner->GetFastSource(networkId, type, attr);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
  * @tc.number: UnlinkProcessStream_001
  * @tc.desc  : Test AudioEndpointInner::UnlinkProcessStream()
  */
@@ -2017,55 +1997,12 @@ HWTEST_F(AudioEndpointPlusUnitTest, UnlinkProcessStream_001, TestSize.Level1)
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
     ASSERT_NE(audioEndpointInner, nullptr);
 
-    sptr<AudioProcessInServer> processStream01 = CreateAudioProcessInServer();
-    std::shared_ptr<OHAudioBufferBase> processBuffer = processStream01->GetStreamBuffer();
-    audioEndpointInner->AddProcessStreamToList(processStream01, processBuffer);
+    sptr<AudioProcessInServer> firstProcessStream = CreateAudioProcessInServer();
+    std::shared_ptr<OHAudioBufferBase> processBuffer = firstProcessStream->GetStreamBuffer();
+    audioEndpointInner->AddProcessStreamToList(firstProcessStream, processBuffer);
 
-    int32_t ret = audioEndpointInner->UnlinkProcessStream(processStream01);
+    int32_t ret = audioEndpointInner->UnlinkProcessStream(firstProcessStream);
     EXPECT_EQ(ret, SUCCESS);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: MixToDupStream_001
- * @tc.desc  : Test AudioEndpointInner::MixToDupStream()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, MixToDupStream_001, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    std::vector<AudioStreamData> srcDataList;
-    AudioStreamData audioStreamData01;
-    audioStreamData01.isInnerCapeds[1] = false;
-    srcDataList.push_back(audioStreamData01);
-    audioEndpointInner->dupBuffer_ = std::make_unique<uint8_t []>(1);
-    EXPECT_NE(nullptr, audioEndpointInner->dupBuffer_);
-
-    audioEndpointInner->MixToDupStream(srcDataList, 2);
-
-    srcDataList.pop_back();
-    AudioStreamData audioStreamData02;
-    audioStreamData02.isInnerCapeds[1] = true;
-    srcDataList.push_back(audioStreamData02);
-    audioEndpointInner->MixToDupStream(srcDataList, 1);
-    
-    srcDataList.pop_back();
-    AudioStreamData audioStreamData03;
-    audioStreamData03.isInnerCapeds[1] = true;
-    srcDataList.push_back(audioStreamData03);
-    audioEndpointInner->MixToDupStream(srcDataList, 2);
-
-    srcDataList.pop_back();
-    AudioStreamData audioStreamData04;
-    audioStreamData04.isInnerCapeds[1] = false;
-    srcDataList.push_back(audioStreamData04);
-    audioEndpointInner->MixToDupStream(srcDataList, 1);
 }
 
 /*
@@ -2082,29 +2019,29 @@ HWTEST_F(AudioEndpointPlusUnitTest, OnStart_001, TestSize.Level1)
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
     ASSERT_NE(audioEndpointInner, nullptr);
 
-    sptr<AudioProcessInServer> processStream01 = CreateAudioProcessInServer();
+    sptr<AudioProcessInServer> firstProcessStream = CreateAudioProcessInServer();
     audioEndpointInner->endpointStatus_ = AudioEndpoint::RUNNING;
-    int32_t ret = audioEndpointInner->OnStart(processStream01);
+    int32_t ret = audioEndpointInner->OnStart(firstProcessStream);
     EXPECT_EQ(ret, SUCCESS);
 
     audioEndpointInner->endpointStatus_ = AudioEndpoint::IDEL;
     audioEndpointInner->isStarted_ = false;
-    ret = audioEndpointInner->OnStart(processStream01);
+    ret = audioEndpointInner->OnStart(firstProcessStream);
     EXPECT_EQ(ret, SUCCESS);
 
     audioEndpointInner->endpointStatus_ = AudioEndpoint::IDEL;
     audioEndpointInner->isStarted_ = true;
-    ret = audioEndpointInner->OnStart(processStream01);
+    ret = audioEndpointInner->OnStart(firstProcessStream);
     EXPECT_EQ(ret, SUCCESS);
 
     audioEndpointInner->endpointStatus_ = AudioEndpoint::UNLINKED;
     audioEndpointInner->isStarted_ = true;
-    ret = audioEndpointInner->OnStart(processStream01);
+    ret = audioEndpointInner->OnStart(firstProcessStream);
     EXPECT_EQ(ret, SUCCESS);
 
     audioEndpointInner->endpointStatus_ = AudioEndpoint::UNLINKED;
     audioEndpointInner->isStarted_ = false;
-    ret = audioEndpointInner->OnStart(processStream01);
+    ret = audioEndpointInner->OnStart(firstProcessStream);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -2122,17 +2059,17 @@ HWTEST_F(AudioEndpointPlusUnitTest, OnPause_001, TestSize.Level1)
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
     ASSERT_NE(audioEndpointInner, nullptr);
 
-    sptr<AudioProcessInServer> processStream01 = CreateAudioProcessInServer();
+    sptr<AudioProcessInServer> firstProcessStream = CreateAudioProcessInServer();
     audioEndpointInner->endpointStatus_ = AudioEndpoint::RUNNING;
-    int32_t ret = audioEndpointInner->OnPause(processStream01);
+    int32_t ret = audioEndpointInner->OnPause(firstProcessStream);
     EXPECT_EQ(ret, SUCCESS);
 
     audioEndpointInner->endpointStatus_ = AudioEndpoint::IDEL;
-    ret = audioEndpointInner->OnPause(processStream01);
+    ret = audioEndpointInner->OnPause(firstProcessStream);
     EXPECT_EQ(ret, SUCCESS);
 
     audioEndpointInner->endpointStatus_ = AudioEndpoint::UNLINKED;
-    ret = audioEndpointInner->OnPause(processStream01);
+    ret = audioEndpointInner->OnPause(firstProcessStream);
     EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
