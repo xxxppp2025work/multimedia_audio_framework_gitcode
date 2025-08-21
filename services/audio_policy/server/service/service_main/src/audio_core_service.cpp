@@ -105,6 +105,7 @@ void AudioCoreService::Init()
     if (audioA2dpOffloadManager_ != nullptr) {
         audioA2dpOffloadManager_->Init();
     }
+
     audioVolumeManager_.Init(audioPolicyServerHandler_);
     audioDeviceCommon_.Init(audioPolicyServerHandler_);
     audioRecoveryDevice_.Init(audioA2dpOffloadManager_);
@@ -114,6 +115,7 @@ void AudioCoreService::Init()
 
     deviceStatusListener_ = std::make_shared<DeviceStatusListener>(*eventEntry_); // shared_ptr.get() -> *
     isFastControlled_ = GetFastControlParam();
+    
     // Register device status listener
     int32_t status = deviceStatusListener_->RegisterDeviceStatusListener();
     if (status != SUCCESS) {
