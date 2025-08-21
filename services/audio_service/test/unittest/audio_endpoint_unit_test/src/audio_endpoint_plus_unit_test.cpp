@@ -1936,7 +1936,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, DisableFastInnerCap_001, TestSize.Level1)
     ASSERT_NE(audioEndpointInner, nullptr);
     int32_t innerCapId = 1;
     
-    int ret = audioEndpointInner->DisableFastInnerCap(innerCapId);
+    int32_t ret = audioEndpointInner->DisableFastInnerCap(innerCapId);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1955,10 +1955,10 @@ HWTEST_F(AudioEndpointPlusUnitTest, HandleDisableFastCap_001, TestSize.Level1)
     ASSERT_NE(audioEndpointInner, nullptr);
     CaptureInfo captureInfo;
 
-    captureInfo.isInnerCapEnabled = true;
-    int ret = audioEndpointInner->HandleDisableFastCap(captureInfo);
+    int32_t ret = audioEndpointInner->HandleDisableFastCap(captureInfo);
     EXPECT_EQ(ret, SUCCESS);
     
+    captureInfo.isInnerCapEnabled = true;
     ret = audioEndpointInner->HandleDisableFastCap(captureInfo);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -1967,7 +1967,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, HandleDisableFastCap_001, TestSize.Level1)
  * @tc.name  : Test ProcessToDupStream API
  * @tc.type  : FUNC
  * @tc.number: ConfigInputPoint_001
- * @tc.desc  : Test AudioEndpointInner::HandleDisableFastCap()
+ * @tc.desc  : Test AudioEndpointInner::ConfigInputPoint()
  */
 HWTEST_F(AudioEndpointPlusUnitTest, ConfigInputPoint_001, TestSize.Level1)
 {
@@ -1979,7 +1979,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, ConfigInputPoint_001, TestSize.Level1)
     AudioDeviceDescriptor deviceInfo(1);
     deviceInfo.networkId_ = "abc";
 
-    ret = audioEndpointInner->ConfigInputPoint(deviceInfo);
+    bool ret = audioEndpointInner->ConfigInputPoint(deviceInfo);
     EXPECT_FALSE(ret);
 }
 
@@ -2007,11 +2007,11 @@ HWTEST_F(AudioEndpointPlusUnitTest, GetFastSource_002, TestSize.Level1)
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC
  * @tc.number: UnlinkProcessStream_001
- * @tc.desc  : Test AudioEndpointInner::GetFastSource()
+ * @tc.desc  : Test AudioEndpointInner::UnlinkProcessStream()
  */
 HWTEST_F(AudioEndpointPlusUnitTest, UnlinkProcessStream_001, TestSize.Level1)
 {
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_VOIP_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
@@ -2072,11 +2072,11 @@ HWTEST_F(AudioEndpointPlusUnitTest, MixToDupStream_001, TestSize.Level1)
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC
  * @tc.number: OnStart_001
- * @tc.desc  : Test AudioEndpointInner::MixToDupStream()
+ * @tc.desc  : Test AudioEndpointInner::OnStart()
  */
 HWTEST_F(AudioEndpointPlusUnitTest, OnStart_001, TestSize.Level1)
 {
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_VOIP_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
@@ -2112,11 +2112,11 @@ HWTEST_F(AudioEndpointPlusUnitTest, OnStart_001, TestSize.Level1)
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC
  * @tc.number: OnPause_001
- * @tc.desc  : Test AudioEndpointInner::MixToDupStream()
+ * @tc.desc  : Test AudioEndpointInner::OnPause()
  */
 HWTEST_F(AudioEndpointPlusUnitTest, OnPause_001, TestSize.Level1)
 {
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_VOIP_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
