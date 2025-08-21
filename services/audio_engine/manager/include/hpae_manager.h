@@ -255,12 +255,12 @@ private:
     std::string coreSink_ = "";
     std::unordered_map<std::string, uint32_t> sourceNameSourceIdMap_;
     std::unordered_map<uint32_t, std::string> sourceIdSourceNameMap_;
-    std::unordered_map<uint32_t, bool> rendererIdFadedOutMap_;
     std::string defaultSource_ = "Built_in_mic";
     std::atomic<int32_t> sinkSourceIndex_ = 0;
     std::atomic<bool> isInit_ = false;
-    std::mutex mutex_;
-
+    std::mutex timerCancelMutex_;
+    std::condition_variable timerCancelCv_;
+    std::unordered_set<uint32_t> canceledTimers_;
     HpaeNoLockQueue hpaeNoLockQueue_;
 
     std::atomic<int32_t> receiveMsgCount_ = 0;

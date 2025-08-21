@@ -910,7 +910,6 @@ bool HpaeManager::MovingSinkStateChange(uint32_t sessionId, const std::shared_pt
         if (movingIds_[sessionId] == HPAE_SESSION_RELEASED) {
             rendererIdSinkNameMap_.erase(sessionId);
             rendererIdStreamInfoMap_.erase(sessionId);
-            rendererIdFadedOutMap_.erase(sessionId);
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSinkInputByIndexOrNameCb(SUCCESS);
             }
@@ -1101,11 +1100,16 @@ void HpaeManager::HandleUpdateStatus(
     if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
         auto it = rendererIdStreamInfoMap_.find(sessionId);
         CHECK_AND_RETURN(it != rendererIdStreamInfoMap_.end());
-        if (status == HPAE_SESSION_STOPPED || status == HPAE_SESSION_PAUSED) {
-            std::unique_lock<std::mutex> lock(mutex_);
-            CHECK_AND_RETURN(!rendererIdFadedOutMap_[sessionId]);
-            rendererIdFadedOutMap_[sessionId] = true;
+        CHECK_AND_RETURN_LOG(!(status == HPAE_SESSION_STOPPED && it->second.state != HPAE_SESSION_STOPPING) || 
+            !(status == HPAE_SESSION_PAUSED && it->second.state != HPAE_SESSION_PAUSING), "stopped or paused");
+        if (status == HPAE_SESSION_PAUSED || status == HPAE_SESSION_STOPPED) {
+            {
+                std::lock_guard<std::mutex> lock(timerCancelMutex_);
+                canceledTimers_.insert(sessionId);
+            }
+            timerCancelCv_.notify_all();
         }
+        it->second.state = status;
         UpdateStatus(it->second.statusCallback, operation, sessionId);
     } else {
         auto it = capturerIdStreamInfoMap_.find(sessionId);
@@ -1117,11 +1121,35 @@ void HpaeManager::HandleUpdateStatus(
 void HpaeManager::ScheduleDelayedFadedOutUpdate(uint32_t sessionId, HpaeSessionState status, IOperation operation)
 {
     auto weakThis = weak_from_this();
+
+    {
+        std::lock_guard<std::mutex> lock(timerCancelMutex_);
+        canceledTimers_.erase(sessionId);
+    }
+
     std::thread([weakThis, sessionId, status, operation]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(FADED_OUT_UPDATE_TIME_MAX));
-        if (auto sharedThis = weakThis.lock()) {
-            sharedThis->HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, status, operation);
+        auto sharedThis = weakThis.lock();
+        CHECK_AND_RETURN(sharedThis != nullptr);
+        bool canceled = false;
+    
+        {
+            std::unique_lock<std::mutex> lock(sharedThis->timerCancelMutex_);
+            if (sharedThis->timerCancelCv_.wait_for(
+                lock,
+                std::chrono::milliseconds(FADED_OUT_UPDATE_TIME_MAX),
+                [&]() {
+                    return sharedThis->canceledTimers_.find(sessionId) != sharedThis->canceledTimers_.end();
+                })){
+                    canceled = true;
+                }
+            sharedThis->canceledTimers_.erase(sessionId);
         }
+        CHECK_AND_RETURN(!canceled);
+        auto request = [sharedThis, sessionId, status, operation]() {
+            sharedThis->HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, status, operation);
+        };
+        sharedThis->SendRequest(request, __func__);
+    
     }).detach();
 }
 
@@ -1363,7 +1391,6 @@ int32_t HpaeManager::DestroyStream(HpaeStreamClassType streamClassType, uint32_t
             }
             rendererIdSinkNameMap_.erase(sessionId);
             rendererIdStreamInfoMap_.erase(sessionId);
-            rendererIdFadedOutMap_.erase(sessionId);
             sinkInputs_.erase(sessionId);
             idPreferSinkNameMap_.erase(sessionId);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
@@ -1495,7 +1522,6 @@ int32_t HpaeManager::Pause(HpaeStreamClassType streamClassType, uint32_t session
                 "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Pause(sessionId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_PAUSING;
-            rendererIdFadedOutMap_[sessionId] = false;
             ScheduleDelayedFadedOutUpdate(sessionId, HPAE_SESSION_PAUSED, OPERATION_PAUSED);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
@@ -1623,7 +1649,6 @@ int32_t HpaeManager::Stop(HpaeStreamClassType streamClassType, uint32_t sessionI
                 "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Stop(sessionId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_STOPPING;
-            rendererIdFadedOutMap_[sessionId] = false;
             ScheduleDelayedFadedOutUpdate(sessionId, HPAE_SESSION_STOPPED, OPERATION_STOPPED);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
