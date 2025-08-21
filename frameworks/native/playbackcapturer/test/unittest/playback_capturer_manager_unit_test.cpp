@@ -129,5 +129,46 @@ HWTEST(PlaybackPlaybackCapturerManagerUnitTest, CheckCaptureLimit_001, TestSize.
     EXPECT_TRUE(checkRet);
 }
 
+/**
+ * @tc.name  : Test CheckCaptureLimit API
+ * @tc.type  : FUNC
+ * @tc.number: SetSupportStreamUsage_001
+ * @tc.desc  : Test SetSupportStreamUsage interface
+ */
+HWTEST(PlaybackPlaybackCapturerManagerUnitTest, SetSupportStreamUsage_001, TestSize.Level1)
+{
+    std::vector<int32_t> usage;
+    PlaybackCapturerManager playbackCapturerManager01;
+    int32_t temp = STREAM_USAGE_MEDIA;
+    usage.emplace_back(temp);
+    playbackCapturerManager01.SetSupportStreamUsage(usage);
+    EXPECT_TRUE(playbackCapturerManager01.IsStreamSupportInnerCapturer(STREAM_USAGE_MEDIA));
+
+    PlaybackCapturerManager playbackCapturerManager02;
+    usage.pop_back();
+    playbackCapturerManager02.SetSupportStreamUsage(usage);
+    EXPECT_TRUE(playbackCapturerManager02.IsStreamSupportInnerCapturer(STREAM_USAGE_MEDIA));    
+}
+
+/**
+ * @tc.name  : Test CheckCaptureLimit API
+ * @tc.type  : FUNC
+ * @tc.number: IsStreamSupportInnerCapturer_001
+ * @tc.desc  : Test IsStreamSupportInnerCapturer interface
+ */
+HWTEST(PlaybackPlaybackCapturerManagerUnitTest, IsStreamSupportInnerCapturer_001, TestSize.Level1)
+{
+    std::vector<int32_t> usage;
+    PlaybackCapturerManager playbackCapturerManager01;
+    int32_t temp = STREAM_USAGE_MEDIA;
+    usage.emplace_back(temp);
+    playbackCapturerManager01.SetSupportStreamUsage(usage);
+    EXPECT_TRUE(playbackCapturerManager01.IsStreamSupportInnerCapturer(STREAM_USAGE_MUSIC));
+
+    PlaybackCapturerManager playbackCapturerManager02;
+    usage.clear();
+    playbackCapturerManager02.SetSupportStreamUsage(usage);
+    EXPECT_TRUE(playbackCapturerManager02.IsStreamSupportInnerCapturer(STREAM_USAGE_MEDIA));    
+}
 }
 }
