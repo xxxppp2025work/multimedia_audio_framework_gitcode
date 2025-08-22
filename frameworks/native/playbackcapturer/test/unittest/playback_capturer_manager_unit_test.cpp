@@ -138,16 +138,16 @@ HWTEST(PlaybackPlaybackCapturerManagerUnitTest, CheckCaptureLimit_001, TestSize.
 HWTEST(PlaybackPlaybackCapturerManagerUnitTest, SetSupportStreamUsage_001, TestSize.Level1)
 {
     std::vector<int32_t> usage;
-    PlaybackCapturerManager playbackCapturerManager01;
+    PlaybackCapturerManager firstPlaybackCapturerManager;
     int32_t temp = STREAM_USAGE_MEDIA;
     usage.emplace_back(temp);
-    playbackCapturerManager01.SetSupportStreamUsage(usage);
-    EXPECT_TRUE(playbackCapturerManager01.IsStreamSupportInnerCapturer(STREAM_USAGE_MEDIA));
+    firstPlaybackCapturerManager.SetSupportStreamUsage(usage);
+    EXPECT_TRUE(firstPlaybackCapturerManager.IsStreamSupportInnerCapturer(STREAM_USAGE_MEDIA));
 
-    PlaybackCapturerManager playbackCapturerManager02;
+    PlaybackCapturerManager secondPlaybackCapturerManager;
     usage.pop_back();
-    playbackCapturerManager02.SetSupportStreamUsage(usage);
-    EXPECT_TRUE(playbackCapturerManager02.IsStreamSupportInnerCapturer(STREAM_USAGE_MEDIA));
+    secondPlaybackCapturerManager.SetSupportStreamUsage(usage);
+    EXPECT_TRUE(secondPlaybackCapturerManager.IsStreamSupportInnerCapturer(STREAM_USAGE_MEDIA));
 }
 
 /**
