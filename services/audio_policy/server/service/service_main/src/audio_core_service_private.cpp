@@ -270,9 +270,8 @@ void AudioCoreService::BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> 
         return;
     }
 
-    if (streamDesc->streamStatus_ != STREAM_STATUS_STARTED) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(streamDesc->streamStatus_ == STREAM_STATUS_STARTED, "Stream not start");
+    
     if (Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType)) {
         ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_);
     } else {
