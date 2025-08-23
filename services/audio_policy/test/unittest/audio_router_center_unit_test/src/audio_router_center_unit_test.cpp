@@ -542,5 +542,23 @@ HWTEST(AudioRouterCenterUnitTest, FetchVoiceMessageCaptureDevice_deviceType_vali
     EXPECT_EQ(result, validDesc);
     EXPECT_EQ(rtype, ROUTER_TYPE_DEFAULT);
 }
+
+/**
+ * @tc.name  : Test GetBypassWithSco.
+ * @tc.number: GetBypassWithSco_001
+ * @tc.desc  : Test GetBypassWithSco interface when desc->deviceType_ is valid.
+ */
+HWTEST(AudioRouterCenterUnitTest, GetBypassWithSco_001, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    center.voiceMessageRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, nullptr, validDesc));
+    RouterType rtype = ROUTER_TYPE_NONE;
+    AudioScene audioScene = AUDIO_SCENE_DEFAULT;
+    auto result = center.GetBypassWithSco(audioScene);
+    EXPECT_EQ(result, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
