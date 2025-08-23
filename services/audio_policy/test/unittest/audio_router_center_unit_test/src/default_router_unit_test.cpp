@@ -21,6 +21,8 @@
 #include "app_select_router.h"
 #include "pair_device_router.h"
 #include "cockpit_phone_router.h"
+#include "public_priority_router.h"
+#include "privacy_priority_router.h"
 
 #include <thread>
 #include <memory>
@@ -239,6 +241,118 @@ HWTEST(AudioRouterCenterUnitTest, CockpitPhoneRouter_GetBTCarDevices_001, TestSi
     AudioDeviceManager::GetAudioDeviceManager().commRenderPublicDevices_ = { desc1, desc2, desc3 };
     shared_ptr<AudioDeviceDescriptor> desc = cockpitPhoneRouter.GetCallRenderDevice(streamUsage, clientUID);
     EXPECT_NE(desc, nullptr);
+}
+
+/**
+ * @tc.name  : Test PublicPriorityRouter_GetMediaRenderDevice.
+ * @tc.number: PublicPriorityRouter_GetMediaRenderDevice_001
+ * @tc.desc  : Test PublicPriorityRouter_GetMediaRenderDevice interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, PublicPriorityRouter_GetMediaRenderDevice_001, TestSize.Level4)
+{
+    PublicPriorityRouter publicPriorityRouter;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+    int32_t clientUID = 1000;
+    auto ret = publicPriorityRouter.GetMediaRenderDevice(streamUsage, clientUID);
+    EXPECT_EQ(0, descs.size());
+
+    streamUsage = STREAM_USAGE_VOICE_RINGTONE;
+    ret = publicPriorityRouter.GetMediaRenderDevice(streamUsage, clientUID);
+    EXPECT_EQ(0, descs.size());
+
+    streamUsage = STREAM_USAGE_INVALID;
+    ret = publicPriorityRouter.GetMediaRenderDevice(streamUsage, clientUID);
+    EXPECT_EQ(0, descs.size());
+}
+
+/**
+ * @tc.name  : Test PublicPriorityRouter_GetMediaRenderDevice.
+ * @tc.number: PublicPriorityRouter_GetRingRenderDevices_001
+ * @tc.desc  : Test PublicPriorityRouter_GetMediaRenderDevice interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, PublicPriorityRouter_GetRingRenderDevices_001, TestSize.Level4)
+{
+    PublicPriorityRouter publicPriorityRouter;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+    int32_t clientUID = 1000;
+    auto ret = publicPriorityRouter.GetRingRenderDevices(streamUsage, clientUID);
+    EXPECT_EQ(0, descs.size());
+
+    streamUsage = STREAM_USAGE_VOICE_RINGTONE;
+    ret = publicPriorityRouter.GetRingRenderDevices(streamUsage, clientUID);
+    EXPECT_EQ(0, descs.size());
+
+    streamUsage = STREAM_USAGE_INVALID;
+    ret = publicPriorityRouter.GetRingRenderDevices(streamUsage, clientUID);
+    EXPECT_EQ(0, descs.size());
+
+    streamUsage = STREAM_USAGE_ALARM;
+    ret = publicPriorityRouter.GetRingRenderDevices(streamUsage, clientUID);
+    EXPECT_EQ(0, descs.size());
+}
+
+/**
+ * @tc.name  : Test CockpitPhoneRouter_GetRingRenderDevices.
+ * @tc.number: CockpitPhoneRouter_GetRingRenderDevices_002
+ * @tc.desc  : Test CockpitPhoneRouter_GetRingRenderDevices interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, CockpitPhoneRouter_GetRingRenderDevices_002, TestSize.Level4)
+{
+    CockpitPhoneRouter cockpitPhoneRouter;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+    int32_t clientUID = 1000;
+    auto ret = cockpitPhoneRouter.GetRingRenderDevices(streamUsage, clientUID);
+    EXPECT_EQ(0, descs.size());
+
+    streamUsage = STREAM_USAGE_VOICE_RINGTONE;
+    ret = cockpitPhoneRouter.GetRingRenderDevices(streamUsage, clientUID);
+    EXPECT_EQ(0, descs.size());
+
+    streamUsage = STREAM_USAGE_INVALID;
+    ret = cockpitPhoneRouter.GetRingRenderDevices(streamUsage, clientUID);
+    EXPECT_EQ(0, descs.size());
+
+    streamUsage = STREAM_USAGE_ALARM;
+    ret = cockpitPhoneRouter.GetRingRenderDevices(streamUsage, clientUID);
+    EXPECT_EQ(0, descs.size());
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter_GetRingRenderDevices.
+ * @tc.number: PrivacyPriorityRouter_GetRingRenderDevices_001
+ * @tc.desc  : Test PrivacyPriorityRouter_GetRingRenderDevices interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, PrivacyPriorityRouter_GetRingRenderDevices_001, TestSize.Level4)
+{
+    PrivacyPriorityRouter privacyPriorityRouter;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+    int32_t clientUID = 1000;
+    auto ret = privacyPriorityRouter.GetRingRenderDevices(streamUsage, clientUID);
+    EXPECT_EQ(0, descs.size());
+
+    streamUsage = STREAM_USAGE_VOICE_RINGTONE;
+    ret = privacyPriorityRouter.GetRingRenderDevices(streamUsage, clientUID);
+    EXPECT_EQ(0, descs.size());
+
+    streamUsage = STREAM_USAGE_INVALID;
+    ret = privacyPriorityRouter.GetRingRenderDevices(streamUsage, clientUID);
+    EXPECT_EQ(0, descs.size());
+
+    streamUsage = STREAM_USAGE_ALARM;
+    ret = privacyPriorityRouter.GetRingRenderDevices(streamUsage, clientUID);
+    EXPECT_EQ(0, descs.size());
 }
 } // namespace AudioStandard
 } // namespace OHOS
