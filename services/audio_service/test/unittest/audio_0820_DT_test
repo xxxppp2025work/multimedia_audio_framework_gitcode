@@ -414,3 +414,7 @@ public:
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // SLE_AUDIO_OPERATION_CALLBACK_STUB_UNIT_TEST_H
+
+
+    "../client/stub/test/unittest:audio_zone_client_unit_test",
+    "../client/stub/test/unittest:sle_audio_operation_callback_stub_impl_unit_test"
