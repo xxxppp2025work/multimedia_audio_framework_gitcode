@@ -39,6 +39,7 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr uint32_t MEDIA_SA_UID = 1013;
+constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 static const int32_t INTERRUPT_SERVICE_TIMEOUT = 10; // 10s
 static sptr<IStandardAudioService> g_adProxy = nullptr;
@@ -875,6 +876,19 @@ void AudioInterruptService::HandleAppStreamType(const int32_t zoneId, AudioInter
     }
 }
 
+void AudioInterruptService::HandleBundleName(const AudioInterrupt &audioInterrupt)
+{
+    uint32_t uid = static_cast<uint32_t>(audioInterrupt.uid);
+    if (uid == BOOTUP_MUSIC_UID) {
+        // boot animation must be system app, no need query from BMS, to redeuce boot latency.
+        AUDIO_INFO_LOG("boot animation must be system app, no need query from BMS.");
+        return;
+    }
+    if (audioInterrupt.bundleName.empty()) {
+        audioInterrupt.bundleName = GetRealBundleName(uid);
+    }
+}
+
 int32_t AudioInterruptService::ActivateAudioInterrupt(
     const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy)
 {
@@ -883,6 +897,7 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
             AUDIO_ERR_LOG("ActivateAudioInterrupt timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(mutex_);
+    HandleBundleName(audioInterrupt);
     bool updateScene = false;
     int32_t ret = ActivateAudioInterruptCoreProcedure(zoneId, audioInterrupt, isUpdatedAudioStrategy, updateScene);
     if (ret != SUCCESS || !updateScene) {
@@ -957,7 +972,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
 void AudioInterruptService::PrintLogsOfFocusStrategyBaseMusic(const AudioInterrupt &audioInterrupt)
 {
     // The log printed by this function is critical, so please do not modify it.
-    std::string bundleName = (AudioBundleManager::GetBundleInfoFromUid(audioInterrupt.uid)).name;
+    std::string bundleName = audioInterrupt.bundleName;
 
     AudioFocusType audioFocusType;
     audioFocusType.streamType = AudioStreamType::STREAM_MUSIC;
@@ -1651,8 +1666,7 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
             ++iterActive;
         }
         uint8_t appstate = GetAppState(currentInterrupt.pid);
-        auto info = AudioBundleManager::GetBundleInfoFromUid(currentInterrupt.uid);
-        dfxBuilder.WriteEffectMsg(appstate, info.name, currentInterrupt, interruptEvent.hintType);
+        dfxBuilder.WriteEffectMsg(appstate, currentInterrupt.bundleName, currentInterrupt, interruptEvent.hintType);
         SendActiveInterruptEvent(activeStreamId, interruptEvent, incomingInterrupt, currentInterrupt);
     }
 
@@ -1845,7 +1859,7 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     int32_t incomingPid = incomingInterrupt.pid;
     AudioFocusType incomingAudioFocusType = incomingInterrupt.audioFocusType;
     AudioFocusType existAudioFocusType = currentInterrupt.audioFocusType;
-    std::string bundleName = GetRealBundleName(static_cast<uint32_t>(uid));
+    std::string bundleName = incomingInterrupt.bundleName;
     CHECK_AND_RETURN_LOG(!bundleName.empty(), "bundleName is empty");
     AudioStreamType existStreamType = existAudioFocusType.streamType;
     AudioStreamType incomingStreamType = incomingAudioFocusType.streamType;
