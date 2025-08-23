@@ -27,6 +27,8 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
+const uint32_t TEST_GROUPID = 10;
+
 void StreamFilterRouterUnitTest::SetUpTestCase(void) {}
 void StreamFilterRouterUnitTest::TearDownTestCase(void) {}
 void StreamFilterRouterUnitTest::SetUp(void) {}
