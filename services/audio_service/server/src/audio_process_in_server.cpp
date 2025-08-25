@@ -94,7 +94,7 @@ AudioProcessInServer::~AudioProcessInServer()
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_INVALID);
     }
-    NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_RELEASE);
+    NotifyXperfOnPlayback(processConfig_.audioMode, OHOS::HiviewDFX::AudioEventCode::AUDIO_RELEASE);
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 }
 
@@ -340,7 +340,7 @@ int32_t AudioProcessInServer::StartInner()
 
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId_, processConfig_.appInfo.appTokenId);
-    NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_START);
+    NotifyXperfOnPlayback(processConfig_.audioMode, OHOS::HiviewDFX::AudioEventCode::AUDIO_START);
     AUDIO_INFO_LOG("Start in server success!");
     return SUCCESS;
 }
@@ -379,7 +379,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_PAUSE);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
     AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId_);
-    NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_STOP);
+    NotifyXperfOnPlayback(processConfig_.audioMode, OHOS::HiviewDFX::AudioEventCode::AUDIO_PAUSE_STOP);
     AUDIO_PRERELEASE_LOGI("Pause in server success!");
     return SUCCESS;
 }
@@ -407,7 +407,7 @@ int32_t AudioProcessInServer::Resume()
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
-    NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_START);
+    NotifyXperfOnPlayback(processConfig_.audioMode, OHOS::HiviewDFX::AudioEventCode::AUDIO_START);
     AUDIO_PRERELEASE_LOGI("Resume in server success!");
     return SUCCESS;
 }
@@ -451,7 +451,7 @@ int32_t AudioProcessInServer::Stop(int32_t stage)
     CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_STOP);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
     AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId_);
-    NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_STOP);
+    NotifyXperfOnPlayback(processConfig_.audioMode, OHOS::HiviewDFX::AudioEventCode::AUDIO_PAUSE_STOP);
     AUDIO_INFO_LOG("Stop in server success!");
     return SUCCESS;
 }
@@ -475,7 +475,7 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
     ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
-    NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_RELEASE);
+    NotifyXperfOnPlayback(processConfig_.audioMode, OHOS::HiviewDFX::AudioEventCode::AUDIO_RELEASE);
     AUDIO_INFO_LOG("notify service release result: %{public}d", ret);
     return SUCCESS;
 }

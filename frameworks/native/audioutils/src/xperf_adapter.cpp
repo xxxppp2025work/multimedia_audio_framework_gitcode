@@ -69,7 +69,7 @@ void XperfAdapter::ReportFaultEvent(int32_t faultcode, uint32_t uid, uint32_t se
     "#HAPPEN_TIME:" + std::to_string(durationSinceEpochMs.count());
 
     OHOS::HiviewDFX::XperfServiceClient::GetInstance().NotifyToXperf(HiviewDFX::DomainId::AUDIO,
-        XPERF_EVENT_FAULT, msg);
+        OHOS::HiviewDFX::AudioEventCode::AUDIO_JNAK_FRAME, msg);
 }
 } // namespace AudioStandard
 } // namespace OHOS
