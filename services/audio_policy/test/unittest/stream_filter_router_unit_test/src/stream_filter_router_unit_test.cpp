@@ -28,6 +28,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 const uint32_t TEST_GROUPID = 10;
+const uint32_t TEST_RESULTZERO = 0;
 
 void StreamFilterRouterUnitTest::SetUpTestCase(void) {}
 void StreamFilterRouterUnitTest::TearDownTestCase(void) {}
