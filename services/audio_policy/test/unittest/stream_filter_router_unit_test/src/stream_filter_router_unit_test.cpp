@@ -368,27 +368,32 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_012, TestSize.Level1)
 
     matchingDevice->macAddress_ = "macAddress";
     descriptors = {matchingDevice};
-    EXPECT_FALSE(streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice));
+    result = streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice);
+    EXPECT_TRUE(incomingDevice->isVrSupported_);
 
     matchingDevice->volumeGroupId_ = TEST_GROUPID - 1;
     descriptors = {matchingDevice};
-    EXPECT_FALSE(streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice));
+    result = streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice);
+    EXPECT_EQ(NO_A2DP_DEVICE, incomingDevice->a2dpOffloadFlag_ );
 
     matchingDevice->interruptGroupId_ = TEST_GROUPID - 1;
     descriptors = {matchingDevice};
-    EXPECT_FALSE(streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice));
+    result = streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice);
+    EXPECT_EQ(TEST_RESULTZERO, incomingDevice->deviceId_);
 
     matchingDevice->deviceType_ = DEVICE_TYPE_SPEAKER;
     descriptors = {matchingDevice};
-    EXPECT_FALSE(streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice));
+    result = streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice);
+    EXPECT_FALSE(matchingDevice->isScoRealConnected_);
     
     incomingDevice->deviceRole_ = OUTPUT_DEVICE;
     descriptors = {matchingDevice};
-    EXPECT_FALSE(streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice));
+    result = streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice);
+    EXPECT_EQ(ALL_USAGE, matchingDevice->deviceUsage_ );
 
     matchingDevice->networkId_ = "otherNetworkId";
-    descriptors = {matchingDevice};
-    EXPECT_FALSE(streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice));
+    result = streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice);
+    EXPECT_FALSE(matchingDevice->spatializationSupported_);
 }
 
 /**
@@ -413,12 +418,12 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_013, TestSize.Level1)
     bool hasDescriptor = false;
     std::shared_ptr<AudioDeviceDescriptor> ret =
     rot.SelectRemoteCaptureDevice(descriptors, incomingDevice, hasDescriptor);
-    EXPECT_FALSE(hasDescriptor);
+    EXPECT_EQ(incomingDevice->a2dpOffloadFlag_, matchingDevice->a2dpOffloadFlag_);
 
     incomingDevice->deviceRole_ = OUTPUT_DEVICE;
     descriptors = {matchingDevice};
     ret = rot.SelectRemoteCaptureDevice(descriptors, incomingDevice, hasDescriptor);
-    EXPECT_FALSE(hasDescriptor);
+    EXPECT_EQ(incomingDevice->routerType_, matchingDevice->routerType_);
 }
 } // namespace AudioStandard
 } // namespace OHOS
