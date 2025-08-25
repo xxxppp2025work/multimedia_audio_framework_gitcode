@@ -27,7 +27,7 @@
 #include "audio_common_log.h"
 #include "napi_audio_capturer.h"
 
-namespace OHOS {
+namespace OHOS { 
 namespace AudioStandard {
 using namespace std;
 using namespace HiviewDFX;
