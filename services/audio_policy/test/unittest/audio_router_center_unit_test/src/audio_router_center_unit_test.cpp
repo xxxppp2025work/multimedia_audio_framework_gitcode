@@ -29,6 +29,8 @@ static constexpr int32_t CLIENT_UID_TYPE_EARPIECE = 2;
 namespace OHOS {
 namespace AudioStandard {
 
+const uint32_t TEST_RETRETURN = 0;
+
 void AudioRouterCenterUnitTest::SetUpTestCase(void) {}
 void AudioRouterCenterUnitTest::TearDownTestCase(void) {}
 void AudioRouterCenterUnitTest::SetUp(void) {}
@@ -558,7 +560,7 @@ HWTEST(AudioRouterCenterUnitTest, GetBypassWithSco_001, TestSize.Level1)
     RouterType rtype = ROUTER_TYPE_NONE;
     AudioScene audioScene = AUDIO_SCENE_DEFAULT;
     auto result = center.GetBypassWithSco(audioScene);
-    EXPECT_EQ(result, 0);
+    EXPECT_EQ(result, TEST_RETRETURN);
 }
 } // namespace AudioStandard
 } // namespace OHOS
