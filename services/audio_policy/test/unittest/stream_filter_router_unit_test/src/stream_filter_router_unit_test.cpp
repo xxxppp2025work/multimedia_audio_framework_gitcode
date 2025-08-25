@@ -375,7 +375,7 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_012, TestSize.Level1)
     matchingDevice->volumeGroupId_ = TEST_GROUPID - 1;
     descriptors = {matchingDevice};
     result = streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice);
-    EXPECT_EQ(NO_A2DP_DEVICE, incomingDevice->a2dpOffloadFlag_ );
+    EXPECT_EQ(NO_A2DP_DEVICE, incomingDevice->a2dpOffloadFlag_);
 
     matchingDevice->interruptGroupId_ = TEST_GROUPID - 1;
     descriptors = {matchingDevice};
@@ -390,7 +390,7 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_012, TestSize.Level1)
     incomingDevice->deviceRole_ = OUTPUT_DEVICE;
     descriptors = {matchingDevice};
     result = streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice);
-    EXPECT_EQ(ALL_USAGE, matchingDevice->deviceUsage_ );
+    EXPECT_EQ(, matchingDevice->deviceUsage_);
 
     matchingDevice->networkId_ = "otherNetworkId";
     result = streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice);
@@ -418,7 +418,7 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_013, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descriptors = {matchingDevice};
     bool hasDescriptor = false;
     std::shared_ptr<AudioDeviceDescriptor> ret =
-    rot.SelectRemoteCaptureDevice(descriptors, incomingDevice, hasDescriptor);
+        rot.SelectRemoteCaptureDevice(descriptors, incomingDevice, hasDescriptor);
     EXPECT_EQ(incomingDevice->a2dpOffloadFlag_, matchingDevice->a2dpOffloadFlag_);
 
     incomingDevice->deviceRole_ = OUTPUT_DEVICE;
