@@ -25,6 +25,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
+//仅有HpaeCapturerManager一个实现类
 class IHpaeCapturerManager : public HpaeStreamManager {
 public:
     virtual ~IHpaeCapturerManager() {}

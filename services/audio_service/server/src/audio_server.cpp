@@ -893,24 +893,20 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
         return SUCCESS;
     }
 
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
 
     AudioParamKey parmKey = AudioParamKey::NONE;
+    std::string value_new = value;
     if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
         parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
         HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "SMARTPA_LOWPOWER",
-            HiviewDFX::HiSysEvent::EventType::BEHAVIOR, "STATE", value == "SmartPA_lowpower=on" ? 1 : 0);
+            HiviewDFX::HiSysEvent::EventType::BEHAVIOR, "STATE", value_new == "SmartPA_lowpower=on" ? 1 : 0);
     } else if (key == "bt_headset_nrec") {
         parmKey = AudioParamKey::BT_HEADSET_NREC;
     } else if (key == "bt_wbs") {
         parmKey = AudioParamKey::BT_WBS;
     } else if (key == "AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG") {
         parmKey = AudioParamKey::A2DP_OFFLOAD_STATE;
-        std::string value_new = "a2dpOffloadConfig=" + value;
-        deviceManager->SetAudioParameter("primary", parmKey, "", value_new);
-        return SUCCESS;
+        value_new = "a2dpOffloadConfig=" + value;
     } else if (key == "mmi") {
         parmKey = AudioParamKey::MMI;
     } else if (key == "perf_info") {
@@ -924,7 +920,19 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
         AUDIO_ERR_LOG("key %{public}s is invalid for hdi interface", key.c_str());
         return SUCCESS;
     }
-    deviceManager->SetAudioParameter("primary", parmKey, "", value);
+
+    std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(HDI_ID_TYPE_VA, HDI_ID_INFO_VA, true);
+    if(source != nullptr) {
+        source->SetAudioParameter(parmKey, "", value_new);
+    }
+
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    if(deviceManager != nullptr) {
+        deviceManager->SetAudioParameter("primary", parmKey, "", value_new);
+    } else {
+        AUDIO_INFO_LOG("local device manager is nullptr");
+    }
     return SUCCESS;
 }
 
@@ -1104,6 +1112,41 @@ const std::string AudioServer::GetAudioParameterInner(const std::string &key)
                 parmKey = AudioParamKey::MMI;
                 return deviceManager->GetAudioParameter("primary", AudioParamKey(parmKey),
                     key.substr(mmiPre.size(), key.size() - mmiPre.size()));
+            }
+        }
+    }
+
+    std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(HDI_ID_TYPE_VA, HDI_ID_INFO_VA, true);
+    if(source != nullptr) {
+        AudioParamKey parmKey = AudioParamKey::NONE;
+        if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
+            parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
+            return source->GetAudioParameter(AudioParamKey(parmKey), "");
+        }
+        if(key.find("need_change_usb_device#C") == 0) {
+            parmKey = AudioParamKey::USB_DEVICE;
+            return source->GetAudioParameter(AudioParamKey(parmKey), key);
+        }
+        if (key == "getSmartPAPOWER" || key == "show_RealTime_ChipModel") {
+            return source->GetAudioParameter(AudioParamKey::NONE, key);
+        }
+        if (key == "perf_info") {
+            return source->GetAudioParameter(AudioParamKey::PERF_INFO, key);
+        }
+        if (key == "concurrent_capture_stream_info") {
+            return source->GetAudioParameter(AudioParamKey::NONE, key);
+        }
+        if (key.size() < BUNDLENAME_LENGTH_LIMIT && key.size() > CHECK_FAST_BLOCK_PREFIX.size() &&
+            key.substr(0, CHECK_FAST_BLOCK_PREFIX.size()) == CHECK_FAST_BLOCK_PREFIX) {
+            return source->GetAudioParameter(AudioParamKey::NONE, key);
+        }
+
+        const std::string mmiPre = "mmi_";
+        if (key.size() > mmiPre.size()) {
+            if (key.substr(0, mmiPre.size()) == mmiPre) {
+                parmKey = AudioParamKey::MMI;
+                return source->GetAudioParameter(AudioParamKey(parmKey),
+                key.substr(mmiPre.size(), key.size() - mmiPre.size()));
             }
         }
     }

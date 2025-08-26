@@ -40,6 +40,8 @@
 #include "audio_bundle_manager.h"
 #include "audio_server_proxy.h"
 #include "audio_policy_client_holder.h"
+#include "va_device_broker_stub_impl.h"
+#include "va_device_manager.h"
 #include "standalone_mode_manager.h"
 
 using OHOS::Security::AccessToken::PrivacyKit;
@@ -274,7 +276,7 @@ void AudioPolicyServer::OnStart()
     SubscribeVolumeKeyEvents();
 #endif
     if (getpid() > FIRST_SCREEN_ON_PID) {
-        coreService_->SetFirstScreenOn();
+        audioDeviceCommon_.SetFirstScreenOn();
     }
     // Restart to reload the volume.
     InitKVStore();
@@ -1059,9 +1061,11 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         eventEntry_->OnReceiveUpdateDeviceNameEvent(macAddress, deviceName);
     } else if (action == "usual.event.SCREEN_ON") {
         AUDIO_INFO_LOG("receive SCREEN_ON action, control audio focus if need");
-        CHECK_AND_RETURN_LOG(coreService_, "coreService_ is nullptr");
-        coreService_->SetFirstScreenOn();
-        CHECK_AND_RETURN_LOG(powerStateListener_, "powerStateListener_ is nullptr");
+        audioDeviceCommon_.SetFirstScreenOn();
+        if (powerStateListener_ == nullptr) {
+            AUDIO_ERR_LOG("powerStateListener_ is nullptr");
+            return;
+        }
         powerStateListener_->ControlAudioFocus(false);
     } else if (action == "usual.event.SCREEN_LOCKED") {
         AUDIO_INFO_LOG("receive SCREEN_OFF or SCREEN_LOCKED action, control audio volume change if stream is active");
@@ -5324,6 +5328,24 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
     CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "Create dataShare failed, datashare or library error.");
     dataShareHelper->Release();
     return SUCCESS;
+}
+
+int32_t AudioPolicyServer::GetVADeviceBroker(sptr<IRemoteObject> &client)
+{
+    client = sptr<VADeviceBrokerStubImpl>::MakeSptr()->AsObject();
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::GetVADeviceController(const std::string& macAddress, sptr<IRemoteObject>& controller)
+{
+    VADeviceManager::GetInstance().GetDeviceController(macAddress, controller);
+    return SUCCESS;
+}
+
+void AudioPolicyServer::SetVoiceMuteState(uint32_t sessionId, bool isMute)
+{
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    return coreService_->SetVoiceMuteState(sessionId, isMute);
 }
 
 int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t volumeDegree, int32_t volumeFlag,

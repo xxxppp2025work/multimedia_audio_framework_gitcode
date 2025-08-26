@@ -1032,12 +1032,6 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
     }
 };
 
-struct AudioCapturerOptions {
-    AudioStreamInfo streamInfo;
-    AudioCapturerInfo capturerInfo;
-    AudioPlaybackCaptureConfig playbackCaptureConfig;
-    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
-};
 
 struct AppInfo {
     int32_t appUid { INVALID_UID };
@@ -1949,14 +1943,6 @@ enum BoostTriggerMethod : uint32_t {
     METHOD_START = 0,
     METHOD_WRITE_OR_READ,
     METHOD_MAX
-};
-
-enum XperfEventId : int32_t {
-    XPERF_EVENT_START = 0,
-    XPERF_EVENT_STOP = 1,
-    XPERF_EVENT_RELEASE = 2,
-    XPERF_EVENT_FAULT = 3,
-    XPERF_EVENT_MAX = 4,
 };
 } // namespace AudioStandard
 } // namespace OHOS
