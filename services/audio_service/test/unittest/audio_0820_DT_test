@@ -1,7 +1,172 @@
-group("client_stub_unit_test_group") {
-  testonly = true
-  deps = [
-    ":audio_zone_client_unit_test",
-    ":sle_audio_operation_callback_stub_impl_unit_test",
-  ]
+frameworks/native/audiopolicy/test/unittest/manager_test/src/audio_manager_interrupt_unit_test.cpp
+HWTEST(AudioManagerInterruptUnitTest, SetAppConcurrencyMode_001, TestSize.Level1)
+{
+    int32_t uid = 0;
+    int32_t mode = 0;
+    auto ret = AudioSystemManager::GetInstance()->SetAppConcurrencyMode(uid, mode);
+    EXPECT_EQ(ret, ERR_SYSTEM_PERMISSION_DENIED);
+}
+
+HWTEST(AudioManagerInterruptUnitTest, SetAppSilentOnDisplay_001, TestSize.Level1)
+{
+    int32_t displayId = 0;
+    auto ret = AudioSystemManager::GetInstance()->SetAppSilentOnDisplay(displayId);
+    EXPECT_EQ(ret, ERR_SYSTEM_PERMISSION_DENIED);
+}
+
+
+
+services/audio_policy/test/unittest/audio_interrupt_service_test/src/audio_interrupt_unit_test.cpp
+HWTEST(AudioInterruptUnitTest, AudioPolicyServer_001, TestSize.Level1)
+{
+    auto policyServerTest = GetPolicyServerTest();
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
+ 
+    AudioInterrupt audioInterrupt;
+    int32_t zoneID = 456;
+    pid_t pid = 1;
+    pid_t uid = 1;
+    int32_t strategy = 0;
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    int32_t result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(policyServerTest->ActivateAudioSession(strategy), ERR_UNKNOWN);
+    server->RegisteredStreamListenerClientDied(pid, uid);
+}
+
+
+
+
+services/audio_policy/test/unittest/audio_interrupt_service_test/src/audio_policy_server_unit_test.cpp
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_009, TestSize.Level1)
+{
+    auto policyServerTest = GetPolicyServerUnitTest();
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
+ 
+    AudioInterrupt audioInterrupt;
+    int32_t zoneID = 456;
+ 
+    int32_t result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID);
+    EXPECT_EQ(result, ERR_UNKNOWN);
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID);
+    EXPECT_EQ(result, 0);
+}
+
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016, TestSize.Level1)
+{
+    auto policyServerTest = GetPolicyServerUnitTest();
+    AudioInterrupt audioInterrupt;
+    int32_t zoneID = 456;
+    int32_t result = 0;
+    policyServerTest->ActivateAudioInterrupt(audioInterrupt, zoneID, result);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_025, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+ 
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+ 
+    int32_t strategy = 0;
+    ptrAudioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
+ 
+    auto ret = ptrAudioPolicyServer->ActivateAudioSession(strategy);
+ 
+    EXPECT_EQ(ret, ERR_UNKNOWN);
+}
+
+
+
+services/audio_service/test/unittest/audio_server_unit_test/src/audio_server_unit_test.cpp
+HWTEST_F(AudioServerUnitTest, OffloadSetVolume_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    int32_t ret = audioServer->OffloadSetVolume(0.5f, "offload", "default");
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
+HWTEST_F(AudioServerUnitTest, ResetRouteForDisconnect_001, TestSize.Level1)
+{
+    DeviceType deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
+ 
+    EXPECT_NE(nullptr, audioServer);
+    auto ret = audioServer->ResetRouteForDisconnect(deviceType);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
+HWTEST_F(AudioServerUnitTest, NotifyStreamVolumeChanged_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioStreamType streamType = STREAM_MUSIC;
+    float volume = 0.5f;
+    int32_t ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+ 
+    streamType = static_cast<AudioStreamType>(-1);
+    ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+ 
+    streamType = STREAM_MUSIC;
+    volume = -1.0f;
+    ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
+HWTEST_F(AudioServerUnitTest, GetVolumeDataCount_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    std::string testName = "testSink";
+    int64_t volueDataCount = 0;
+    int32_t ret = audioServer->GetVolumeDataCount(testName, volueDataCount);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+    EXPECT_EQ(volueDataCount, 0);
+}
+
+HWTEST_F(AudioServerUnitTest, ResetRecordConfig_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+ 
+    AudioProcessConfig config;
+    config.capturerInfo.sourceType = SourceType::SOURCE_TYPE_LIVE;
+ 
+    audioServer->ResetRecordConfig(config);
+    EXPECT_EQ(config.capturerInfo.sourceType, SOURCE_TYPE_LIVE);
+}
+
+#ifdef TEMP_DISABLE
+/**
+ * @tc.name  : Test SetRenderWhitelist API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerSetRenderWhitelist_001
+ * @tc.desc  : Test SetRenderWhitelist interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerSetRenderWhitelist_001, TestSize.Level2)
+{
+    EXPECT_NE(nullptr, audioServer);
+ 
+    std::vector<std::string> list;
+    list.push_back("com.test");
+    int32_t ret = audioServer->SetRenderWhitelist(list);
+    EXPECT_EQ(SUCCESS, ret);
+}
+#endif
+
+
+
+
+
+services/audio_service/test/unittest/audio_service_unit_test.cpp
+HWTEST(AudioServiceUnitTest, SaveRenderWhitelist_001, TestSize.Level1)
+{
+    std::vector<std::string> list = { "test1", "test2", "test3" };
+    AudioService::GetInstance()->SaveRenderWhitelist(list);
+    EXPECT_EQ(AudioService::GetInstance()->renderWhitelist_.size(), 3);
 }
