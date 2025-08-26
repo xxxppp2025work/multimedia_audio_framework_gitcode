@@ -3605,6 +3605,10 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
             return ERR_INVALID_PARAM;
     }
 
+    for (auto &desc : descs) {
+        AUDIO_INFO_LOG("GetAvailableDevices:id =%{public}d, displayName = %{public}s, deviceType = %{public}d_",
+            desc->deviceId_, desc->displayName_.c_str(), desc->deviceType_);
+    }
     descs = eventEntry_->GetAvailableDevices(usage);
 
     if (!hasSystemPermission) {
@@ -3630,7 +3634,10 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
             descs.push_back(make_shared<AudioDeviceDescriptor>(*dec));
         }
     }
-
+    for (auto &desc : descs) {
+        AUDIO_INFO_LOG("GetAvailableDevices:id =%{public}d, displayName = %{public}s, deviceType = %{public}d",
+            desc->deviceId_, desc->displayName_.c_str(), desc->deviceType_);
+    }
     return SUCCESS;
 }
 
