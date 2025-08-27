@@ -1,109 +1,87 @@
-frameworks/native/audiopolicy/test/unittest/manager_test/src/audio_manager_interrupt_unit_test.cpp
-HWTEST(AudioManagerInterruptUnitTest, SetAppConcurrencyMode_001, TestSize.Level1)
-{
-    int32_t uid = 0;
-    int32_t mode = 0;
+    std::string GetRealBundleName(uint32_t uid);
+    std::string GetBundleName2(uint32_t uid);
 
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_025, TestSize.Level1)
+
+        void UpdateMicFocusStrategy(SourceType existSourceType, SourceType incomingSourceType,
+        const std::string &currentBundleName, const std::string &incomingBundleName, AudioFocusEntry &focusEntry);
+
+
+
+
+std::string AudioInterruptService::GetBundleName2(uint32_t uid)
 {
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
- 
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
- 
-    int32_t strategy = 0;
-    ptrAudioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
- 
-    auto ret = ptrAudioPolicyServer->ActivateAudioSession(strategy);
- 
-    EXPECT_EQ(ret, ERR_UNKNOWN);
+    CHECK_AND_RETURN_RET_LOG(policyServer_ != nullptr, "", "policyServer nullptr");
+    auto info = AudioBundleManager::GetBundleInfoFromUid(uid);
+    return info.name;
 }
 
 
 
-services/audio_service/test/unittest/audio_server_unit_test/src/audio_server_unit_test.cpp
-HWTEST_F(AudioServerUnitTest, OffloadSetVolume_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    int32_t ret = audioServer->OffloadSetVolume(0.5f, "offload", "default");
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-}
+    int32_t uid = incomingInterrupt.uid;
+    int32_t currentUid = currentInterrupt.uid;
 
-HWTEST_F(AudioServerUnitTest, ResetRouteForDisconnect_001, TestSize.Level1)
-{
-    DeviceType deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
+
+    std::string bundleName = GetRealBundleName(static_cast<int32_t>(uid));
+    std::string currentBundleName = GetBundleName2(static_cast<int32_t>(currentUid));
+
+
+
+        "existStreamType:%{public}d  incomingStreamType:%{public}d"
+        "currentPid:%{public}d  incomingPid:%{public}d  currentBundleName: %{public}s",
+        focusEntry.hintType, focusEntry.actionOn, existSourceType, incomingSourceType,
+        existStreamType, incomingStreamType, currentPid, incomingPid, currentBundleName.c_str());
+
+    
+
+
+    UpdateMicFocusByUid(uid, existSourceType, incomingSourceType, currentBundleName, focusEntry);
+
+
+
+void AudioInterruptService::UpdateMicFocusStrategy(SourceType existSourceType,
+    SourceType incomingSourceType, const std::string &currentBundleName,
+    const std::string &incomingBundleName, AudioFocusEntry &focusEntry)
+
+    bool isCurrentBundleNameExist = false;
+    bool isIncomingBundleNameExist = false;
+    if (queryBundleNameListCallback_ != nullptr) {
+        queryBundleNameListCallback_->OnQueryBundleNameIsInList(currentBundleName, "audio_micfocus_list",
+            isCurrentBundleNameExist);
+        AUDIO_INFO_LOG("isCurrentBundleNameExist: %{public}d", isCurrentBundleNameExist);
+    }
+    if (queryBundleNameListCallback_ != nullptr) {
+        queryBundleNameListCallback_->OnQueryBundleNameIsInList(incomingBundleName, "audio_micfocus_list",
+            isIncomingBundleNameExist);
+        AUDIO_INFO_LOG("isIncomingBundleNameExist: %{public}d", isIncomingBundleNameExist);
+    }
+    AUDIO_INFO_LOG("%{public}s update mic focus strategy, focusEntry.hintType: %{public}d,"
+        " focusEntry.actionOn: %{public}d"
+        " existSourceType: %{public}d  incomingSourceType: %{public}d"
+        " isCurrentBundleNameExist: %{public}d  isIncomingBundleNameExist: %{public}d" ,
+        currentBundleName.c_str(), focusEntry.hintType, focusEntry.actionOn, existSourceType, incomingSourceType,
+        isCurrentBundleNameExist, isIncomingBundleNameExist);
+    if (existSourceType == SOURCE_TYPE_MIC && IsMicSource(incomingSourceType) && isCurrentBundleNameExist) {
+        focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+        focusEntry.actionOn = CURRENT;
+        AUDIO_INFO_LOG("current %{public}s update mic focus strategy", currentBundleName.c_str());
+        return;
+    }
+    if (IsMicSource(existSourceType) && incomingSourceType == SOURCE_TYPE_MIC && isIncomingBundleNameExist) {
+        focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+        focusEntry.actionOn = INCOMING;
+        AUDIO_INFO_LOG("incoming %{public}s update mic focus strategy", incomingBundleName.c_str());
+        return;
+    }
+}
  
-    EXPECT_NE(nullptr, audioServer);
-    auto ret = audioServer->ResetRouteForDisconnect(deviceType);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-}
-
-HWTEST_F(AudioServerUnitTest, NotifyStreamVolumeChanged_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    AudioStreamType streamType = STREAM_MUSIC;
-    float volume = 0.5f;
-    int32_t ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
- 
-    streamType = static_cast<AudioStreamType>(-1);
-    ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
- 
-    streamType = STREAM_MUSIC;
-    volume = -1.0f;
-    ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-}
-
-HWTEST_F(AudioServerUnitTest, GetVolumeDataCount_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    std::string testName = "testSink";
-    int64_t volueDataCount = 0;
-    int32_t ret = audioServer->GetVolumeDataCount(testName, volueDataCount);
-    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
-    EXPECT_EQ(volueDataCount, 0);
-}
-
-HWTEST_F(AudioServerUnitTest, ResetRecordConfig_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
- 
-    AudioProcessConfig config;
-    config.capturerInfo.sourceType = SourceType::SOURCE_TYPE_LIVE;
- 
-    audioServer->ResetRecordConfig(config);
-    EXPECT_EQ(config.capturerInfo.sourceType, SOURCE_TYPE_LIVE);
-}
-
-#ifdef TEMP_DISABLE
-/**
- * @tc.name  : Test SetRenderWhitelist API
- * @tc.type  : FUNC
- * @tc.number: AudioServerSetRenderWhitelist_001
- * @tc.desc  : Test SetRenderWhitelist interface.
- */
-HWTEST_F(AudioServerUnitTest, AudioServerSetRenderWhitelist_001, TestSize.Level2)
-{
-    EXPECT_NE(nullptr, audioServer);
- 
-    std::vector<std::string> list;
-    list.push_back("com.test");
-    int32_t ret = audioServer->SetRenderWhitelist(list);
-    EXPECT_EQ(SUCCESS, ret);
-}
-#endif
 
 
 
+ CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_MIC 
 
 
-services/audio_service/test/unittest/audio_service_unit_test.cpp
-HWTEST(AudioServiceUnitTest, SaveRenderWhitelist_001, TestSize.Level1)
-{
-    std::vector<std::string> list = { "test1", "test2", "test3" };
-    AudioService::GetInstance()->SaveRenderWhitelist(list);
-    EXPECT_EQ(AudioService::GetInstance()->renderWhitelist_.size(), 3);
-}
+ config.capturerInfo.sourceType == SOURCE_TYPE_MIC)
+
+
+ CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_MIC 
+
