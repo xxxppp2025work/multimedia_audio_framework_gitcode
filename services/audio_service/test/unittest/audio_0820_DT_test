@@ -3,69 +3,6 @@ HWTEST(AudioManagerInterruptUnitTest, SetAppConcurrencyMode_001, TestSize.Level1
 {
     int32_t uid = 0;
     int32_t mode = 0;
-    auto ret = AudioSystemManager::GetInstance()->SetAppConcurrencyMode(uid, mode);
-    EXPECT_EQ(ret, ERR_SYSTEM_PERMISSION_DENIED);
-}
-
-HWTEST(AudioManagerInterruptUnitTest, SetAppSilentOnDisplay_001, TestSize.Level1)
-{
-    int32_t displayId = 0;
-    auto ret = AudioSystemManager::GetInstance()->SetAppSilentOnDisplay(displayId);
-    EXPECT_EQ(ret, ERR_SYSTEM_PERMISSION_DENIED);
-}
-
-
-
-services/audio_policy/test/unittest/audio_interrupt_service_test/src/audio_interrupt_unit_test.cpp
-HWTEST(AudioInterruptUnitTest, AudioPolicyServer_001, TestSize.Level1)
-{
-    auto policyServerTest = GetPolicyServerTest();
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
- 
-    AudioInterrupt audioInterrupt;
-    int32_t zoneID = 456;
-    pid_t pid = 1;
-    pid_t uid = 1;
-    int32_t strategy = 0;
-    server->interruptService_ = std::make_shared<AudioInterruptService>();
-    int32_t result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID);
-    EXPECT_EQ(result, SUCCESS);
-    EXPECT_EQ(policyServerTest->ActivateAudioSession(strategy), ERR_UNKNOWN);
-    server->RegisteredStreamListenerClientDied(pid, uid);
-}
-
-
-
-
-services/audio_policy/test/unittest/audio_interrupt_service_test/src/audio_policy_server_unit_test.cpp
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_009, TestSize.Level1)
-{
-    auto policyServerTest = GetPolicyServerUnitTest();
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
- 
-    AudioInterrupt audioInterrupt;
-    int32_t zoneID = 456;
- 
-    int32_t result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID);
-    EXPECT_EQ(result, ERR_UNKNOWN);
-    server->interruptService_ = std::make_shared<AudioInterruptService>();
-    result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID);
-    EXPECT_EQ(result, 0);
-}
-
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016, TestSize.Level1)
-{
-    auto policyServerTest = GetPolicyServerUnitTest();
-    AudioInterrupt audioInterrupt;
-    int32_t zoneID = 456;
-    int32_t result = 0;
-    policyServerTest->ActivateAudioInterrupt(audioInterrupt, zoneID, result);
-    EXPECT_EQ(result, SUCCESS);
-}
 
 HWTEST(AudioPolicyUnitTest, AudioPolicyServer_025, TestSize.Level1)
 {
