@@ -24,15 +24,15 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioInjector {
 public:
-    static std::shared_ptr<AudioInjector> Create()
+    static AudioInjector& GetInstance()
     {
-        static std::shared_ptr<AudioInjector> instance(new AudioInjector());
+        static AudioInjector instance;
         return instance;
     }
     int32_t Init();
     int32_t DeInit();
     int32_t UpdateAudioInfo(AudioModuleInfo &Info);
-    int32_t MoveIn(uint32_t renderId, bool flag);
+    int32_t MoveStream(uint32_t renderId, bool flag);
     int32_t PeekAudioData(uint32_t streamid, uint8_t *destPtr, size_t dataSize);
     int32_t GetRenderCount();
     void SetCaptureIdx(uint32_t idx);

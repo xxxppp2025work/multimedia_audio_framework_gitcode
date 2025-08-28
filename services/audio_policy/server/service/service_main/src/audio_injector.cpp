@@ -38,7 +38,7 @@ int32_t AudioInjector::UpdateAudioInfo(AudioModuleInfo &Info)
     return 0;
 }
 
-int32_t AudioInjector::MoveIn(uint32_t renderId, bool flag)
+int32_t AudioInjector::MoveStream(uint32_t renderId, bool flag)
 {
     return 0;
 }
