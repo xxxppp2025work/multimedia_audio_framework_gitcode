@@ -40,6 +40,8 @@
 #include "audio_bundle_manager.h"
 #include "audio_server_proxy.h"
 #include "audio_policy_client_holder.h"
+#include "va_device_broker_stub_impl.h"
+#include "va_device_manager.h"
 #include "standalone_mode_manager.h"
 
 using OHOS::Security::AccessToken::PrivacyKit;
@@ -2059,6 +2061,9 @@ int32_t AudioPolicyServer::GetDevices(int32_t deviceFlagIn,
             desc->networkId_ = "";
             desc->interruptGroupId_ = GROUP_ID_NONE;
             desc->volumeGroupId_ = GROUP_ID_NONE;
+            if (desc->deviceType_ == DEVICE_TYPE_BT_SPP) {
+                desc->deviceType_ = DEVICE_TYPE_SYSTEM_PRIVATE;
+            }
         }
     }
 
@@ -2157,6 +2162,7 @@ int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRender
     }
 
     int32_t apiVersion = HasUsbDevice(deviceDescs) ? GetApiTargetVersion() : 0;
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     bool isSupportedNearlink = !audioPolicyUtils_.IsBundleNameInList(AudioBundleManager::GetBundleName(),
         NEARLINK_LIST);
     for (auto &desc : deviceDescs) {
@@ -2164,6 +2170,9 @@ int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRender
         desc->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
         if (desc->IsAudioDeviceDescriptor()) {
             desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion, isSupportedNearlink);
+        }
+        if(!hasSystemPermission && desc->deviceType_ == DEVICE_TYPE_BT_SPP) {
+            desc->deviceType_ = DEVICE_TYPE_SYSTEM_PRIVATE;
         }
     }
 
@@ -3833,6 +3842,9 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
             desc->networkId_ = "";
             desc->interruptGroupId_ = GROUP_ID_NONE;
             desc->volumeGroupId_ = GROUP_ID_NONE;
+            if (desc->deviceType_ == DEVICE_TYPE_BT_SPP) {
+                desc->deviceType_ = DEVICE_TYPE_SYSTEM_PRIVATE;
+            }
         }
     }
 
@@ -5356,6 +5368,18 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
         DATASHARE_SERVICE_TIMEOUT_SECONDS);
     CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "Create dataShare failed, datashare or library error.");
     dataShareHelper->Release();
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::GetVADeviceBroker(sptr<IRemoteObject> &client)
+{
+    client = sptr<VADeviceBrokerStubImpl>::MakeSptr()->AsObject();
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::GetVADeviceController(const std::string& macAddress, sptr<IRemoteObject>& controller)
+{
+    VADeviceManager::GetInstance().GetDeviceController(macAddress, controller);
     return SUCCESS;
 }
 
