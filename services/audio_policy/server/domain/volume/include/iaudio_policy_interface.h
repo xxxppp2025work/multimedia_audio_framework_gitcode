@@ -129,7 +129,7 @@ public:
 
     virtual bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) = 0;
 
-    virtual float CalculateVolumeDb(int32_t volumeLevel, int32_t maxDegree = 0) = 0;
+    virtual float CalculateVolumeDb(int32_t volumeLevel) = 0;
 
     virtual int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) = 0;
 
@@ -200,9 +200,6 @@ public:
     virtual int32_t GetPersistMicMuteState(bool &isMute) = 0;
 
     virtual void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel,
-        std::string networkId) = 0;
-
-    virtual void HandleSaveVolumeDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree,
         std::string networkId) = 0;
 
     virtual void HandleStreamMuteStatus(AudioStreamType streamType, bool mute,

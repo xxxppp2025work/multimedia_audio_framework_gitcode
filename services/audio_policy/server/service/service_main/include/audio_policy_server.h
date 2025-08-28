@@ -698,9 +698,6 @@ protected:
     int32_t GetApiTargetVersion();
 
 private:
-    int32_t SetSystemVolumeDegreeInner(AudioStreamType streamType, int32_t volumeDegree,
-        bool isUpdateUi, int32_t uid);
-
     friend class AudioInterruptService;
 
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
