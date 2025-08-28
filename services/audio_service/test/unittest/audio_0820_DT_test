@@ -1,0 +1,12 @@
+
+
+
+
+
+
+        UpdateMicFocusStrategy(existSourceType, incomingSourceType, existStreamType,
+            incomingStreamType, std::to_string(uid), bundleName, focusEntry);
+    } else {
+        UpdateMicFocusStrategy(existSourceType, incomingSourceType, existStreamType,
+            incomingStreamType, currentBundleName, bundleName, focusEntry);
+    }
