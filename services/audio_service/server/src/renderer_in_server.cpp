@@ -635,21 +635,23 @@ void RendererInServer::VolumeHandle(BufferDesc &desc)
 BufferDesc RendererInServer::PrepareOutputBuffer(const RingBufferWrapper& ringBufferDesc)
 {
     BufferDesc bufferDesc;
-    if (ringBufferDesc.basicBufferDescs[0].bufLength >= ringBufferDesc.dataLength) {
+    if (ringBufferDesc.basicBufferDescs[0].bufLength >= ringBufferDesc.dataLength &&
+        ringBufferDesc.dataLength == spanSizeInByte_) {
         bufferDesc.buffer = ringBufferDesc.basicBufferDescs[0].buffer;
         bufferDesc.bufLength = ringBufferDesc.dataLength;
         bufferDesc.dataLength = ringBufferDesc.dataLength;
     } else {
-        rendererTmpBuffer_.resize(ringBufferDesc.dataLength);
+        rendererTmpBuffer_.resize(0);
+        rendererTmpBuffer_.resize(spanSizeInByte_);
         RingBufferWrapper tmpWrapper;
-        tmpWrapper.dataLength = ringBufferDesc.dataLength;
+        tmpWrapper.dataLength = spanSizeInByte_;
         tmpWrapper.basicBufferDescs[0].buffer = rendererTmpBuffer_.data();
-        tmpWrapper.basicBufferDescs[0].bufLength = ringBufferDesc.dataLength;
+        tmpWrapper.basicBufferDescs[0].bufLength = spanSizeInByte_;
         tmpWrapper.CopyInputBufferValueToCurBuffer(ringBufferDesc);
 
         bufferDesc.buffer = rendererTmpBuffer_.data();
-        bufferDesc.bufLength = ringBufferDesc.dataLength;
-        bufferDesc.dataLength = ringBufferDesc.dataLength;
+        bufferDesc.bufLength = spanSizeInByte_;
+        bufferDesc.dataLength = spanSizeInByte_;
     }
     return bufferDesc;
 }
