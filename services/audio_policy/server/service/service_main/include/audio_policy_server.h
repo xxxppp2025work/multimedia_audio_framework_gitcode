@@ -599,6 +599,10 @@ public:
 
     int32_t ForceVolumeKeyControlType(int32_t volumeType, int32_t duration, int32_t &ret) override;
 
+    int32_t GetVADeviceBroker(sptr<IRemoteObject> &client) override;
+
+    int32_t GetVADeviceController(const std::string &macAddress, sptr<IRemoteObject> &controller) override;
+
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
     std::set<int32_t> GetStreamIdsForAudioSessionByStreamUsage(
         const int32_t zoneId, const std::set<StreamUsage> &streamUsageSet);
@@ -684,6 +688,7 @@ public:
     int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t command) override;
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) override;
     int32_t CallRingtoneLibrary();
+    void SetVoiceMuteState(uint32_t sessionId, bool isMute);
     int32_t SetSystemVolumeDegree(int32_t streamType, int32_t volumeDegree, int32_t volumeFlag, int32_t uid) override;
     int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
     int32_t GetMinVolumeDegree(int32_t volumeType, int32_t &volumeDegree) override;
