@@ -17,8 +17,6 @@
 
 #include <set>
 #include "audio_module_info.h"
-#include "audio_iohandle_map.h"
-#include "iaudio_policy_interface.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -31,14 +29,14 @@ public:
     }
     int32_t Init();
     int32_t DeInit();
-    int32_t UpdateAudioInfo(AudioModuleInfo &Info);
+    int32_t UpdateAudioInfo(AudioModuleInfo &info);
     int32_t MoveStream(uint32_t renderId, bool flag);
-    int32_t PeekAudioData(uint32_t streamid, uint8_t *destPtr, size_t dataSize);
-    int32_t GetRenderCount();
-    void SetCaptureIdx(uint32_t idx);
-    uint32_t GetCaptureIdx();
-    void SetRenderIdx(uint32_t idx);
-    uint32_t GetRenderIdx();
+    int32_t PeekAudioData(uint32_t capturePortIdx, uint8_t *destBuff, size_t buffSize);
+    int32_t GetRendererStreamCount();
+    void SetCapturePortIdx(uint32_t idx);
+    uint32_t GetCapturePortIdx();
+    void SetRendererPortIdx(uint32_t idx);
+    uint32_t GetRendererPortIdx();
 
 private:
     AudioInjector();
@@ -49,9 +47,7 @@ private:
     uint32_t capturePortIdx_;
     uint32_t renderPortIdx_;
     bool isConnected_;
-    std::unordered_map<uint32_t, std::string> renderIdMap_ = {};
-    AudioIOHandleMap &audioIOHandleMap_;
-    IAudioPolicyInterface &audioPolicyManager_;
+    std::unordered_map<uint32_t, std::string> rendererStreamMap_ = {};
 };
 } //  namespace AudioStandard
 } //  namespace OHOS

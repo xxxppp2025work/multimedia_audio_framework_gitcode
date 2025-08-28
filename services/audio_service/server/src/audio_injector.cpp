@@ -13,14 +13,12 @@
  * limitations under the License.
  */
 #include "audio_injector.h"
-#include "audio_policy_manager_factory.h"
 
 namespace OHOS {
 namespace AudioStandard {
 AudioInjector::AudioInjector()
-    : audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
-      audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())
 {
+    isConnected_ = false;
 }
 
 int32_t AudioInjector::Init()
@@ -33,7 +31,7 @@ int32_t AudioInjector::DeInit()
     return 0;
 }
 
-int32_t AudioInjector::UpdateAudioInfo(AudioModuleInfo &Info)
+int32_t AudioInjector::UpdateAudioInfo(AudioModuleInfo &info)
 {
     return 0;
 }
@@ -42,32 +40,33 @@ int32_t AudioInjector::MoveStream(uint32_t renderId, bool flag)
 {
     return 0;
 }
-int32_t AudioInjector::PeekAudioData(uint32_t streamid, uint8_t *destPtr, size_t dataSize)
+int32_t AudioInjector::PeekAudioData(uint32_t capturePortIdx, uint8_t *destBuff, size_t buffSize)
 {
     return 0;
 }
 
-int32_t AudioInjector::GetRenderCount()
+// get the number of rendererStream moved in Injector
+int32_t AudioInjector::GetRendererStreamCount()
 {
-    return renderIdMap_.size();
+    return rendererStreamMap_.size();
 }
 
-void AudioInjector::SetCaptureIdx(uint32_t idx)
+void AudioInjector::SetCapturePortIdx(uint32_t idx)
 {
     capturePortIdx_ = idx;
 }
 
-uint32_t AudioInjector::GetCaptureIdx()
+uint32_t AudioInjector::GetCapturePortIdx()
 {
     return capturePortIdx_;
 }
 
-void AudioInjector::SetRenderIdx(uint32_t idx)
+void AudioInjector::SetRendererPortIdx(uint32_t idx)
 {
     renderPortIdx_ = idx;
 }
 
-uint32_t AudioInjector::GetRenderIdx()
+uint32_t AudioInjector::GetRendererPortIdx()
 {
     return renderPortIdx_;
 }
