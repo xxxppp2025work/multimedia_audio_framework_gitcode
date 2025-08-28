@@ -103,6 +103,7 @@ napi_value NapiAudioRoutingManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getActiveOutputDeviceDescriptors", GetActiveOutputDeviceDescriptors),
         DECLARE_NAPI_FUNCTION("getPreferredOutputDeviceForRendererInfo", GetPreferredOutputDeviceForRendererInfo),
         DECLARE_NAPI_FUNCTION("getPreferOutputDeviceForRendererInfo", GetPreferOutputDeviceForRendererInfo),
+        DECLARE_NAPI_FUNCTION("getPreferOutputDeviceByFilter", GetPreferOutputDeviceByFilter),
         DECLARE_NAPI_FUNCTION("getPreferredOutputDeviceForRendererInfoSync",
             GetPreferredOutputDeviceForRendererInfoSync),
         DECLARE_NAPI_FUNCTION("getPreferredOutputDeviceByFilter", GetPreferredOutputDeviceByFilter),
@@ -318,6 +319,9 @@ napi_value NapiAudioRoutingManager::SelectOutputDeviceByFilter(napi_env env, nap
             context->bArgTransFlag, argv[PARAM0]);
         NapiParamUtils::GetAudioDeviceDescriptorVector(env, context->deviceDescriptors,
             context->bArgTransFlag, argv[PARAM1]);
+        if (argc == ARGS_THREE) {
+            NapiParamUtils::GetValueInt32(env, context->audioDeviceSelectMode, argv[PARAM2]);
+        }
     };
     context->GetCbInfo(env, info, inputParser);
 
@@ -332,7 +336,7 @@ napi_value NapiAudioRoutingManager::SelectOutputDeviceByFilter(napi_env env, nap
             context->SignError(NAPI_ERR_UNSUPPORTED);
         }
         context->intValue = napiAudioRoutingManager->audioMngr_->SelectOutputDevice(context->audioRendererFilter,
-            context->deviceDescriptors);
+            context->deviceDescriptors, context->audioDeviceSelectMode);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SelectOutputDeviceByFilter failed",
             NAPI_ERR_SYSTEM);
     };
@@ -699,6 +703,49 @@ napi_value NapiAudioRoutingManager::GetPreferOutputDeviceForRendererInfo(napi_en
     return GetPreferredOutputDeviceForRendererInfo(env, info);
 }
 
+napi_value NapiAudioRoutingManager::GetPreferOutputDeviceByFilter(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRoutingManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("GetPreferOutputDeviceByFilter failed : no memory");
+        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments.",
+            NAPI_ERR_INPUT_INVALID);
+        NapiParamUtils::GetAudioRendererFilter(env, context->audioRendererFilter,
+            context->bArgTransFlag, argv[PARAM0]);
+
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioRoutingManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioRoutingManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioRoutingManagerStatus(napiAudioRoutingManager, context),
+            "context object state is error.");
+        if (context->audioRendererFilter->rendererInfo.streamUsage == StreamUsage::STREAM_USAGE_INVALID) {
+            context->SignError(NAPI_ERR_INVALID_PARAM,
+                "Parameter verification failed. Your usage in AudioRendererInfo is invalid.");
+        } else {
+            context->intValue = napiAudioRoutingManager->audioRoutingMngr_->GetPreferredOutputDeviceForRendererInfo(
+                context->audioRendererFilter->rendererInfo, context->outDeviceDescriptors,
+                context->audioRendererFilter->uid);
+            NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS,
+                "GetPreferOutputDeviceByFilter failed", NAPI_ERR_SYSTEM);
+        }
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetDeviceDescriptors(env, context->outDeviceDescriptors, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetPreferOutputDeviceByFilter", executor, complete);
+}
+
 napi_value NapiAudioRoutingManager::GetPreferredOutputDeviceForRendererInfoSync(napi_env env, napi_callback_info info)
 {
     AUDIO_INFO_LOG("GetPreferredOutputDeviceForRendererInfoSync");
@@ -984,6 +1031,8 @@ napi_value NapiAudioRoutingManager::RegisterCallback(napi_env env, napi_value js
     } else if (!cbName.compare(PREFERRED_OUTPUT_DEVICE_CALLBACK_NAME) ||
         !cbName.compare(PREFER_OUTPUT_DEVICE_CALLBACK_NAME)) {
         RegisterPreferredOutputDeviceChangeCallback(env, argc, args, cbName, napiRoutingMgr);
+    } else if (!cbName.compare(PREFER_OUTPUT_DEVICE_BY_FILTER_CALLBACK_NAME)) {
+        RegisterPreferredOutputDeviceByFilterChangeCallback(env, argc, args, cbName, napiRoutingMgr);
     } else if (!cbName.compare(PREFERRED_INPUT_DEVICE_CALLBACK_NAME)) {
         RegisterPreferredInputDeviceChangeCallback(env, argc, args, cbName, napiRoutingMgr);
     } else if (!cbName.compare(AVAILABLE_DEVICE_CHANGE_CALLBACK_NAME)) {
@@ -1096,6 +1145,43 @@ void NapiAudioRoutingManager::RegisterPreferredOutputDeviceChangeCallback(napi_e
         rendererInfo, cb);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowError(env, ret),
         "Registering Preferred Output Device Change Callback Failed %{public}d", ret);
+
+    AddPreferredOutputDeviceChangeCallback(napiRoutingMgr, cb);
+}
+
+void NapiAudioRoutingManager::RegisterPreferredOutputDeviceByFilterChangeCallback(napi_env env, size_t argc,
+    napi_value *args, const std::string &cbName, NapiAudioRoutingManager *napiRoutingMgr)
+{
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_THREE, NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+        "incorrect number of parameters: expected at least 3 parameters"), "argc invalid");
+
+    CHECK_AND_RETURN_RET_LOG(NapiParamUtils::CheckArgType(env, args[PARAM2], napi_function),
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+        "incorrect parameter types: The type of callback must be function"), "callback invalid");
+
+    CHECK_AND_RETURN_LOG(GetNapiPrefOutputDeviceChangeCb(args[PARAM2], napiRoutingMgr) == nullptr,
+        "Do not allow duplicate registration of the same callback");
+
+    aptr<AudioRendererFilter> audioRendererFilter = nullptr;
+    bool argTransFlag = false;
+    napi_status status = NapiParamUtils::GetAudioRendererFilter(env, audioRendererFilter, argTransFlag, args[PARAM1]);
+    CHECK_AND_RETURN_LOG(status == napi_ok, "Parameter verification failed.");
+    CHECK_AND_RETURN_LOG(audioRendererFilter != nullptr,
+        "Parameter verification failed. Your AudioRendererFilter is NULL.");
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter->rendererInfo.streamUsage != StreamUsage::STREAM_USAGE_INVALID,
+        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
+        "Parameter verification failed. Your usage in AudioRendererInfo is invalid."), "invalid streamUsage");
+    std::shared_ptr<NapiAudioPreferredOutputDeviceChangeCallback> cb =
+        std::make_shared<NapiAudioPreferredOutputDeviceChangeCallback>(env);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
+
+    cb->SaveCallbackReference(args[PARAM2]);
+    cb->CreatePreferredOutTsfn(env);
+
+    int32_t ret = napiRoutingMgr->audioRoutingMngr_->SetPreferredOutputDeviceChangeCallback(
+        audioRendererFilter->rendererInfo, cb, audioRendererFilter->uid);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowError(env, ret),
+        "Registering Preferred Output Device By Filter Change Callback Failed %{public}d", ret);
 
     AddPreferredOutputDeviceChangeCallback(napiRoutingMgr, cb);
 }
@@ -1278,7 +1364,8 @@ napi_value NapiAudioRoutingManager::UnregisterCallback(napi_env env, napi_value 
     if (!callbackName.compare(DEVICE_CHANGE_CALLBACK_NAME)) {
         UnregisterDeviceChangeCallback(env, callback, napiRoutingMgr);
     } else if (!callbackName.compare(PREFERRED_OUTPUT_DEVICE_CALLBACK_NAME) ||
-        !callbackName.compare(PREFER_OUTPUT_DEVICE_CALLBACK_NAME)) {
+        !callbackName.compare(PREFER_OUTPUT_DEVICE_CALLBACK_NAME) ||
+        !callbackName.compare(PREFER_OUTPUT_DEVICE_BY_FILTER_CALLBACK_NAME)) {
         UnregisterPreferredOutputDeviceChangeCallback(env, callback, napiRoutingMgr);
     } else if (!callbackName.compare(PREFERRED_INPUT_DEVICE_CALLBACK_NAME)) {
         UnregisterPreferredInputDeviceChangeCallback(env, callback, napiRoutingMgr);

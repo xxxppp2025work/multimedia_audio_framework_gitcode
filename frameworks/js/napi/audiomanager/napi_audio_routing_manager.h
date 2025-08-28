@@ -40,6 +40,7 @@ private:
         int32_t deviceFlag;
         int32_t deviceType;
         int32_t intValue;
+        int32_t audioDeviceSelectMode = 0;
         bool isActive;
         bool isTrue;
         bool bArgTransFlag = true;
@@ -74,6 +75,7 @@ private:
     static napi_value GetActiveOutputDeviceDescriptors(napi_env env, napi_callback_info info);
     static napi_value GetPreferredOutputDeviceForRendererInfo(napi_env env, napi_callback_info info);
     static napi_value GetPreferOutputDeviceForRendererInfo(napi_env env, napi_callback_info info);
+    static napi_value GetPreferOutputDeviceByFilter(napi_env env, napi_callback_info info);
     static napi_value GetPreferredOutputDeviceForRendererInfoSync(napi_env env, napi_callback_info info);
     static napi_value GetPreferredOutputDeviceByFilter(napi_env env, napi_callback_info info);
     static napi_value GetPreferredInputDeviceForCapturerInfo(napi_env env, napi_callback_info info);
@@ -87,6 +89,8 @@ private:
     static void RegisterDeviceChangeCallback(napi_env env, size_t argc, napi_value *args, const std::string &cbName,
         NapiAudioRoutingManager *napiRoutingMgr);
     static void RegisterPreferredOutputDeviceChangeCallback(napi_env env, size_t argc, napi_value *args,
+        const std::string &cbName, NapiAudioRoutingManager *napiRoutingMgr);
+    static void RegisterPreferredOutputDeviceByFilterChangeCallback(napi_env env, size_t argc, napi_value *args,
         const std::string &cbName, NapiAudioRoutingManager *napiRoutingMgr);
     static void RegisterPreferredInputDeviceChangeCallback(napi_env env, size_t argc, napi_value *args,
         const std::string &cbName, NapiAudioRoutingManager *napiRoutingMgr);
