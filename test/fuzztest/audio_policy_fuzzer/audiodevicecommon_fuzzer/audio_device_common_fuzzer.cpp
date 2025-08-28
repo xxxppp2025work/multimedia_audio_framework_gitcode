@@ -230,17 +230,6 @@ void FilterSourceOutputsFuzzTest()
     audioDeviceCommon.FilterSourceOutputs(sessionId);
 }
 
-void IsRingerOrAlarmerDualDevicesRangeFuzzTest()
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    if (DeviceTypeVec.size() == 0) {
-        return;
-    }
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    InternalDeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-    audioDeviceCommon.IsRingerOrAlarmerDualDevicesRange(deviceType);
-}
-
 void IsRingOverPlaybackFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
@@ -250,6 +239,17 @@ void IsRingOverPlaybackFuzzTest()
         static_cast<int32_t>(RendererState::RENDERER_PAUSED - RendererState::RENDERER_INVALID) + 1;
     RendererState state = static_cast<RendererState>(GetData<int32_t>() % rendererStateCount- 1);
     audioDeviceCommon.IsRingOverPlayback(mode, state);
+}
+
+void IsRingerOrAlarmerDualDevicesRangeFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    if (DeviceTypeVec.size() == 0) {
+        return;
+    }
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    InternalDeviceType deviceType = DeviceTypeVec[deviceTypeCount];
+    audioDeviceCommon.IsRingerOrAlarmerDualDevicesRange(deviceType);
 }
 
 void GetPreferredInputDeviceDescInnerFuzzTest()

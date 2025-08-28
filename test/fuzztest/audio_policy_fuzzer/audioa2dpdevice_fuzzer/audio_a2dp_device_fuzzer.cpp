@@ -129,6 +129,19 @@ void GetA2dpDeviceInfoFuzzTest()
     AudioA2dpDevice::GetInstance().DelA2dpDevice(device);
 }
 
+void GetA2dpDeviceVolumeLevelFuzzTest()
+{
+    A2dpDeviceConfigInfo configInfo;
+    configInfo.volumeLevel = GetData<int32_t>();
+    std::string device = "test_device";
+    AudioA2dpDevice::GetInstance().AddA2dpDevice(device, configInfo);
+    int32_t volumeLevel;
+    AudioA2dpDevice::GetInstance().GetA2dpDeviceVolumeLevel(device, volumeLevel);
+    string nonDevice = "non_existent_device";
+    int32_t volumeLeve2;
+    AudioA2dpDevice::GetInstance().GetA2dpDeviceVolumeLevel(nonDevice, volumeLeve2);
+}
+
 void GetA2dpInDeviceInfoFuzzTest()
 {
     uint32_t samplingRateCount = GetData<uint32_t>() % AudioSamplingRateVec.size();
@@ -151,19 +164,6 @@ void GetA2dpInDeviceInfoFuzzTest()
     A2dpDeviceConfigInfo info;
     AudioA2dpDevice::GetInstance().GetA2dpInDeviceInfo(device, info);
     AudioA2dpDevice::GetInstance().DelA2dpInDevice(device);
-}
-
-void GetA2dpDeviceVolumeLevelFuzzTest()
-{
-    A2dpDeviceConfigInfo configInfo;
-    configInfo.volumeLevel = GetData<int32_t>();
-    std::string device = "test_device";
-    AudioA2dpDevice::GetInstance().AddA2dpDevice(device, configInfo);
-    int32_t volumeLevel;
-    AudioA2dpDevice::GetInstance().GetA2dpDeviceVolumeLevel(device, volumeLevel);
-    string nonDevice = "non_existent_device";
-    int32_t volumeLeve2;
-    AudioA2dpDevice::GetInstance().GetA2dpDeviceVolumeLevel(nonDevice, volumeLeve2);
 }
 
 void CheckA2dpDeviceExistFuzzTest()

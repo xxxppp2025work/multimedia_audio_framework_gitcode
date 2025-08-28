@@ -160,22 +160,6 @@ void GetMaxAmplitudeFuzzTest()
     audioActiveDevice->GetMaxAmplitude(deviceId, audioInterrupt);
 }
 
-void UpdateDeviceFuzzTest()
-{
-    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-    auto desc = std::make_shared<AudioDeviceDescriptor>(deviceType);
-    int32_t reasonCount = static_cast<int32_t>(AudioStreamDeviceChangeReason::OVERRODE) + 1;
-    auto reason_ = static_cast<AudioStreamDeviceChangeReason>(GetData<uint8_t>() % reasonCount);
-    AudioStreamDeviceChangeReasonExt reason(reason_);
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->clientUID = GetData<int32_t>();
-    rendererChangeInfo->createrUID = GetData<int32_t>();
-    rendererChangeInfo->sessionId = GetData<int32_t>();
-    audioActiveDevice->UpdateDevice(desc, reason, rendererChangeInfo);
-}
-
 void HandleActiveBtFuzzTest()
 {
     std::string macAddress = "test";
@@ -199,6 +183,22 @@ void HandleNegtiveBtFuzzTest()
     deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
     audioActiveDevice->HandleNegtiveBt(deviceType);
+}
+
+void UpdateDeviceFuzzTest()
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
+    auto desc = std::make_shared<AudioDeviceDescriptor>(deviceType);
+    int32_t reasonCount = static_cast<int32_t>(AudioStreamDeviceChangeReason::OVERRODE) + 1;
+    auto reason_ = static_cast<AudioStreamDeviceChangeReason>(GetData<uint8_t>() % reasonCount);
+    AudioStreamDeviceChangeReasonExt reason(reason_);
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->clientUID = GetData<int32_t>();
+    rendererChangeInfo->createrUID = GetData<int32_t>();
+    rendererChangeInfo->sessionId = GetData<int32_t>();
+    audioActiveDevice->UpdateDevice(desc, reason, rendererChangeInfo);
 }
 
 void SetDeviceActiveFuzzTest()

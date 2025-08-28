@@ -148,16 +148,6 @@ void RegisterTrackerFuzzTest()
     int32_t apiVersion = GetData<int32_t>();
 }
 
-void SendA2dpConnectedWhileRunningFuzzTest()
-{
-    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
-    int32_t rendererStateCount =
-        static_cast<int32_t>(RendererState::RENDERER_PAUSED - RendererState::RENDERER_INVALID) + 1;
-    RendererState rendererState = static_cast<RendererState>(GetData<uint8_t>() % rendererStateCount - 1);
-    uint32_t sessionId = GetData<uint32_t>();
-    audioDeviceLock->audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
-}
-
 void HandleAudioCaptureStateFuzzTest()
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
@@ -169,6 +159,16 @@ void HandleAudioCaptureStateFuzzTest()
         static_cast<CapturerState>(GetData<uint8_t>() % capturerStateCount);
     uint32_t sourceTypeCount = GetData<uint32_t>() % SourceTypeVec.size();
     streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = SourceTypeVec[sourceTypeCount];
+}
+
+void SendA2dpConnectedWhileRunningFuzzTest()
+{
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    int32_t rendererStateCount =
+        static_cast<int32_t>(RendererState::RENDERER_PAUSED - RendererState::RENDERER_INVALID) + 1;
+    RendererState rendererState = static_cast<RendererState>(GetData<uint8_t>() % rendererStateCount - 1);
+    uint32_t sessionId = GetData<uint32_t>();
+    audioDeviceLock->audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
 }
 
 void UpdateTrackerFuzzTest()

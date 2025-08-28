@@ -174,6 +174,21 @@ void HandleArmUsbDeviceFuzzTest()
     audioDeviceStatus.DeInit();
 }
 
+void NoNeedChangeUsbDeviceFuzzTest()
+{
+    std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager = std::make_shared<AudioA2dpOffloadManager>();
+    std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler =
+        DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioA2dpOffloadManager->Init();
+    audioDeviceStatus.Init(audioA2dpOffloadManager, audioPolicyServerHandler);
+
+    std::string address = "00:11:22:33:44:55";
+    audioDeviceStatus.NoNeedChangeUsbDevice(address);
+
+    audioDeviceStatus.DeInit();
+}
+
 void RehandlePnpDeviceFuzzTest()
 {
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager = std::make_shared<AudioA2dpOffloadManager>();
@@ -189,21 +204,6 @@ void RehandlePnpDeviceFuzzTest()
     DeviceRole deviceRole = DeviceRoleVec[roleCount];
     std::string address = "00:11:22:33:44:55";
     audioDeviceStatus.RehandlePnpDevice(deviceType, deviceRole, address);
-
-    audioDeviceStatus.DeInit();
-}
-
-void NoNeedChangeUsbDeviceFuzzTest()
-{
-    std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager = std::make_shared<AudioA2dpOffloadManager>();
-    std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler =
-        DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
-    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-    audioA2dpOffloadManager->Init();
-    audioDeviceStatus.Init(audioA2dpOffloadManager, audioPolicyServerHandler);
-
-    std::string address = "00:11:22:33:44:55";
-    audioDeviceStatus.NoNeedChangeUsbDevice(address);
 
     audioDeviceStatus.DeInit();
 }
