@@ -126,7 +126,7 @@ interface IAudioPolicy {
     void GetNetworkIdByGroupId([in] int groupId, [out] String networkId);
     void GetToneConfig([in] int ltonetype, [in] String countryCode, [out] sharedptr<ToneInfo> config); // [macrodef FEATURE_DTMF_TONE]
     void GetSupportedTones([in] String countryCode, [out] List<int> tones); // [macrodef FEATURE_DTMF_TONE]
-    void GetPreferredOutputDeviceDescriptors([in] AudioRendererInfo rendererInfo, [in] boolean forceNoBTPermission, [out] List<sharedptr<AudioDeviceDescriptor>> retDevList, [in] int uid);
+    void GetPreferredOutputDeviceDescriptors([in] AudioRendererInfo rendererInfo, [in] boolean forceNoBTPermission, [out] List<sharedptr<AudioDeviceDescriptor>> retDevList);
     void GetPreferredInputDeviceDescriptors([in] AudioCapturerInfo captureInfo, [out] List<sharedptr<AudioDeviceDescriptor>> retDevList);
     void SetClientCallbacksEnable([in] int callbackchange, [in] boolean enable);
     void GetAudioFocusInfoList([out] List<OrderedMap<AudioInterrupt, int>> focusInfoList, [in] int zoneId); /*  zoneID default value: 0 -- local device */
