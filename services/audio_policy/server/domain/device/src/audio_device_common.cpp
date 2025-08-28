@@ -171,7 +171,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
         auto preferredType = AudioPolicyUtils::GetInstance().GetPreferredTypeByStreamUsage(rendererInfo.streamUsage);
         if (preferredType == AUDIO_CALL_RENDER) {
             shared_ptr<AudioDeviceDescriptor> preferredDev_ = 
-                AudioStateManager::GetAudioStateManager().GetPreferredCallRendgiterDeviceForUid(uid);
+                AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(uid);
             if (preferredDev_->deviceId_ != 0) {
                 deviceList.push_back(preferredDev_);
                 return deviceList;
