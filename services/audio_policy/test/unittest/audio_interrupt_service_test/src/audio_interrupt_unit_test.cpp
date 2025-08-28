@@ -3749,6 +3749,76 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_119, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test AudioInterruptService
+ * @tc.number: AudioInterruptService_120
+ * @tc.desc  : Test HandleBundleName_01
+ */
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_120, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioInterrupt audioInterrupt = {};
+    audioInterrupt.uid = 111;
+    audioInterrupt.bundleName.clear();
+    audioInterruptService->HandleBundleName(audioInterrupt);
+    EXPECT_TRUE(audioInterrupt.bundleName.empty());
+}
+
+/**
+ * @tc.name  : Test AudioInterruptService
+ * @tc.number: AudioInterruptService_121
+ * @tc.desc  : Test HandleBundleName_02
+ */
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_121, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioInterrupt audioInterrupt = {};
+    audioInterrupt.uid = 111;
+    std::string str = "xyz";
+    audioInterrupt.bundleName = str;
+    audioInterruptService->HandleBundleName(audioInterrupt);
+    EXPECT_TRUE(audioInterrupt.bundleName.compare(str) == 0);
+}
+
+/**
+ * @tc.name  : Test AudioInterruptService
+ * @tc.number: AudioInterruptService_122
+ * @tc.desc  : Test HandleBundleName_03
+ */
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_122, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioInterrupt audioInterrupt = {};
+    audioInterrupt.uid = 1003;
+    audioInterrupt.bundleName.clear();
+    audioInterruptService->HandleBundleName(audioInterrupt);
+    EXPECT_TRUE(audioInterrupt.bundleName.empty());
+}
+
+/**
+ * @tc.name  : Test AudioInterruptService
+ * @tc.number: AudioInterruptService_123
+ * @tc.desc  : Test HandleBundleName_04
+ */
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_123, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioInterrupt audioInterrupt = {};
+    audioInterrupt.uid = 1003;
+    std::string str = "xyz";
+    audioInterrupt.bundleName = str;
+    audioInterruptService->HandleBundleName(audioInterrupt);
+    EXPECT_TRUE(audioInterrupt.bundleName.compare(str) == 0);
+}
+
+/**
 * @tc.name  : Test RegisterDefaultVolumeTypeListener
 * @tc.number: RegisterDefaultVolumeTypeListenerTest
 * @tc.desc  : Test RegisterDefaultVolumeTypeListener
