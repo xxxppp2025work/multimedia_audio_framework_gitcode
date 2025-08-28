@@ -400,7 +400,9 @@ int32_t HpaeManager::OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo
 int32_t HpaeManager::OpenAudioPortInner(const AudioModuleInfo &audioModuleInfo)
 {
     uint32_t sinkSourceIndex = static_cast<uint32_t>(sinkSourceIndex_.load());
-    if ((audioModuleInfo.lib != "libmodule-hdi-source.z.so") &&
+    if(audioModuleInfo.lib == "va_lib"){
+        OpenInputAudioPort(audioModuleInfo, sinkSourceIndex);
+    } else if ((audioModuleInfo.lib != "libmodule-hdi-source.z.so") &&
         (audioModuleInfo.lib != "libmodule-inner-capturer-sink.z.so")) {
         OpenOutputAudioPort(audioModuleInfo, sinkSourceIndex);
     } else if (audioModuleInfo.lib == "libmodule-hdi-source.z.so") {

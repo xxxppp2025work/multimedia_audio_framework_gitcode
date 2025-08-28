@@ -40,6 +40,8 @@
 #include "audio_bundle_manager.h"
 #include "audio_server_proxy.h"
 #include "audio_policy_client_holder.h"
+#include "va_device_broker_stub_impl.h"
+#include "va_device_manager.h"
 #include "standalone_mode_manager.h"
 
 using OHOS::Security::AccessToken::PrivacyKit;
@@ -5357,6 +5359,24 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
     CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "Create dataShare failed, datashare or library error.");
     dataShareHelper->Release();
     return SUCCESS;
+}
+
+int32_t AudioPolicyServer::GetVADeviceBroker(sptr<IRemoteObject> &client)
+{
+    client = sptr<VADeviceBrokerStubImpl>::MakeSptr()->AsObject();
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::GetVADeviceController(const std::string& macAddress, sptr<IRemoteObject>& controller)
+{
+    VADeviceManager::GetInstance().GetDeviceController(macAddress, controller);
+    return SUCCESS;
+}
+
+void AudioPolicyServer::SetVoiceMuteState(uint32_t sessionId, bool isMute)
+{
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    return coreService_->SetVoiceMuteState(sessionId, isMute);
 }
 
 int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t volumeDegree, int32_t volumeFlag,

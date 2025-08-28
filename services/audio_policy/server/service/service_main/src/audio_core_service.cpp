@@ -219,6 +219,11 @@ int32_t AudioCoreService::CreateCapturerClient(
     std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc =
         audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType,
         GetRealUid(streamDesc), sessionId);
+    
+    if (inputDeviceDesc->deviceType_ == DEVICE_TYPE_BT_SPP) {
+        inputDeviceDesc->networkId_ = inputDeviceDesc->macAddress_;
+    }
+
     CHECK_AND_RETURN_RET_LOG(inputDeviceDesc != nullptr, ERR_INVALID_PARAM, "inputDeviceDesc is nullptr");
     streamDesc->newDeviceDescs_.clear();
     streamDesc->newDeviceDescs_.push_back(inputDeviceDesc);
