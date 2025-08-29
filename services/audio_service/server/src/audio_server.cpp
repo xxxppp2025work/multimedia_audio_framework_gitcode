@@ -352,6 +352,7 @@ public:
     {
     }
 
+// LCOV_EXCL_START
     void OnCaptureState(bool isActive) override final
     {
         std::lock_guard<std::mutex> lock(captureIdMtx_);
@@ -366,6 +367,7 @@ public:
             captureId_, preNum, curNum, isActive);
         callback_(isActive, preNum, curNum);
     }
+// LCOV_EXCL_STOP
 
 private:
     static inline std::unordered_set<uint32_t> captureIds_;
@@ -580,6 +582,7 @@ void DataTransferStateChangeCallbackInnerImpl::SetDataTransferMonitorParam(
     param_.badFramesRatio = param.badFramesRatio;
 }
 
+// LCOV_EXCL_START
 void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
     const int32_t &callbackId, const AudioRendererDataTransferStateChangeInfo &info)
 {
@@ -598,6 +601,7 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
         }
     }
 }
+// LCOV_EXCL_STOP
 
 void DataTransferStateChangeCallbackInnerImpl::ReportEvent(
     const AudioRendererDataTransferStateChangeInfo &info)
@@ -616,6 +620,7 @@ void DataTransferStateChangeCallbackInnerImpl::ReportEvent(
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
+// LCOV_EXCL_START
 void AudioServer::InitMaxRendererStreamCntPerUid()
 {
     bool result = GetSysPara("const.multimedia.audio.stream_cnt_uid", maxRendererStreamCntPerUid_);
@@ -674,6 +679,7 @@ void AudioServer::OnStart()
     DlopenUtils::DeInit();
     RegisterDataTransferStateChangeCallback();
 }
+// LCOV_EXCL_STOP
 
 void AudioServer::ParseAudioParameter()
 {
@@ -826,6 +832,7 @@ bool AudioServer::ProcessKeyValuePairs(const std::string &key,
     return true;
 }
 
+// LCOV_EXCL_START
 bool AudioServer::CacheExtraParameters(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs)
 {
@@ -859,6 +866,7 @@ void AudioServer::SetA2dpAudioParameter(const std::string &renderValue)
         AUDIO_INFO_LOG("HasBlueToothEndpoint");
     }
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string &value)
 {
@@ -910,6 +918,8 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
     } else if (key == "mute_call") {
         deviceManager->SetAudioParameter("primary", parmKey, "", key + "=" + value);
         return SUCCESS;
+    } else if (key == "LOUD_VOLUMN_MODE") {
+        parmKey = AudioParamKey::NONE;
     } else {
         AUDIO_ERR_LOG("key %{public}s is invalid for hdi interface", key.c_str());
         return SUCCESS;
@@ -1335,7 +1345,7 @@ int32_t AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> 
     for (auto activeDevice : activeDevices) {
         deviceTypes.push_back(activeDevice.first);
     }
-    AUDIO_INFO_LOG("SetIORoutes 1st deviceType: %{public}d, deviceSize : %{public}zu, flag: %{public}d",
+    HILOG_COMM_INFO("SetIORoutes 1st deviceType: %{public}d, deviceSize : %{public}zu, flag: %{public}d",
         type, deviceTypes.size(), flag);
     int32_t ret = SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
     return ret;
@@ -1404,15 +1414,12 @@ int32_t AudioServer::UpdateActiveDevicesRoute(const std::vector<IntPair> &active
     return SetIORoutes(activeOutputDevices, static_cast<BluetoothOffloadState>(a2dpOffloadFlag), deviceName);
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "refused for %{public}d", callingUid);
-
-    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
-    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "has no valid sink");
-    sink->SetDmDeviceType(dmDeviceType, static_cast<DeviceType>(deviceType));
 
     std::shared_ptr<IAudioCaptureSource> source;
     if (static_cast<DeviceType>(deviceType) == DEVICE_TYPE_NEARLINK_IN) {
@@ -1561,8 +1568,8 @@ int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
     sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, 0, "failed: bundleMgrProxy is nullptr");
 
-    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetHapBuildApiVersion");
-    bundleMgrProxy->GetNameForUid(callerUid, bundleName);
+    WatchTimeout reguard("bundleMgrProxy->GetBundleNameForUid:GetHapBuildApiVersion");
+    bundleMgrProxy->GetBundleNameForUid(callerUid, bundleName);
     bundleMgrProxy->GetBundleInfoV9(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT |
         AppExecFwk::BundleFlag::GET_BUNDLE_WITH_ABILITIES |
         AppExecFwk::BundleFlag::GET_BUNDLE_WITH_REQUESTED_PERMISSION |
@@ -1855,6 +1862,7 @@ void AudioServer::NotifyProcessStatus()
 #endif
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
     const AudioPlaybackCaptureConfig &filterConfig, sptr<IRemoteObject>& client)
 {
@@ -2294,8 +2302,8 @@ bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig 
         CAPTURER_PREPARED,
     };
     if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_CREATED)) {
-        AUDIO_INFO_LOG("Recreating stream for callerUid:%{public}d need not VerifyBackgroundCapture",
-            config.callerUid);
+        AUDIO_INFO_LOG("switchStream is recreating, callerUid:%{public}d", config.callerUid);
+        AudioService::GetInstance()->UpdateSwitchStreamMap(config.originalSessionId, SWITCH_STATE_CREATED);
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
         return true;
     }
@@ -2322,12 +2330,28 @@ int32_t AudioServer::SetForegroundList(const std::vector<std::string> &list)
     return SUCCESS;
 }
 
+int32_t AudioServer::SendInterruptEventToAudioServer(uint32_t sessionId, const InterruptEventInternal &interruptEvent)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "Refused for %{public}d", callingUid);
+    AudioService::GetInstance()->SendInterruptEventToAudioService(sessionId, interruptEvent);
+    return SUCCESS;
+}
+
 int32_t AudioServer::SetRenderWhitelist(const std::vector<std::string> &list)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d",
         IPCSkeleton::GetCallingUid());
     AudioService::GetInstance()->SaveRenderWhitelist(list);
     return SUCCESS;
+}
+
+int32_t AudioServer::GetVolumeBySessionId(uint32_t sessionId, float &volume)
+{
+    bool result = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    return AudioStreamMonitor::GetInstance().GetVolumeBySessionId(sessionId, volume);
 }
 
 bool AudioServer::CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId)
@@ -2567,15 +2591,15 @@ int32_t AudioServer::UpdateLatencyTimestamp(const std::string &timestamp, bool i
 }
 
 // LCOV_EXCL_START
-int32_t AudioServer::UpdateDualToneState(bool enable, int32_t sessionId)
+int32_t AudioServer::UpdateDualToneState(bool enable, int32_t sessionId, const std::string &dupSinkName)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
     if (enable) {
-        return AudioService::GetInstance()->EnableDualToneList(static_cast<uint32_t>(sessionId));
+        return AudioService::GetInstance()->EnableDualStream(static_cast<uint32_t>(sessionId), dupSinkName);
     } else {
-        return AudioService::GetInstance()->DisableDualToneList(static_cast<uint32_t>(sessionId));
+        return AudioService::GetInstance()->DisableDualStream(static_cast<uint32_t>(sessionId));
     }
 }
 // LCOV_EXCL_STOP
@@ -2827,6 +2851,7 @@ int32_t AudioServer::SetInnerCapLimit(uint32_t innerCapLimit)
 }
 // LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 int32_t AudioServer::ReleaseCaptureLimit(int32_t innerCapId)
 {
 #if defined(AUDIO_BUILD_VARIANT_ROOT) && defined(HAS_FEATURE_INNERCAPTURER)
@@ -3087,5 +3112,6 @@ int32_t AudioServer::RestoreAudioWorkgroupPrio(int32_t pid, const std::unordered
 {
     return AudioResourceService::GetInstance()->RestoreAudioWorkgroupPrio(pid, threads);
 }
+// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

@@ -4259,15 +4259,14 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_InitTargetStream_002, TestSize.Leve
  * @tc.number: Audio_Renderer_FinishOldStream_001
  * @tc.desc  : Test FinishOldStream interface.
  */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_FinishOldStream_001, TestSize.Level2)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_FinishOldStream_001, TestSize.Level4)
 {
     AppInfo appInfo = {};
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
     ASSERT_TRUE(audioRendererPrivate != nullptr);
 
-    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK,
-        appInfo.appUid);
+    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<TestAudioStremStub>();
     ASSERT_TRUE(audioStream != nullptr);
     audioRendererPrivate->audioStream_ = audioStream;
 
@@ -4292,8 +4291,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_FinishOldStream_002, TestSize.Level
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
     ASSERT_TRUE(audioRendererPrivate != nullptr);
 
-    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK,
-        appInfo.appUid);
+    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<TestAudioStremStub>();
     ASSERT_TRUE(audioStream != nullptr);
     audioRendererPrivate->audioStream_ = audioStream;
 
@@ -4303,7 +4301,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_FinishOldStream_002, TestSize.Level
     restoreInfo.restoreReason = DEFAULT_REASON;
     auto ret = audioRendererPrivate->FinishOldStream(IAudioStream::StreamClass::PA_STREAM, restoreInfo,
         previousState, switchInfo);
-    EXPECT_FALSE(ret);
+    EXPECT_TRUE(ret);
 }
 
 /**
@@ -4594,6 +4592,20 @@ HWTEST(AudioRendererUnitTest, NotifyForcedEvent_001, TestSize.Level1)
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_RESUME, 20.0f};
     audioInterruptCallback->NotifyForcedEvent(interruptEvent);
     EXPECT_FALSE(audioInterruptCallback->isForcePaused_);
+}
+
+/**
+ * @tc.name  : Test CheckSupportedSamplingRates
+ * @tc.number: CheckSupportedSamplingRates
+ * @tc.desc  : Test CheckSupportedSamplingRates the branch when custom sample rates differ
+ */
+ HWTEST(AudioRendererUnitTest, CheckSupportedSamplingRatesTest, TestSize.Level0)
+{
+    EXPECT_TRUE(AudioRenderer::CheckSupportedSamplingRates(RenderUT::SAMPLE_RATE_16010));
+    EXPECT_TRUE(AudioRenderer::CheckSupportedSamplingRates(SAMPLE_RATE_11025));
+    EXPECT_FALSE(AudioRenderer::CheckSupportedSamplingRates(RenderUT::SAMPLE_RATE_7999));
+    EXPECT_FALSE(AudioRenderer::CheckSupportedSamplingRates(RenderUT::SAMPLE_RATE_384001));
+    EXPECT_FALSE(AudioRenderer::CheckSupportedSamplingRates(RenderUT::SAMPLE_RATE_16001));
 }
 } // namespace AudioStandard
 } // namespace OHOS

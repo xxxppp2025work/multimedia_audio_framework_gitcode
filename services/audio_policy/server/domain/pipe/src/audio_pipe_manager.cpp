@@ -144,6 +144,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipe()
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::vector<std::shared_ptr<AudioPipeInfo>> newList;
     for (auto pipe : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipe is nullptr");
         if (pipe->streamDescriptors_.empty() && IsSpecialPipe(pipe->routeFlag_)) {
             newList.push_back(pipe);
         }

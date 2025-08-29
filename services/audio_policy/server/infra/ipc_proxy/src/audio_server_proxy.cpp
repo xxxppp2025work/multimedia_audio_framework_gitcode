@@ -149,12 +149,13 @@ void AudioServerProxy::SetDmDeviceTypeProxy(uint16_t dmDeviceType, DeviceType de
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
-int32_t AudioServerProxy::UpdateDualToneStateProxy(const bool &enable, const int32_t &sessionId)
+int32_t AudioServerProxy::UpdateDualToneStateProxy(const bool &enable, const int32_t &sessionId,
+    const std::string &dupSinkName)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->UpdateDualToneState(enable, sessionId);
+    int32_t ret = gsp->UpdateDualToneState(enable, sessionId, dupSinkName);
     IPCSkeleton::SetCallingIdentity(identity);
     return ret;
 }
@@ -699,5 +700,17 @@ int32_t AudioServerProxy::ForceStopAudioStreamProxy(StopAudioType audioType)
     IPCSkeleton::SetCallingIdentity(identity);
     return res;
 }
+
+void AudioServerProxy::SendInterruptEventToAudioServerProxy(InterruptEventInternal interruptEvent,
+    int32_t sessionId)
+{
+    AUDIO_INFO_LOG("hintType:%{public}d for stream:%{public}u", interruptEvent.hintType, sessionId);
+    const sptr gsp = GetAudioServerProxy();
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "error for audio server proxy null");
+    gsp->SendInterruptEventToAudioServer(sessionId, interruptEvent);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
 }
 }

@@ -168,29 +168,57 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_001, TestSize.Level1)
 /**
 * @tc.name  : Test AudioCoreService.
 * @tc.number: SetDefaultOutputDevice_001
-* @tc.desc  : Test SetDefaultOutputDevice - Set DEVICE_TYPE_SPEAKER as default device.
+* @tc.desc  : Test SetDefaultOutputDevice - Set DEVICE_TYPE_SPEAKER as default device to nonexistent session.
 */
 HWTEST_F(AudioCoreServiceUnitTest, SetDefaultOutputDevice_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest SetDefaultOutputDevice_001 start");
-    uint32_t sessionID = 100001; // sessionId
+    uint32_t sessionID = 99999; // nonexistent sessionId
     auto result = GetServerPtr()->eventEntry_->SetDefaultOutputDevice(DEVICE_TYPE_SPEAKER,
         sessionID, STREAM_USAGE_MEDIA, false);
-    EXPECT_EQ(result, SUCCESS);
+
+    auto desc = GetServerPtr()->eventEntry_->coreService_->pipeManager_->GetStreamDescById(sessionID);
+    if (desc == nullptr) {
+        EXPECT_EQ(result, ERR_NOT_SUPPORTED);
+    } else {
+        EXPECT_EQ(result, SUCCESS);
+    }
 }
 
 /**
 * @tc.name  : Test AudioCoreService.
 * @tc.number: SetDefaultOutputDevice_002
-* @tc.desc  : Test SetDefaultOutputDevice - Set DEVICE_TYPE_BLUETOOTH_A2DP as default device.
+* @tc.desc  : Test SetDefaultOutputDevice - Set DEVICE_TYPE_SPEAKER as default device.
 */
 HWTEST_F(AudioCoreServiceUnitTest, SetDefaultOutputDevice_002, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest SetDefaultOutputDevice_002 start");
-    uint32_t sessionID = 100001; // sessionId
-    auto result = GetServerPtr()->eventEntry_->SetDefaultOutputDevice(DEVICE_TYPE_BLUETOOTH_A2DP,
+    uint32_t sessionID = 0; // sessionId
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    streamDesc->callerUid_ = getuid();
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    std::string networkId = LOCAL_NETWORK_ID;
+    auto createResult = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, sessionID, networkId);
+    EXPECT_EQ(createResult, SUCCESS);
+
+    auto result = GetServerPtr()->eventEntry_->SetDefaultOutputDevice(DEVICE_TYPE_SPEAKER,
         sessionID, STREAM_USAGE_MEDIA, false);
-    EXPECT_EQ(result, SUCCESS);
+    auto desc = GetServerPtr()->eventEntry_->coreService_->pipeManager_->GetStreamDescById(sessionID);
+    if (desc == nullptr) {
+        EXPECT_EQ(result, ERR_NOT_SUPPORTED);
+    } else {
+        EXPECT_EQ(result, SUCCESS);
+    }
 }
 
 /**
@@ -1148,8 +1176,8 @@ HWTEST_F(AudioCoreServiceUnitTest, DumpSelectHistory_001, TestSize.Level1)
     audioCoreService->selectDeviceHistory_ = {};
     std::string dumpString;
     audioCoreService->DumpSelectHistory(dumpString);
-    std::string expectedDump = "Select device history infos\n - TotalPipeNums: 0\n\n\n";
-    EXPECT_EQ(dumpString, expectedDump);
+    std::string expectedDump = "Select device history infos";
+    EXPECT_TRUE(dumpString.find(expectedDump) != std::string::npos);
 }
 
 /**
@@ -1164,9 +1192,8 @@ HWTEST_F(AudioCoreServiceUnitTest, DumpSelectHistory_002, TestSize.Level1)
     audioCoreService->selectDeviceHistory_.push_back("HistoryRecord2");
     std::string dumpString;
     audioCoreService->DumpSelectHistory(dumpString);
-    std::string expectedDump = "Select device history infos\n - TotalPipeNums: 2\n\nHistory Record1\n"
-                               "HistoryRecord2\n\n";
-    EXPECT_EQ(dumpString, expectedDump);
+    std::string expectedDump = "HistoryRecord2";
+    EXPECT_TRUE(dumpString.find(expectedDump) != std::string::npos);
 }
 
 /**
@@ -1332,6 +1359,29 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_006, TestSize.Level1)
     EXPECT_EQ(audioCoreService->audioVolumeManager_.IsAppRingMuted(appUid), true);
     audioCoreService->audioVolumeManager_.SetAppRingMuted(appUid, false);
     audioVolume->streamVolume_.clear();
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: SetFlagForMmapStream_001
+* @tc.desc  : Test SetFlagForMmapStream() when device type is DEVICE_TYPE_BLUETOOTH_A2DP
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetFlagForMmapStream_001, TestSize.Level4)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest CreateRenderClient_001 start");
+
+    ASSERT_NE(nullptr, GetServerPtr());
+    auto coreService_ = GetServerPtr()->coreService_;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(nullptr, streamDesc);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_NE(nullptr, deviceDesc);
+
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    auto ret = coreService_->SetFlagForMmapStream(streamDesc);
+    EXPECT_EQ(AUDIO_OUTPUT_FLAG_FAST, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

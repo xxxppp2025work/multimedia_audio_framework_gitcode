@@ -122,6 +122,7 @@ const std::unordered_map<DeviceType, std::vector<std::string>> DEVICE_CLASS_MAP 
 // LCOV_EXCL_START
 bool AudioAdapterManager::Init()
 {
+    currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
     char testMode[10] = {0}; // 10 for system parameter usage
     auto ret = GetParameter("debug.audio_service.testmodeon", "0", testMode, sizeof(testMode));
     if (ret == 1 && testMode[0] == '1') {
@@ -413,6 +414,28 @@ void AudioAdapterManager::UpdateSafeVolumeByS4()
     isBtBoot_ = true;
     UpdateSafeVolume();
     SetVolumeDb(STREAM_MUSIC);
+}
+
+void AudioAdapterManager::SendLoudVolumeModeToDsp(FunctionHoldType funcHoldType, bool state)
+{
+    std::string key = "LOUD_VOLUME_MODE";
+    std::string value = "super_loudness_mode=voice_off";
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    CHECK_AND_RETURN_LOG(audioServerProxy_ != nullptr, "audioServerProxy_ null");
+
+    if (FUNCTION_HOLD_SYSTEM == funcHoldType) {
+        value = state ? "super_loudness_mode=voice_on" : "super_loudness_mode=voice_off";
+    } else if (FUNCTION_HOLD_MUSIC == funcHoldType) {
+        value = state ? "super_loudness_mode=music_on" : "super_loudness_mode=music_off";
+    } else {
+        AUDIO_ERR_LOG("funcHoldType error : %{public}d", funcHoldType);
+        return;
+    }
+ 
+    audioServerProxy_->SetAudioParameter(key, value);
+    IPCSkeleton::SetCallingIdentity(identity);
+    AUDIO_INFO_LOG("update LoudVolume [%{public}s]", value.c_str());
+    return;
 }
 
 int32_t AudioAdapterManager::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel)
@@ -3215,6 +3238,7 @@ void AudioAdapterManager::NotifyAccountsChanged(const int &id)
             CheckAndDealMuteStatus(deviceType, streamType);
         }
     }
+    UpdateVolumeForLowLatency();
 }
 
 int32_t AudioAdapterManager::DoRestoreData()

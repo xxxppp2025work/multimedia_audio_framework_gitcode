@@ -17,13 +17,16 @@
 #endif
 
 #include "renderer_in_server.h"
+#include <chrono>
 #include <cinttypes>
 #include "securec.h"
+#include <format>
 #include "audio_errors.h"
 #include "audio_renderer_log.h"
 #include "audio_utils.h"
 #include "audio_service.h"
 #include "futex_tool.h"
+#include "xperf_adapter.h"
 #include "i_stream_manager.h"
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
@@ -202,7 +205,8 @@ int32_t RendererInServer::Init()
     // eg: /data/data/.pulse_dir/10000_100001_48000_2_1_server_in.pcm
     AudioStreamInfo tempInfo = processConfig_.streamInfo;
     dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + "_" + std::to_string(streamIndex_)
-        + "_renderer_server_in_" + std::to_string(tempInfo.samplingRate) + "_"
+        + "_renderer_server_in_"
+        + std::to_string(tempInfo.customSampleRate == 0 ? tempInfo.samplingRate : tempInfo.customSampleRate) + "_"
         + std::to_string(tempInfo.channels) + "_" + std::to_string(tempInfo.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpC2S_);
     playerDfx_ = std::make_unique<PlayerDfxWriter>(processConfig_.appInfo, streamIndex_);
@@ -233,7 +237,7 @@ void RendererInServer::CheckAndWriterRenderStreamStandbySysEvent(bool standbyEna
 void RendererInServer::OnStatusUpdate(IOperation operation)
 {
     if (operation != OPERATION_UNDERFLOW) {
-        AUDIO_INFO_LOG("%{public}u recv operation:%{public}d standByEnable_:%{public}s", streamIndex_, operation,
+        HILOG_COMM_INFO("%{public}u recv operation:%{public}d standByEnable_:%{public}s", streamIndex_, operation,
             (standByEnable_ ? "true" : "false"));
     }
     Trace trace(traceTag_ + " OnStatusUpdate:" + std::to_string(operation));
@@ -292,6 +296,7 @@ void RendererInServer::OnStatusUpdateExt(IOperation operation, std::shared_ptr<I
         stateListener->OnOperationHandled(DRAIN_STREAM, 0);
     }
     afterDrain = true;
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(streamIndex_, processConfig_.appInfo.appTokenId);
 }
 
 void RendererInServer::HandleOperationStarted()
@@ -473,6 +478,7 @@ void RendererInServer::HandleOperationFlushed()
         default:
             AUDIO_WARNING_LOG("Invalid status before flusing");
     }
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(streamIndex_, processConfig_.appInfo.appTokenId);
 }
 
 void RendererInServer::HandleOperationStopped(RendererStage stage)
@@ -969,6 +975,11 @@ int32_t RendererInServer::Start()
     if (ret == SUCCESS) {
         StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, true);
     }
+
+    XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(XPERF_EVENT_START,
+        processConfig_.rendererInfo.streamUsage, streamIndex_, processConfig_.appInfo.appPid,
+        processConfig_.appInfo.appUid);
+
     return ret;
 }
 
@@ -1112,6 +1123,8 @@ int32_t RendererInServer::Pause()
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE, isStandbyTmp);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(streamIndex_);
+    XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(XPERF_EVENT_STOP, processConfig_.rendererInfo.streamUsage,
+        streamIndex_, processConfig_.appInfo.appPid, processConfig_.appInfo.appUid);
     return SUCCESS;
 }
 
@@ -1240,7 +1253,11 @@ int32_t RendererInServer::Stop()
         }
         status_ = I_STATUS_STOPPING;
     }
-    return StopInner();
+    int32_t ret = StopInner();
+    XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(XPERF_EVENT_STOP,
+        processConfig_.rendererInfo.streamUsage, streamIndex_, processConfig_.appInfo.appPid,
+        processConfig_.appInfo.appUid);
+    return ret;
 }
 
 int32_t RendererInServer::StopInner()
@@ -1331,6 +1348,9 @@ int32_t RendererInServer::Release(bool isSwitchStream)
     if (isDualToneEnabled_) {
         DisableDualTone();
     }
+    XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(XPERF_EVENT_RELEASE,
+        processConfig_.rendererInfo.streamUsage, streamIndex_, processConfig_.appInfo.appPid,
+        processConfig_.appInfo.appUid);
     return SUCCESS;
 }
 
@@ -1554,13 +1574,13 @@ int32_t RendererInServer::InitDupStreamVolume(uint32_t dupStreamIndex)
     return SUCCESS;
 }
 
-int32_t RendererInServer::EnableDualTone()
+int32_t RendererInServer::EnableDualTone(const std::string &dupSinkName)
 {
     if (isDualToneEnabled_) {
         AUDIO_INFO_LOG("DualTone is already enabled");
         return SUCCESS;
     }
-    int32_t ret = InitDualToneStream();
+    int32_t ret = InitDualToneStream(dupSinkName);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dual tone stream failed");
     return SUCCESS;
 }
@@ -1582,12 +1602,13 @@ int32_t RendererInServer::DisableDualTone()
     return ERROR;
 }
 
-int32_t RendererInServer::InitDualToneStream()
+int32_t RendererInServer::InitDualToneStream(const std::string &dupSinkName)
 {
     {
         std::lock_guard<std::mutex> lock(dualToneMutex_);
 
-        int32_t ret = IStreamManager::GetDualPlaybackManager().CreateRender(processConfig_, dualToneStream_);
+        int32_t ret = IStreamManager::GetDualPlaybackManager().CreateRender(processConfig_, dualToneStream_,
+            dupSinkName);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && dualToneStream_ != nullptr,
             ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
         dualToneStreamIndex_ = dualToneStream_->GetStreamIndex();

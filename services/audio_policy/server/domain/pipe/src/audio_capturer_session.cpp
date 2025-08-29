@@ -296,16 +296,34 @@ bool AudioCapturerSession::FindRunningNormalSession(uint32_t sessionId, AudioStr
     return HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
 }
 
+int32_t AudioCapturerSession::SetHearingAidReloadFlag(const bool hearingAidReloadFlag)
+{
+    std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
+    hearingAidReloadFlag_ = hearingAidReloadFlag;
+    return SUCCESS;
+}
+
+int32_t AudioCapturerSession::ReloadCaptureSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo,
+    const AudioModuleInfo &moduleInfo)
+{
+    std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
+    int32_t ret = audioEcManager_.ReloadSourceSoftLink(pipeInfo, moduleInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "reload softLink failed");
+    hearingAidReloadFlag_ = true;
+    return SUCCESS;
+}
+
 int32_t AudioCapturerSession::ReloadCaptureSessionSoftLink()
 {
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
+    hearingAidReloadFlag_ = false;
     bool hasSession = false;
     auto pipes = AudioPipeManager::GetPipeManager()->GetPipeList();
     if (pipes.empty()) {
         AUDIO_ERR_LOG("pipes invalid");
         return ERR_INVALID_OPERATION;
     }
-    std::shared_ptr<AudioStreamDescriptor> targetStream = nullptr;
+    AudioStreamDescriptor targetStream;
     for (auto pipe : pipes) {
         if (pipe == nullptr || pipe->streamDescriptors_.empty()) {
             AUDIO_WARNING_LOG("pipe invalid");
@@ -328,18 +346,18 @@ int32_t AudioCapturerSession::ReloadCaptureSessionSoftLink()
                 specialSourceTypeSet_.count(higherSourceType) != 0) {
                 continue;
             }
-            if (IsHigherPrioritySourceType(higherSourceType, targetStream->capturerInfo_.sourceType)) {
+            if (IsHigherPrioritySourceType(higherSourceType, targetStream.capturerInfo_.sourceType)) {
                 hasSession = true;
-                targetStream = streamDescriptor;
+                streamDescriptor->CopyToStruct(targetStream);
             }
         }
     }
 
-    CHECK_AND_RETURN_RET_LOG(hasSession && targetStream != nullptr, SUCCESS, "no need to reload session");
-    AUDIO_INFO_LOG("start reload session: %{public}u", targetStream->GetSessionId());
+    CHECK_AND_RETURN_RET_LOG(hasSession, SUCCESS, "no need to reload session");
+    AUDIO_INFO_LOG("start reload session: %{public}u", targetStream.sessionId_);
 
-    audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[targetStream->GetSessionId()]);
-    audioEcManager_.SetOpenedNormalSourceSessionId(targetStream->GetSessionId());
+    audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[targetStream.sessionId_]);
+    audioEcManager_.SetOpenedNormalSourceSessionId(targetStream.sessionId_);
     return SUCCESS;
 }
 
@@ -347,6 +365,7 @@ int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOp
 {
     AUDIO_INFO_LOG("prepare reload session: %{public}u with operation: %{public}d", sessionId, operation);
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
+    CHECK_AND_RETURN_RET_LOG(!hearingAidReloadFlag_, SUCCESS, "no need to reload session");
     uint32_t targetSessionId = sessionId;
     AudioStreamDescriptor runningSessionInfo = {};
     bool needReload = false;

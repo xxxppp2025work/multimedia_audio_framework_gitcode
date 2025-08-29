@@ -163,6 +163,12 @@ public:
     int32_t SelectInputDevice(const sptr<AudioCapturerFilter> &audioCapturerFilter,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
 
+    int32_t SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor) override;
+
+    int32_t GetSelectedInputDevice(std::shared_ptr<AudioDeviceDescriptor> &AudioDeviceDescriptor) override;
+
+    int32_t ClearSelectedInputDevice() override;
+
     int32_t ExcludeOutputDevices(int32_t audioDevUsage,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
 
@@ -240,7 +246,7 @@ public:
 
     int32_t SetAppConcurrencyMode(const int32_t appUid, const int32_t mode = 0) override;
 
-    int32_t SetAppSlientOnDisplay(const int32_t displayId = -1) override;
+    int32_t SetAppSilentOnDisplay(const int32_t displayId = -1) override;
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneId) override;
 
@@ -329,6 +335,7 @@ public:
 
     int32_t IsAcousticEchoCancelerSupported(int32_t sourceType, bool &ret) override;
     int32_t IsAudioLoopbackSupported(int32_t mode, bool &ret) override;
+    int32_t IsCurrentDeviceEnableIntelligentNoiseReduction(int32_t sourceType, bool &ret) override;
     int32_t SetKaraokeParameters(const std::string &parameters, bool &ret) override;
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
@@ -677,10 +684,13 @@ public:
     int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t command) override;
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) override;
     int32_t CallRingtoneLibrary();
-    void SetVoiceMuteState(uint32_t sessionId, bool isMute);
     int32_t SetSystemVolumeDegree(int32_t streamType, int32_t volumeDegree, int32_t volumeFlag, int32_t uid) override;
     int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
     int32_t GetMinVolumeDegree(int32_t volumeType, int32_t &volumeDegree) override;
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+    bool ReloadLoudVolumeMode(const AudioStreamType streamInFocus,
+        SetLoudVolMode setVolMode = LOUD_VOLUME_SWITCH_UNSET);
+#endif
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();
@@ -774,6 +784,10 @@ private:
     bool IsContinueAddVol();
     void TriggerMuteCheck();
     int32_t ProcessVolumeKeyEvents(const int32_t keyType);
+    void SetLoudVolumeHoldMap(FunctionHoldType funcHoldType, bool state);
+    bool ClearLoudVolumeHoldMap(FunctionHoldType funcHoldType);
+    bool GetLoudVolumeHoldMap(FunctionHoldType funcHoldType, bool &state);
+    bool CheckLoudVolumeMode(const int32_t volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
 #endif
     void AddAudioServiceOnStart();
     void SubscribeOsAccountChangeEvents();
@@ -862,6 +876,13 @@ private:
     std::mutex volUpHistoryMutex_;
     std::deque<int64_t> volUpHistory_;
     std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
+
+    int32_t triggerTime = 0;
+    int64_t upTriggerTimeMSec = 0;
+    std::mutex loudVolTrigTimeMutex_;
+    AudioStreamType lastReloadStreamType = STREAM_DEFAULT;
+    std::mutex setLoudVolHoldMutex_;
+    std::unordered_map<FunctionHoldType, bool> loudVolumeHoldMap_;
 #endif
     std::vector<pid_t> clientDiedListenerState_;
     sptr<PowerStateListener> powerStateListener_;
@@ -879,6 +900,7 @@ private:
     bool volumeApplyToAll_ = false;
     bool screenOffAdjustVolumeEnable_ = false;
     bool supportVibrator_ = false;
+    bool loudVolumeModeEnable_ = false;
 
     bool isHighResolutionExist_ = false;
     std::mutex descLock_;

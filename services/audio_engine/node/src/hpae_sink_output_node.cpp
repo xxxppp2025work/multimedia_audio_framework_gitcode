@@ -101,7 +101,7 @@ void HpaeSinkOutputNode::DoProcess()
         AUDIO_ERR_LOG("HpaeSinkOutputNode: RenderFrame failed");
         if (GetDeviceClass() != "remote") {
             periodTimer_.Stop();
-            uint64_t usedTimeUs = periodTimer_.Elapsed<std::chrono::microseconds>();
+            uint64_t usedTimeUs = static_cast<uint64_t>(periodTimer_.Elapsed<std::chrono::microseconds>());
             usleep(SLEEP_TIME_IN_US > usedTimeUs ? SLEEP_TIME_IN_US - usedTimeUs : 0);
         }
     }
@@ -121,6 +121,13 @@ void HpaeSinkOutputNode::DoProcess()
 const char *HpaeSinkOutputNode::GetRenderFrameData(void)
 {
     return renderFrameData_.data();
+}
+
+void HpaeSinkOutputNode::RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback)
+{
+    CHECK_AND_RETURN_LOG(audioRendererSink_ != nullptr, "audioRendererSink_ is nullptr");
+    CHECK_AND_RETURN_LOG(callback != nullptr, "callback is nullptr");
+    audioRendererSink_->RegisterCurrentDeviceCallback(callback);
 }
 
 bool HpaeSinkOutputNode::Reset()
@@ -331,8 +338,8 @@ int32_t HpaeSinkOutputNode::SetSinkState(StreamManagerState sinkState)
     AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
         ConvertStreamManagerState2Str(sinkState).c_str());
-        state_ = sinkState;
-        return SUCCESS;
+    state_ = sinkState;
+    return SUCCESS;
 }
 
 size_t HpaeSinkOutputNode::GetPreOutNum()

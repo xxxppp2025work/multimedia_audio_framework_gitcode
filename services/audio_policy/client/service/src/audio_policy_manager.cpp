@@ -1177,7 +1177,7 @@ int32_t AudioPolicyManager::SetAppConcurrencyMode(const int32_t appUid, const in
     return gsp->SetAppConcurrencyMode(appUid, mode);
 }
 
-int32_t AudioPolicyManager::SetAppSlientOnDisplay(const int32_t displayId)
+int32_t AudioPolicyManager::SetAppSilentOnDisplay(const int32_t displayId)
 {
     CHECK_AND_RETURN_RET_LOG((displayId > 0 || displayId == -1), -1,
         "mode is illegal parameters");
@@ -1189,7 +1189,7 @@ int32_t AudioPolicyManager::SetAppSlientOnDisplay(const int32_t displayId)
             return ret;
         }
     }
-    return gsp->SetAppSlientOnDisplay(displayId);
+    return gsp->SetAppSilentOnDisplay(displayId);
 }
 
 int32_t AudioPolicyManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
@@ -3289,6 +3289,16 @@ int32_t AudioPolicyManager::GetMinVolumeDegree(AudioVolumeType volumeType)
     int32_t volumeDegree = 0;
     gsp->GetMinVolumeDegree(volumeType, volumeDegree);
     return volumeDegree;
+}
+
+bool AudioPolicyManager::IsCurrentDeviceEnableIntelligentNoiseReduction(SourceType sourceType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+
+    bool isSupport = false;
+    gsp->IsCurrentDeviceEnableIntelligentNoiseReduction(sourceType, isSupport);
+    return isSupport;
 }
 
 AudioPolicyManager& AudioPolicyManager::GetInstance()
