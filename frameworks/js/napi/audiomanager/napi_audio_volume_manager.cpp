@@ -1268,7 +1268,7 @@ napi_value NapiAudioVolumeManager::RegisterStreamVolumeChangeCallback(napi_env e
     NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM1]);
 
     NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
-        "on streamVolumeChange", volType);
+        "on streamVolumeChange", streamUsage);
 
     if (napiAudioVolumeManager->streamVolumeChangeCallbackNapi_ == nullptr) {
         napiAudioVolumeManager->streamVolumeChangeCallbackNapi_ =
