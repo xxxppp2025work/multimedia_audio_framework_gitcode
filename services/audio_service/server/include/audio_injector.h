@@ -31,7 +31,7 @@ public:
     int32_t DeInit();
     int32_t UpdateAudioInfo(AudioModuleInfo &info);
     int32_t MoveStream(uint32_t renderId, bool flag);
-    int32_t PeekAudioData(uint32_t rendererPortIdx, uint8_t *destBuff, size_t buffSize);
+    int32_t PeekAudioData(const uint32_t rendererPortIdx, uint8_t *destBuff, const size_t buffSize, AudioStreamInfo &streamInfo);
     int32_t GetRendererStreamCount();
     void SetCapturePortIdx(uint32_t idx);
     uint32_t GetCapturePortIdx();
