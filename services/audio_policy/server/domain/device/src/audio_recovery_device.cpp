@@ -79,6 +79,7 @@ void AudioRecoveryDevice::RecoveryPreferredDevices()
         tryCounter--;
         Media::MediaMonitor::MediaMonitorManager::GetInstance().GetAudioRouteMsg(preferredDevices);
         if (preferredDevices.size() == 0) {
+            AUDIO_ERR_LOG("The length of preferredDevices is 0 and does not need to be set.");
             continue;
         }
         for (auto iter = preferredDevices.begin(); iter != preferredDevices.end(); ++iter) {
