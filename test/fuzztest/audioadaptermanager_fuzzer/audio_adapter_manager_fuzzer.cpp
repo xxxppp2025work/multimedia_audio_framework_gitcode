@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,283 +13,184 @@
  * limitations under the License.
  */
 
+#include "../fuzz_utils.h"
+
 #include "audio_adapter_manager.h"
 #include "audio_server_proxy.h"
+
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
 
+typedef void (*TestPtr)();
+
+FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
+static const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
+
 static AudioAdapterManager *audioAdapterManager_;
 
-const int32_t NUM_2 = 2;
-typedef void (*TestPtr)(const uint8_t *, size_t);
-
-const vector<AudioStreamType> g_testAudioStreamTypes = {
-    STREAM_DEFAULT,
-    STREAM_VOICE_CALL,
-    STREAM_MUSIC,
-    STREAM_RING,
-    STREAM_MEDIA,
-    STREAM_VOICE_ASSISTANT,
-    STREAM_SYSTEM,
-    STREAM_ALARM,
-    STREAM_NOTIFICATION,
-    STREAM_BLUETOOTH_SCO,
-    STREAM_ENFORCED_AUDIBLE,
-    STREAM_DTMF,
-    STREAM_TTS,
-    STREAM_ACCESSIBILITY,
-    STREAM_RECORDING,
-    STREAM_MOVIE,
-    STREAM_GAME,
-    STREAM_SPEECH,
-    STREAM_SYSTEM_ENFORCED,
-    STREAM_ULTRASONIC,
-    STREAM_WAKEUP,
-    STREAM_VOICE_MESSAGE,
-    STREAM_NAVIGATION,
-    STREAM_INTERNAL_FORCE_STOP,
-    STREAM_SOURCE_VOICE_CALL,
-    STREAM_VOICE_COMMUNICATION,
-    STREAM_VOICE_RING,
-    STREAM_VOICE_CALL_ASSISTANT,
-    STREAM_CAMCORDER,
-    STREAM_APP,
-    STREAM_TYPE_MAX,
-    STREAM_ALL,
-};
-
-const vector<DeviceType> g_testDeviceTypes = {
-    DEVICE_TYPE_NONE,
-    DEVICE_TYPE_INVALID,
-    DEVICE_TYPE_EARPIECE,
-    DEVICE_TYPE_SPEAKER,
-    DEVICE_TYPE_WIRED_HEADSET,
-    DEVICE_TYPE_WIRED_HEADPHONES,
-    DEVICE_TYPE_BLUETOOTH_SCO,
-    DEVICE_TYPE_BLUETOOTH_A2DP,
-    DEVICE_TYPE_BLUETOOTH_A2DP_IN,
-    DEVICE_TYPE_MIC,
-    DEVICE_TYPE_WAKEUP,
-    DEVICE_TYPE_USB_HEADSET,
-    DEVICE_TYPE_DP,
-    DEVICE_TYPE_REMOTE_CAST,
-    DEVICE_TYPE_USB_DEVICE,
-    DEVICE_TYPE_ACCESSORY,
-    DEVICE_TYPE_REMOTE_DAUDIO,
-    DEVICE_TYPE_HDMI,
-    DEVICE_TYPE_LINE_DIGITAL,
-    DEVICE_TYPE_NEARLINK,
-    DEVICE_TYPE_NEARLINK_IN,
-    DEVICE_TYPE_FILE_SINK,
-    DEVICE_TYPE_FILE_SOURCE,
-    DEVICE_TYPE_EXTERN_CABLE,
-    DEVICE_TYPE_DEFAULT,
-    DEVICE_TYPE_USB_ARM_HEADSET,
-    DEVICE_TYPE_MAX,
-};
-
-const vector<StreamUsage> g_testStreamUsages = {
-    STREAM_USAGE_INVALID,
-    STREAM_USAGE_UNKNOWN,
-    STREAM_USAGE_MEDIA,
-    STREAM_USAGE_MUSIC,
-    STREAM_USAGE_VOICE_COMMUNICATION,
-    STREAM_USAGE_VOICE_ASSISTANT,
-    STREAM_USAGE_ALARM,
-    STREAM_USAGE_VOICE_MESSAGE,
-    STREAM_USAGE_NOTIFICATION_RINGTONE,
-    STREAM_USAGE_RINGTONE,
-    STREAM_USAGE_NOTIFICATION,
-    STREAM_USAGE_ACCESSIBILITY,
-    STREAM_USAGE_SYSTEM,
-    STREAM_USAGE_MOVIE,
-    STREAM_USAGE_GAME,
-    STREAM_USAGE_AUDIOBOOK,
-    STREAM_USAGE_NAVIGATION,
-    STREAM_USAGE_DTMF,
-    STREAM_USAGE_ENFORCED_TONE,
-    STREAM_USAGE_ULTRASONIC,
-    STREAM_USAGE_VIDEO_COMMUNICATION,
-    STREAM_USAGE_RANGING,
-    STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
-    STREAM_USAGE_VOICE_RINGTONE,
-    STREAM_USAGE_VOICE_CALL_ASSISTANT,
-    STREAM_USAGE_MAX,
-};
-
-template<class T>
-uint32_t GetArrLength(T& arr)
+void AudioVolumeManagerIsAppVolumeMuteFuzzTest()
 {
-    if (arr == nullptr) {
-        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
-        return 0;
-    }
-    return sizeof(arr) / sizeof(arr[0]);
-}
-
-void AudioVolumeManagerIsAppVolumeMuteFuzzTest(const uint8_t *rawData, size_t size)
-{
-    static uint32_t randomStep = 0;
-    int32_t randIntValue = static_cast<int32_t>(size);
-    randomStep += randIntValue;
-    int32_t appUid = randIntValue;
-    bool owned = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
-    bool isMute = static_cast<bool>(static_cast<uint32_t>(size + randomStep) % NUM_2);
+    int32_t appUid = g_fuzzUtils.GetData<int32_t>();
+    bool owned = g_fuzzUtils.GetData<bool>();
+    bool isMute = g_fuzzUtils.GetData<bool>();
     AudioAdapterManager::GetInstance().IsAppVolumeMute(appUid, owned, isMute);
 }
 
-void AudioVolumeManagerSaveSpecifiedDeviceVolumeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSaveSpecifiedDeviceVolumeFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
-    int32_t randIntValue = static_cast<int32_t>(size);
-    static uint32_t randomStep = 0;
-    randomStep += randIntValue;
-    audioAdapterManager_->Init();
-    audioAdapterManager_->currentActiveDevice_.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
-    int32_t volumeLevel = randIntValue;
-    DeviceType deviceType = g_testDeviceTypes[(index + randomStep) % g_testDeviceTypes.size()];
-    audioAdapterManager_->GetMinVolumeLevel(streamType);
-    audioAdapterManager_->GetMaxVolumeLevel(streamType);
-    audioAdapterManager_->SaveSpecifiedDeviceVolume(streamType, volumeLevel, deviceType);
+    AudioAdapterManager::GetInstance().Init();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    int32_t volumeLevel = g_fuzzUtils.GetData<int32_t>();
+    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
+    AudioAdapterManager::GetInstance().GetMinVolumeLevel(streamType);
+    AudioAdapterManager::GetInstance().GetMaxVolumeLevel(streamType);
+    AudioAdapterManager::GetInstance().SaveSpecifiedDeviceVolume(streamType, volumeLevel, deviceType);
 }
 
-void AudioVolumeManagerHandleStreamMuteStatusFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerHandleStreamMuteStatusFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
-    bool mute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
-    StreamUsage streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
-    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    bool mute = g_fuzzUtils.GetData<bool>();
+    StreamUsage streamUsage = g_fuzzUtils.GetData<StreamUsage>();
+    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
     AudioAdapterManager::GetInstance().HandleStreamMuteStatus(streamType, mute, streamUsage, deviceType);
 }
 
-void AudioVolumeManagerSetOffloadVolumeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetOffloadVolumeFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
-    float volumeDb = static_cast<float>(size);
-    audioAdapterManager_->currentActiveDevice_.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    float volumeDb = g_fuzzUtils.GetData<float>();
+    audioAdapterManager_->currentActiveDevice_.deviceType_ = g_fuzzUtils.GetData<DeviceType>();
     audioAdapterManager_->SetOffloadVolume(streamType, volumeDb, "offload");
 }
 
-void AudioVolumeManagerSetOffloadSessionIdFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetOffloadSessionIdFuzzTest()
 {
-    uint32_t sessionId = static_cast<uint32_t>(size);
+    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
     AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId);
 }
 
-void AudioVolumeManagerConnectServiceAdapterFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerConnectServiceAdapterFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
     audioAdapterManager_->ConnectServiceAdapter();
     audioAdapterManager_->InitKVStore();
 }
 
-void AudioVolumeManagerHandleKvDataFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerHandleKvDataFuzzTest()
 {
-    static uint32_t step = 0;
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    step += static_cast<uint32_t>(size);
-    audioAdapterManager_->isNeedCopySystemUrlData_ = static_cast<bool>(step % NUM_2);
-    audioAdapterManager_->isNeedCopyVolumeData_ = static_cast<bool>(step % NUM_2);
-    audioAdapterManager_->isNeedCopyMuteData_ = static_cast<bool>(step % NUM_2);
-    audioAdapterManager_->isNeedCopyRingerModeData_ = static_cast<bool>(step % NUM_2);
-    audioAdapterManager_->isNeedCopySystemUrlData_ = static_cast<bool>(step % NUM_2);
-    bool isFirstBoot = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    audioAdapterManager_->isNeedCopySystemUrlData_ = g_fuzzUtils.GetData<bool>();
+    audioAdapterManager_->isNeedCopyVolumeData_ = g_fuzzUtils.GetData<bool>();
+    audioAdapterManager_->isNeedCopyMuteData_ = g_fuzzUtils.GetData<bool>();
+    audioAdapterManager_->isNeedCopyRingerModeData_ = g_fuzzUtils.GetData<bool>();
+    audioAdapterManager_->isNeedCopySystemUrlData_ = g_fuzzUtils.GetData<bool>();
+    bool isFirstBoot = g_fuzzUtils.GetData<bool>();
     audioAdapterManager_->HandleKvData(isFirstBoot);
 }
 
-void AudioVolumeManagerReInitKVStoreFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerReInitKVStoreFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
     audioAdapterManager_->ReInitKVStore();
 }
 
-void AudioVolumeManagerSaveRingtoneVolumeToLocalFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSaveRingtoneVolumeToLocalFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    int32_t volumeLevel = static_cast<int32_t>(size);
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioVolumeType volumeType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
-    audioAdapterManager_->currentActiveDevice_.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    int32_t volumeLevel = g_fuzzUtils.GetData<int32_t>();
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioVolumeType volumeType = g_fuzzUtils.GetData<AudioStreamType>();
+    audioAdapterManager_->currentActiveDevice_.deviceType_ = g_fuzzUtils.GetData<DeviceType>();
     audioAdapterManager_->SaveRingtoneVolumeToLocal(volumeType, volumeLevel);
 }
 
-void AudioVolumeManagerUpdateSafeVolumeByS4FuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerUpdateSafeVolumeByS4FuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    uint32_t index = static_cast<uint32_t>(size);
-    audioAdapterManager_->currentActiveDevice_.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    audioAdapterManager_->currentActiveDevice_.deviceType_ = g_fuzzUtils.GetData<DeviceType>();
     audioAdapterManager_->UpdateSafeVolumeByS4();
 }
 
-void AudioVolumeManagerSetAppVolumeMutedFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetAppVolumeMutedFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    int32_t randIntValue = static_cast<int32_t>(size);
-    bool muted = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
-    audioAdapterManager_->SetAppVolumeLevel(randIntValue, randIntValue / NUM_2);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
+    bool muted = g_fuzzUtils.GetData<bool>();
+    audioAdapterManager_->SetAppVolumeLevel(randIntValue, g_fuzzUtils.GetData<bool>());
     audioAdapterManager_->SetAppVolumeMuted(randIntValue, muted);
 }
 
-void AudioVolumeManagerSetSystemVolumeLevelFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetSystemVolumeLevelFuzzTest()
 {
     vector<string> testNetworkIds = {
         "LocalDevice",
         "RemoteDevice",
         "NetworkDevice1",
     };
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     AudioDeviceDescriptor deviceDescriptor;
-    deviceDescriptor.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    deviceDescriptor.deviceType_ = g_fuzzUtils.GetData<DeviceType>();
     deviceDescriptor.networkId_ = testNetworkIds[index % testNetworkIds.size()];
-    int32_t testVolumeLevel = static_cast<int32_t>(size);
+    int32_t testVolumeLevel = g_fuzzUtils.GetData<int32_t>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->SetActiveDeviceDescriptor(deviceDescriptor);
     audioAdapterManager->SetSystemVolumeLevel(STREAM_MUSIC, testVolumeLevel);
 }
 
-void AudioVolumeManagerSetDoubleRingVolumeDbFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetDoubleRingVolumeDbFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    uint32_t index = static_cast<uint32_t>(size);
-    audioAdapterManager_->currentActiveDevice_.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
-    int32_t volumeLevel = static_cast<int32_t>(size);
-    audioAdapterManager_->useNonlinearAlgo_ = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    audioAdapterManager_->currentActiveDevice_.deviceType_ = g_fuzzUtils.GetData<DeviceType>();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    int32_t volumeLevel = g_fuzzUtils.GetData<int32_t>();
+    audioAdapterManager_->useNonlinearAlgo_ = g_fuzzUtils.GetData<bool>();
     audioAdapterManager_->SetDoubleRingVolumeDb(streamType, volumeLevel);
 }
 
-void AudioVolumeManagerSetInnerStreamMuteFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetInnerStreamMuteFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
-    StreamUsage streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
-    bool mute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    StreamUsage streamUsage = g_fuzzUtils.GetData<StreamUsage>();
+    bool mute = g_fuzzUtils.GetData<bool>();
     audioAdapterManager_->SetInnerStreamMute(streamType, mute, streamUsage);
 }
 
-void AudioVolumeManagerSetStreamMuteFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetStreamMuteFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
-    StreamUsage streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
-    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
-    bool mute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    StreamUsage streamUsage = g_fuzzUtils.GetData<StreamUsage>();
+    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
+    bool mute = g_fuzzUtils.GetData<bool>();
     audioAdapterManager_->SetStreamMute(streamType, mute, streamUsage, deviceType);
 }
 
-void AudioVolumeManagerSetSinkMuteFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetSinkMuteFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    static uint32_t step = 0;
-    step += static_cast<uint32_t>(size);
     vector<string> sinkNames = {
         "Speaker",
         "Offload_Speaker",
@@ -301,182 +202,169 @@ void AudioVolumeManagerSetSinkMuteFuzzTest(const uint8_t *rawData, size_t size)
         "RemoteCastInnerCapturer",
         "test",
     };
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     string sinkName = sinkNames[index % sinkNames.size()];
-    bool isMute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
-    bool isSync = static_cast<bool>(step % NUM_2);
+    bool isMute = g_fuzzUtils.GetData<bool>();
+    bool isSync = g_fuzzUtils.GetData<bool>();
     audioAdapterManager_->SetSinkMute(sinkName, isMute, isSync);
 }
 
-void AudioVolumeManagerSelectDeviceFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSelectDeviceFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    vector<DeviceRole> testDeviceRoles = {
-        DEVICE_ROLE_NONE,
-        INPUT_DEVICE,
-        OUTPUT_DEVICE,
-        DEVICE_ROLE_MAX,
-    };
-    uint32_t index = static_cast<uint32_t>(size);
-    DeviceRole deviceRole = testDeviceRoles[index % testDeviceRoles.size()];
-    InternalDeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    DeviceRole deviceRole = g_fuzzUtils.GetData<DeviceRole>();
+    InternalDeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
     audioAdapterManager_->SelectDevice(deviceRole, deviceType, "test");
 }
 
-void AudioVolumeManagerSetDeviceActiveFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetDeviceActiveFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    vector<DeviceFlag> testDeviceFlags = {
-        NONE_DEVICES_FLAG,
-        OUTPUT_DEVICES_FLAG,
-        INPUT_DEVICES_FLAG,
-        ALL_DEVICES_FLAG,
-        DISTRIBUTED_OUTPUT_DEVICES_FLAG,
-        DISTRIBUTED_INPUT_DEVICES_FLAG,
-        ALL_DISTRIBUTED_DEVICES_FLAG,
-        ALL_L_D_DEVICES_FLAG,
-        DEVICE_FLAG_MAX,
-    };
-    uint32_t index = static_cast<uint32_t>(size);
-    InternalDeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
-    bool active = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
-    DeviceFlag flag = testDeviceFlags[index % testDeviceFlags.size()];
+    InternalDeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
+    bool active = g_fuzzUtils.GetData<bool>();
+    DeviceFlag flag = g_fuzzUtils.GetData<DeviceFlag>();
     audioAdapterManager_->SetDeviceActive(deviceType, "test", active, flag);
 }
 
-void AudioVolumeManagerAdjustBluetoothVoiceAssistantVolumeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerAdjustBluetoothVoiceAssistantVolumeFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    uint32_t index = static_cast<uint32_t>(size);
-    InternalDeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
-    bool isA2dpSwitchToSco = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    InternalDeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
+    bool isA2dpSwitchToSco = g_fuzzUtils.GetData<bool>();
     audioAdapterManager_->AdjustBluetoothVoiceAssistantVolume(deviceType, isA2dpSwitchToSco);
 }
 
-void AudioVolumeManagerSetVolumeForSwitchDeviceFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetVolumeForSwitchDeviceFuzzTest()
 {
     vector<string> testNetworkIds = {
         "LocalDevice",
         "RemoteDevice",
         "NetworkDevice1",
     };
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     AudioDeviceDescriptor deviceDescriptor;
-    deviceDescriptor.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    deviceDescriptor.deviceType_ = g_fuzzUtils.GetData<DeviceType>();
     deviceDescriptor.networkId_ = testNetworkIds[index % testNetworkIds.size()];
 
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->SetVolumeForSwitchDevice(deviceDescriptor);
 }
 
-void AudioVolumeManagerSaveRingerModeInfoFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSaveRingerModeInfoFuzzTest()
 {
     vector<AudioRingerMode> testAudioRingerModers = {
         RINGER_MODE_SILENT,
         RINGER_MODE_VIBRATE,
         RINGER_MODE_NORMAL,
     };
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioRingerMode ringMode = testAudioRingerModers[index % testAudioRingerModers.size()];
-
+    AudioRingerMode ringMode = g_fuzzUtils.GetData<AudioRingerMode>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->SaveRingerModeInfo(ringMode, "test", "invocationTimeTest");
 }
 
-void AudioVolumeManagerGetSinkIdInfoAndIdTypeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetSinkIdInfoAndIdTypeFuzzTest()
 {
     vector<string> testAdapterNames = {
         "primary",
         "a2dp",
         "testAdapter",
     };
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     pipeInfo->adapterName_ = testAdapterNames[index % testAdapterNames.size()];
-    pipeInfo->routeFlag_ = static_cast<uint32_t>(size);
+    pipeInfo->routeFlag_ = g_fuzzUtils.GetData<uint32_t>();
     std::string idInfo;
     HdiIdType idType;
 
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
 }
 
-void AudioVolumeManagerOpenNotPaAudioPortFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerOpenNotPaAudioPortFuzzTest()
 {
-    vector<AudioPipeRole> testAudioPipeRoles = {
-        PIPE_ROLE_OUTPUT,
-        PIPE_ROLE_INPUT,
-        PIPE_ROLE_NONE,
-    };
-    uint32_t index = static_cast<uint32_t>(size);
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->pipeRole_ = testAudioPipeRoles[index % testAudioPipeRoles.size()];
-    pipeInfo->routeFlag_ = static_cast<uint32_t>(size);
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    pipeInfo->pipeRole_ = g_fuzzUtils.GetData<AudioPipeRole>();
+    pipeInfo->routeFlag_ = g_fuzzUtils.GetData<uint32_t>();
     uint32_t paIndex = 0;
 
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->audioServerProxy_ = AudioServerProxy::GetInstance().GetAudioServerProxy();
     audioAdapterManager->OpenNotPaAudioPort(pipeInfo, paIndex);
 }
 
-void AudioVolumeManagerSetAudioVolumeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetAudioVolumeFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
-    float volumeDb = static_cast<float>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    float volumeDb = g_fuzzUtils.GetData<float>();
     audioAdapterManager_->SetAudioVolume(streamType, volumeDb);
 }
 
-void AudioVolumeManagerNotifyAccountsChangedFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerNotifyAccountsChangedFuzzTest()
 {
-    int id =  static_cast<int>(size);
+    int id = g_fuzzUtils.GetData<int>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->NotifyAccountsChanged(id);
 }
 
-void AudioVolumeManagerDoRestoreDataFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerDoRestoreDataFuzzTest()
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->DoRestoreData();
     audioAdapterManager->GetSafeVolumeLevel();
     audioAdapterManager->GetSafeVolumeTimeout();
 }
 
-void AudioVolumeManagerSetFirstBootFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetFirstBootFuzzTest()
 {
-    bool isFirst = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    bool isFirst = g_fuzzUtils.GetData<bool>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->SetFirstBoot(isFirst);
 }
 
-void AudioVolumeManagerSafeVolumeDumpFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSafeVolumeDumpFuzzTest()
 {
     std::string dumpString = "test";
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    audioAdapterManager->isSafeBoot_ = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    audioAdapterManager->isSafeBoot_ = g_fuzzUtils.GetData<bool>();
     audioAdapterManager->SafeVolumeDump(dumpString);
 }
 
-void AudioVolumeManagerSetVgsVolumeSupportedFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetVgsVolumeSupportedFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
-    bool isVgsSupported = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    bool isVgsSupported = g_fuzzUtils.GetData<bool>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    audioAdapterManager->currentActiveDevice_.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    audioAdapterManager->currentActiveDevice_.deviceType_ = g_fuzzUtils.GetData<DeviceType>();
     audioAdapterManager->SetVgsVolumeSupported(isVgsSupported);
     audioAdapterManager->IsVgsVolumeSupported();
 }
 
-void AudioVolumeManagerUpdateVolumeForLowLatencyFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerUpdateVolumeForLowLatencyFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    audioAdapterManager->currentActiveDevice_.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    audioAdapterManager->currentActiveDevice_.deviceType_ = g_fuzzUtils.GetData<DeviceType>();
     audioAdapterManager->UpdateVolumeForLowLatency();
 }
 
-void AudioVolumeManagerUpdateSinkArgsFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerUpdateSinkArgsFuzzTest()
 {
     AudioModuleInfo info;
     info.name = "hello";
@@ -487,13 +375,14 @@ void AudioVolumeManagerUpdateSinkArgsFuzzTest(const uint8_t *rawData, size_t siz
     info.networkId = "ASD**G124";
     info.deviceType = "AE00";
     info.extra = "1:13:2";
-    info.needEmptyChunk = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    info.needEmptyChunk = g_fuzzUtils.GetData<bool>();
     std::string ret {};
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->UpdateSinkArgs(info, ret);
 }
 
-void AudioVolumeManagerGetModuleArgsFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetModuleArgsFuzzTest()
 {
     vector<std::string_view> testLib = {
         AudioAdapterManager::HDI_SINK,
@@ -515,13 +404,14 @@ void AudioVolumeManagerGetModuleArgsFuzzTest(const uint8_t *rawData, size_t size
     info.networkId = "ASD**G124";
     info.deviceType = "AE00";
     info.extra = "1:13:2";
-    info.lib = testLib[static_cast<uint32_t>(size) % testLib.size()];
-    info.needEmptyChunk = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    info.lib = testLib[g_fuzzUtils.GetData<uint32_t>() % testLib.size()];
+    info.needEmptyChunk = g_fuzzUtils.GetData<bool>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->GetModuleArgs(info);
 }
 
-void AudioVolumeManagerGetHdiSinkIdInfoFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetHdiSinkIdInfoFuzzTest()
 {
     vector<string> testClassName = {
         "CALSS",
@@ -530,18 +420,19 @@ void AudioVolumeManagerGetHdiSinkIdInfoFuzzTest(const uint8_t *rawData, size_t s
     AudioModuleInfo info;
     info.name = "hello";
     info.adapterName = "world";
-    info.className = testClassName[static_cast<uint32_t>(size) % testClassName.size()];
+    info.className = testClassName[g_fuzzUtils.GetData<uint32_t>() % testClassName.size()];
     info.fileName = "sink.so";
     info.sinkLatency = "300ms";
     info.networkId = "ASD**G124";
     info.deviceType = "AE00";
     info.extra = "1:13:2";
-    info.needEmptyChunk = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    info.needEmptyChunk = g_fuzzUtils.GetData<bool>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->GetHdiSinkIdInfo(info);
 }
 
-void AudioVolumeManagerGetHdiSourceIdInfoFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetHdiSourceIdInfoFuzzTest()
 {
     vector<string> testClassName = {
         "primary",
@@ -551,28 +442,30 @@ void AudioVolumeManagerGetHdiSourceIdInfoFuzzTest(const uint8_t *rawData, size_t
     AudioModuleInfo info;
     info.name = "hello";
     info.adapterName = "world";
-    info.className = testClassName[static_cast<uint32_t>(size) % testClassName.size()];
+    info.className = testClassName[g_fuzzUtils.GetData<uint32_t>() % testClassName.size()];
     info.fileName = "sink.so";
     info.sinkLatency = "300ms";
     info.networkId = "ASD**G124";
     info.deviceType = "AE00";
     info.extra = "1:13:2";
     info.sourceType = "SOURCE_TYPE_WAKEUP";
-    info.needEmptyChunk = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    info.needEmptyChunk = g_fuzzUtils.GetData<bool>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->GetHdiSourceIdInfo(info);
 }
 
-void AudioVolumeManagerGetVolumeKeyForKvStoreFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetVolumeKeyForKvStoreFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
-    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->GetVolumeKeyForKvStore(deviceType, streamType);
 }
 
-void AudioVolumeManagerGetStreamIDByTypeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetStreamIDByTypeFuzzTest()
 {
     vector<string> testStreamTypes = {
         "music",
@@ -586,111 +479,124 @@ void AudioVolumeManagerGetStreamIDByTypeFuzzTest(const uint8_t *rawData, size_t 
         "ultrasonic",
         "camcorder",
     };
-    std::string streamType = testStreamTypes[static_cast<uint32_t>(size) % testStreamTypes.size()];
+    std::string streamType = testStreamTypes[g_fuzzUtils.GetData<uint32_t>() % testStreamTypes.size()];
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->GetStreamIDByType(streamType);
 }
 
-void AudioVolumeManagerGetDeviceCategoryFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetDeviceCategoryFuzzTest()
 {
-    DeviceType deviceType = g_testDeviceTypes[static_cast<uint32_t>(size) % g_testDeviceTypes.size()];
+    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->GetDeviceCategory(deviceType);
 }
 
-void AudioVolumeManagerDeleteAudioPolicyKvStoreFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerDeleteAudioPolicyKvStoreFuzzTest()
 {
-    bool isFirstBoot = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    bool isFirstBoot = g_fuzzUtils.GetData<bool>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->InitAudioPolicyKvStore(isFirstBoot);
     audioAdapterManager->DeleteAudioPolicyKvStore();
 }
 
-void AudioVolumeManagerUpdateSafeVolumeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerUpdateSafeVolumeFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    audioAdapterManager->currentActiveDevice_.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    audioAdapterManager->currentActiveDevice_.deviceType_ = g_fuzzUtils.GetData<DeviceType>();
     audioAdapterManager->UpdateSafeVolume();
 }
 
-void AudioVolumeManagerInitVolumeMapFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerInitVolumeMapFuzzTest()
 {
-    bool isFirstBoot = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    bool isFirstBoot = g_fuzzUtils.GetData<bool>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->InitVolumeMap(isFirstBoot);
 }
 
-void AudioVolumeManagerGetDefaultVolumeLevelFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetDefaultVolumeLevelFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     std::unordered_map<AudioStreamType, int32_t> volumeLevelMapTemp;
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
-    int32_t volumeLevel = static_cast<int32_t>(size);
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    int32_t volumeLevel = g_fuzzUtils.GetData<int32_t>();
     volumeLevelMapTemp.insert({streamType, volumeLevel});
-    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
-    AudioVolumeType volumeType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
+    AudioVolumeType volumeType = g_fuzzUtils.GetData<AudioStreamType>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->GetDefaultVolumeLevel(volumeLevelMapTemp, volumeType, deviceType);
 }
 
-void AudioVolumeManagerResetRemoteCastDeviceVolumeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerResetRemoteCastDeviceVolumeFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->defaultVolumeTypeList_.push_back(streamType);
     audioAdapterManager->ResetRemoteCastDeviceVolume();
 }
 
-void AudioVolumeManagerInitRingerModeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerInitRingerModeFuzzTest()
 {
-    bool isFirstBoot = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    bool isFirstBoot = g_fuzzUtils.GetData<bool>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->isNeedCopyRingerModeData_ = !isFirstBoot;
     audioAdapterManager->ReInitKVStore();
     audioAdapterManager->InitRingerMode(isFirstBoot);
 }
 
-void AudioVolumeManagerHandleDistributedVolumeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerHandleDistributedVolumeFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     AudioDeviceDescriptor deviceDescriptor;
-    deviceDescriptor.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    deviceDescriptor.deviceType_ = g_fuzzUtils.GetData<DeviceType>();
     deviceDescriptor.networkId_ = "testNetworkId";
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->HandleDistributedVolume(streamType);
 }
 
-void AudioVolumeManagerInitMuteStatusMapFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerInitMuteStatusMapFuzzTest()
 {
-    bool isFirstBoot = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    bool isFirstBoot = g_fuzzUtils.GetData<bool>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->InitMuteStatusMap(isFirstBoot);
 }
 
-void AudioVolumeManagerCheckAndDealMuteStatusFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerCheckAndDealMuteStatusFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
-    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->currentActiveDevice_.deviceType_ = deviceType;
     audioAdapterManager->CheckAndDealMuteStatus(deviceType, streamType);
 }
 
-void AudioVolumeManagerSetVolumeCallbackAfterCloneFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetVolumeCallbackAfterCloneFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->defaultVolumeTypeList_.push_back(streamType);
     audioAdapterManager->SetVolumeCallbackAfterClone();
 }
 
-void AudioVolumeManagerOpenPaAudioPortFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerOpenPaAudioPortFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
     audioAdapterManager_->ConnectServiceAdapter();
     audioAdapterManager_->audioServerProxy_ = AudioServerProxy::GetInstance().GetAudioServerProxy();
@@ -699,119 +605,125 @@ void AudioVolumeManagerOpenPaAudioPortFuzzTest(const uint8_t *rawData, size_t si
         PIPE_ROLE_INPUT,
         PIPE_ROLE_NONE,
     };
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    CHECK_AND_RETURN(pipeInfo != nullptr);
     pipeInfo->pipeRole_ = testAudioPipeRoles[index % testAudioPipeRoles.size()];
     uint32_t paIndex = 0;
     audioAdapterManager_->OpenPaAudioPort(pipeInfo, paIndex, "test");
 }
 
-void AudioVolumeManagerCloneMuteStatusMapFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerCloneMuteStatusMapFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    audioAdapterManager->currentActiveDevice_.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    audioAdapterManager->currentActiveDevice_.deviceType_ = g_fuzzUtils.GetData<DeviceType>();
     audioAdapterManager->CloneMuteStatusMap();
 }
 
-void AudioVolumeManagerLoadMuteStatusMapFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerLoadMuteStatusMapFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    audioAdapterManager->isNeedCopyMuteData_ = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    audioAdapterManager->isNeedCopyMuteData_ = g_fuzzUtils.GetData<bool>();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
     audioAdapterManager->defaultVolumeTypeList_.push_back(streamType);
     audioAdapterManager->LoadMuteStatusMap();
 }
 
-void AudioVolumeManagerInitSafeStatusFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerInitSafeStatusFuzzTest()
 {
-    bool isFirstBoot = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    bool isFirstBoot = g_fuzzUtils.GetData<bool>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->InitSafeStatus(isFirstBoot);
 }
 
-void AudioVolumeManagerInitSafeTimeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerInitSafeTimeFuzzTest()
 {
-    bool isFirstBoot = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    bool isFirstBoot = g_fuzzUtils.GetData<bool>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->InitSafeTime(isFirstBoot);
 }
 
-void AudioVolumeManagerConvertSafeTimeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerConvertSafeTimeFuzzTest()
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    audioAdapterManager->safeActiveTime_ = static_cast<int64_t>(size);
-    audioAdapterManager->safeActiveBtTime_ = static_cast<int64_t>(size / NUM_2);
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    audioAdapterManager->safeActiveTime_ = g_fuzzUtils.GetData<int64_t>();
+    audioAdapterManager->safeActiveBtTime_ = g_fuzzUtils.GetData<bool>();
     audioAdapterManager->ConvertSafeTime();
 }
 
-void AudioVolumeManagerGetCurrentDeviceSafeStatusFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetCurrentDeviceSafeStatusFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
-    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->GetCurrentDeviceSafeStatus(deviceType);
 }
 
-void AudioVolumeManagerGetCurentDeviceSafeTimeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetCurentDeviceSafeTimeFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
-    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->GetCurentDeviceSafeTime(deviceType);
 }
 
-void AudioVolumeManagerGetRestoreVolumeLevelFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetRestoreVolumeLevelFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
-    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->GetRestoreVolumeLevel(deviceType);
 }
 
-void AudioVolumeManagerSetDeviceSafeStatusFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetDeviceSafeStatusFuzzTest()
 {
-    static const vector<SafeStatus> testSafeStatus = {
-        SAFE_UNKNOWN,
-        SAFE_INACTIVE,
-        SAFE_ACTIVE,
-    };
-    uint32_t index = static_cast<uint32_t>(size);
-    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
-    SafeStatus status = testSafeStatus[index % testSafeStatus.size()];
+    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
+    SafeStatus status = g_fuzzUtils.GetData<SafeStatus>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->SetDeviceSafeStatus(deviceType, status);
 }
 
-void AudioVolumeManagerSetDeviceSafeTimeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetDeviceSafeTimeFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
-    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
-    int64_t time = static_cast<int64_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
+    int64_t time = g_fuzzUtils.GetData<int64_t>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->SetDeviceSafeTime(deviceType, time);
 }
 
-void AudioVolumeManagerSetRestoreVolumeLevelFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetRestoreVolumeLevelFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
-    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
-    int32_t volume = static_cast<int32_t>(size);
+    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
+    int32_t volume = g_fuzzUtils.GetData<int32_t>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->SetRestoreVolumeLevel(deviceType, volume);
 }
 
-void AudioVolumeManagerGetMuteKeyForKvStoreFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetMuteKeyForKvStoreFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
-    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->GetMuteKeyForKvStore(deviceType, streamType);
 }
 
-void AudioVolumeManagerSetSystemSoundUriFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetSystemSoundUriFuzzTest()
 {
     static const std::vector<std::string> testSystemSoundKey = {
         "ringtone_for_sim_card_0",
@@ -820,13 +732,14 @@ void AudioVolumeManagerSetSystemSoundUriFuzzTest(const uint8_t *rawData, size_t 
         "system_tone_for_sim_card_1",
         "system_tone_for_notification"
     };
-    std::string key = testSystemSoundKey[static_cast<uint32_t>(size) % testSystemSoundKey.size()];
+    std::string key = testSystemSoundKey[g_fuzzUtils.GetData<uint32_t>() % testSystemSoundKey.size()];
     std::string uri = "test";
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->SetSystemSoundUri(key, uri);
 }
 
-void AudioVolumeManagerGetSystemSoundUriFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetSystemSoundUriFuzzTest()
 {
     static const std::vector<std::string> testSystemSoundKey = {
         "ringtone_for_sim_card_0",
@@ -835,344 +748,342 @@ void AudioVolumeManagerGetSystemSoundUriFuzzTest(const uint8_t *rawData, size_t 
         "system_tone_for_sim_card_1",
         "system_tone_for_notification"
     };
-    std::string key = testSystemSoundKey[static_cast<uint32_t>(size) % testSystemSoundKey.size()];
+    std::string key = testSystemSoundKey[g_fuzzUtils.GetData<uint32_t>() % testSystemSoundKey.size()];
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->GetSystemSoundUri(key);
 }
 
-void AudioVolumeManagerGetSystemVolumeInDbFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetSystemVolumeInDbFuzzTest()
 {
-    int32_t volumeLevel = static_cast<int32_t>(size);
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioVolumeType volumeType =  g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
-    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    int32_t volumeLevel = g_fuzzUtils.GetData<int32_t>();
+    AudioVolumeType volumeType =  g_fuzzUtils.GetData<AudioStreamType>();
+    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    audioAdapterManager->useNonlinearAlgo_ = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    audioAdapterManager->useNonlinearAlgo_ = g_fuzzUtils.GetData<bool>();
     audioAdapterManager->GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
 }
 
-void AudioVolumeManagerGetPositionInVolumePointsFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetPositionInVolumePointsFuzzTest()
 {
-    static uint32_t step = 0;
-    step += static_cast<uint32_t>(size);
     VolumePoint volumePoint1;
-    volumePoint1.index = static_cast<uint32_t>(size);
-    volumePoint1.dbValue = static_cast<int32_t>(size) / NUM_2;
+    volumePoint1.index = g_fuzzUtils.GetData<uint32_t>();
+    volumePoint1.dbValue = g_fuzzUtils.GetData<bool>();
     VolumePoint volumePoint2;
-    volumePoint2.index = step;
-    volumePoint2.dbValue = step / NUM_2;
-    std::vector<VolumePoint> volumePoints;
+    volumePoint2.index = g_fuzzUtils.GetData<uint32_t>();
+    volumePoint2.dbValue = g_fuzzUtils.GetData<bool>();
+    std::vector<VolumePoint> volumePoints = {};
     volumePoints.push_back(volumePoint1);
     volumePoints.push_back(volumePoint2);
-    int32_t idx = static_cast<int32_t>(size);
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    audioAdapterManager->GetPositionInVolumePoints(volumePoints, idx);
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    audioAdapterManager->GetPositionInVolumePoints(volumePoints, 0);
 }
 
-void AudioVolumeManagerInitVolumeMapIndexFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerInitVolumeMapIndexFuzzTest()
 {
-    AudioStreamType streamType = g_testAudioStreamTypes[static_cast<uint32_t>(size) % g_testAudioStreamTypes.size()];
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->defaultVolumeTypeList_.push_back(streamType);
     audioAdapterManager->InitVolumeMapIndex();
 }
 
-void AudioVolumeManagerUpdateVolumeMapIndexFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerUpdateVolumeMapIndexFuzzTest()
 {
-    static const vector<DeviceVolumeType> testDeviceVolumeTypes = {
-        EARPIECE_VOLUME_TYPE,
-        SPEAKER_VOLUME_TYPE,
-        HEADSET_VOLUME_TYPE,
-    };
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     VolumePoint volumePoint;
-    volumePoint.index = static_cast<uint32_t>(size);
-    volumePoint.dbValue = static_cast<int32_t>(size) / NUM_2;
+    volumePoint.index = g_fuzzUtils.GetData<uint32_t>();
+    volumePoint.dbValue = g_fuzzUtils.GetData<bool>();
     std::vector<VolumePoint> volumePoints;
     volumePoints.push_back(volumePoint);
     std::shared_ptr<DeviceVolumeInfo> deviceVolumeInfoPtr = std::make_shared<DeviceVolumeInfo>();
-    deviceVolumeInfoPtr->deviceType = testDeviceVolumeTypes[index % testDeviceVolumeTypes.size()];
+    CHECK_AND_RETURN(deviceVolumeInfoPtr != nullptr);
+    deviceVolumeInfoPtr->deviceType = g_fuzzUtils.GetData<DeviceVolumeType>();
     deviceVolumeInfoPtr->volumePoints = volumePoints;
     DeviceVolumeInfoMap deviceVolumeInfoMap;
     deviceVolumeInfoMap.insert({deviceVolumeInfoPtr->deviceType, deviceVolumeInfoPtr});
 
     std::shared_ptr<StreamVolumeInfo> streamVolumeInfoPtr = std::make_shared<StreamVolumeInfo>();
-    streamVolumeInfoPtr->streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
-    streamVolumeInfoPtr->maxLevel = static_cast<int>(size) | 1;
-    streamVolumeInfoPtr->minLevel = static_cast<int>(size);
-    streamVolumeInfoPtr->defaultLevel = static_cast<int>(size) / NUM_2;
+    CHECK_AND_RETURN(streamVolumeInfoPtr != nullptr);
+    streamVolumeInfoPtr->streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    streamVolumeInfoPtr->maxLevel = g_fuzzUtils.GetData<int>() | 1;
+    streamVolumeInfoPtr->minLevel = g_fuzzUtils.GetData<int>();
+    streamVolumeInfoPtr->defaultLevel = g_fuzzUtils.GetData<bool>();
     streamVolumeInfoPtr->deviceVolumeInfos = deviceVolumeInfoMap;
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->streamVolumeInfos_.insert({streamVolumeInfoPtr->streamType, streamVolumeInfoPtr});
     audioAdapterManager->UpdateVolumeMapIndex();
 }
 
-void AudioVolumeManagerSetAbsVolumeSceneFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetAbsVolumeSceneFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
-    bool isAbsVolumeScene = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    bool isAbsVolumeScene = g_fuzzUtils.GetData<bool>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    audioAdapterManager->currentActiveDevice_.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    audioAdapterManager->currentActiveDevice_.deviceType_ = g_fuzzUtils.GetData<DeviceType>();
     audioAdapterManager->SetAbsVolumeScene(isAbsVolumeScene);
 }
 
-void AudioVolumeManagerSetAbsVolumeMuteFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetAbsVolumeMuteFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
-    bool mute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    bool mute = g_fuzzUtils.GetData<bool>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    audioAdapterManager->currentActiveDevice_.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    audioAdapterManager->currentActiveDevice_.deviceType_ = g_fuzzUtils.GetData<DeviceType>();
     audioAdapterManager->SetAbsVolumeMute(mute);
 }
 
-void AudioVolumeManagerSetAppVolumeLevelFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetAppVolumeLevelFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    uint32_t index = static_cast<uint32_t>(size);
-    audioAdapterManager_->currentActiveDevice_.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
-    int32_t randIntValue = static_cast<int32_t>(size);
-    audioAdapterManager_->SetAppVolumeLevel(randIntValue, randIntValue / NUM_2);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    audioAdapterManager_->currentActiveDevice_.deviceType_ = g_fuzzUtils.GetData<DeviceType>();
+    int32_t randIntValue = g_fuzzUtils.GetData<bool>();
+    audioAdapterManager_->SetAppVolumeLevel(randIntValue, randIntValue);
 }
  
-void AudioVolumeManagerSetAdjustVolumeForZoneFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetAdjustVolumeForZoneFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    int32_t zoneId = static_cast<int32_t>(size);
+    int32_t zoneId = g_fuzzUtils.GetData<int32_t>();
     audioAdapterManager_->SetAdjustVolumeForZone(zoneId);
 }
  
-void AudioVolumeManagerSetZoneMuteFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetZoneMuteFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    int32_t zoneId = static_cast<int32_t>(size);
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
-    StreamUsage streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
-    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
-    bool mute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    int32_t zoneId = g_fuzzUtils.GetData<int32_t>();
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    StreamUsage streamUsage = g_fuzzUtils.GetData<StreamUsage>();
+    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
+    bool mute = g_fuzzUtils.GetData<bool>();
     audioAdapterManager_->SetZoneMute(zoneId, streamType, mute, streamUsage, deviceType);
 }
  
-void AudioVolumeManagerGetZoneMuteFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetZoneMuteFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    int32_t zoneId = static_cast<int32_t>(size);
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    int32_t zoneId = g_fuzzUtils.GetData<int32_t>();
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
     audioAdapterManager_->GetZoneMute(zoneId, streamType);
 }
  
-void AudioVolumeManagerGetZoneVolumeLevelFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetZoneVolumeLevelFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    int32_t zoneId = static_cast<int32_t>(size);
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    int32_t zoneId = g_fuzzUtils.GetData<int32_t>();
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
     audioAdapterManager_->GetZoneVolumeLevel(zoneId, streamType);
 }
  
-void AudioVolumeManagerSetZoneVolumeLevelFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetZoneVolumeLevelFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    int32_t zoneId = static_cast<int32_t>(size);
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
-    int32_t volumeLevel = static_cast<int32_t>(size);
+    int32_t zoneId = g_fuzzUtils.GetData<int32_t>();
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    int32_t volumeLevel = g_fuzzUtils.GetData<int32_t>();
     audioAdapterManager_->SetZoneVolumeLevel(zoneId, streamType, volumeLevel);
 }
  
-void AudioVolumeManagerGetDeviceVolumeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetDeviceVolumeFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
-    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
     audioAdapterManager_->GetDeviceVolume(deviceType, streamType);
 }
  
-void AudioVolumeManagerHandleRingerModeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerHandleRingerModeFuzzTest()
 {
-    vector<AudioRingerMode> testAudioRingerModers = {
-        RINGER_MODE_SILENT,
-        RINGER_MODE_VIBRATE,
-        RINGER_MODE_NORMAL,
-    };
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioRingerMode ringMode = testAudioRingerModers[index % testAudioRingerModers.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioRingerMode ringMode = g_fuzzUtils.GetData<AudioRingerMode>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->HandleRingerMode(ringMode);
 }
  
-void AudioVolumeManagerSetAppVolumeDbFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetAppVolumeDbFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    int32_t appUid = static_cast<int32_t>(size);
+    int32_t appUid = g_fuzzUtils.GetData<int32_t>();
     audioAdapterManager_->SetAppVolumeDb(appUid);
 }
  
-void AudioVolumeManagerSetAppVolumeMutedDBFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetAppVolumeMutedDBFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    int32_t appUid = static_cast<int32_t>(size);
-    bool muted = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    int32_t appUid = g_fuzzUtils.GetData<int32_t>();
+    bool muted = g_fuzzUtils.GetData<bool>();
     audioAdapterManager_->SetAppVolumeMutedDB(appUid, muted);
 }
  
-void AudioVolumeManagerGetAppVolumeLevelFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetAppVolumeLevelFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    int32_t appUid = static_cast<int32_t>(size);
-    int32_t volumeLevel = static_cast<int32_t>(size);
+    int32_t appUid = g_fuzzUtils.GetData<int32_t>();
+    int32_t volumeLevel = g_fuzzUtils.GetData<int32_t>();
     audioAdapterManager_->GetAppVolumeLevel(appUid, volumeLevel);
 }
  
-void AudioVolumeManagerSetPersistMicMuteStateFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetPersistMicMuteStateFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    bool mute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    bool mute = g_fuzzUtils.GetData<bool>();
     audioAdapterManager_->SetPersistMicMuteState(mute);
 }
  
-void AudioVolumeManagerSetSourceOutputStreamMuteFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetSourceOutputStreamMuteFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    int32_t uid = static_cast<int32_t>(size);
-    bool setMute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    int32_t uid = g_fuzzUtils.GetData<int32_t>();
+    bool setMute = g_fuzzUtils.GetData<bool>();
     audioAdapterManager_->SetSourceOutputStreamMute(uid, setMute);
 }
  
-void AudioVolumeManagerGetStreamMuteFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetStreamMuteFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
     audioAdapterManager_->GetStreamMute(streamType);
 }
  
-void AudioVolumeManagerGetAppMuteFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerGetAppMuteFuzzTest()
 {
+    CHECK_AND_RETURN(audioAdapterManager_ != nullptr);
     audioAdapterManager_->Init();
-    int32_t appUid = static_cast<int32_t>(size);
+    int32_t appUid = g_fuzzUtils.GetData<int32_t>();
     audioAdapterManager_->GetAppMute(appUid);
 }
  
-void AudioVolumeManagerSetRingerModeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeManagerSetRingerModeFuzzTest()
 {
-    vector<AudioRingerMode> testAudioRingerModers = {
-        RINGER_MODE_SILENT,
-        RINGER_MODE_VIBRATE,
-        RINGER_MODE_NORMAL,
-    };
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioRingerMode ringMode = testAudioRingerModers[index % testAudioRingerModers.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioRingerMode ringMode = g_fuzzUtils.GetData<AudioRingerMode>();
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->SetRingerMode(ringMode);
 }
+
+vector<TestPtr> g_testPtrs = {
+    AudioVolumeManagerIsAppVolumeMuteFuzzTest,
+    AudioVolumeManagerSaveSpecifiedDeviceVolumeFuzzTest,
+    AudioVolumeManagerHandleStreamMuteStatusFuzzTest,
+    AudioVolumeManagerSetOffloadVolumeFuzzTest,
+    AudioVolumeManagerSetOffloadSessionIdFuzzTest,
+    AudioVolumeManagerConnectServiceAdapterFuzzTest,
+    AudioVolumeManagerHandleKvDataFuzzTest,
+    AudioVolumeManagerReInitKVStoreFuzzTest,
+    AudioVolumeManagerSaveRingtoneVolumeToLocalFuzzTest,
+    AudioVolumeManagerUpdateSafeVolumeByS4FuzzTest,
+    AudioVolumeManagerSetAppVolumeMutedFuzzTest,
+    AudioVolumeManagerSetSystemVolumeLevelFuzzTest,
+    AudioVolumeManagerSetDoubleRingVolumeDbFuzzTest,
+    AudioVolumeManagerSetInnerStreamMuteFuzzTest,
+    AudioVolumeManagerSetStreamMuteFuzzTest,
+    AudioVolumeManagerSetSinkMuteFuzzTest,
+    AudioVolumeManagerSelectDeviceFuzzTest,
+    AudioVolumeManagerSetDeviceActiveFuzzTest,
+    AudioVolumeManagerAdjustBluetoothVoiceAssistantVolumeFuzzTest,
+    AudioVolumeManagerSetVolumeForSwitchDeviceFuzzTest,
+    AudioVolumeManagerSaveRingerModeInfoFuzzTest,
+    AudioVolumeManagerGetSinkIdInfoAndIdTypeFuzzTest,
+    AudioVolumeManagerOpenNotPaAudioPortFuzzTest,
+    AudioVolumeManagerUpdateSinkArgsFuzzTest,
+    AudioVolumeManagerGetModuleArgsFuzzTest,
+    AudioVolumeManagerGetHdiSinkIdInfoFuzzTest,
+    AudioVolumeManagerGetHdiSourceIdInfoFuzzTest,
+    AudioVolumeManagerGetVolumeKeyForKvStoreFuzzTest,
+    AudioVolumeManagerGetStreamIDByTypeFuzzTest,
+    AudioVolumeManagerGetDeviceCategoryFuzzTest,
+    AudioVolumeManagerDeleteAudioPolicyKvStoreFuzzTest,
+    AudioVolumeManagerUpdateSafeVolumeFuzzTest,
+    AudioVolumeManagerInitVolumeMapFuzzTest,
+    AudioVolumeManagerGetDefaultVolumeLevelFuzzTest,
+    AudioVolumeManagerResetRemoteCastDeviceVolumeFuzzTest,
+    AudioVolumeManagerInitRingerModeFuzzTest,
+    AudioVolumeManagerHandleDistributedVolumeFuzzTest,
+    AudioVolumeManagerInitMuteStatusMapFuzzTest,
+    AudioVolumeManagerCheckAndDealMuteStatusFuzzTest,
+    AudioVolumeManagerSetVolumeCallbackAfterCloneFuzzTest,
+    AudioVolumeManagerOpenPaAudioPortFuzzTest,
+    AudioVolumeManagerCloneMuteStatusMapFuzzTest,
+    AudioVolumeManagerLoadMuteStatusMapFuzzTest,
+    AudioVolumeManagerInitSafeStatusFuzzTest,
+    AudioVolumeManagerInitSafeTimeFuzzTest,
+    AudioVolumeManagerConvertSafeTimeFuzzTest,
+    AudioVolumeManagerGetCurrentDeviceSafeStatusFuzzTest,
+    AudioVolumeManagerGetCurentDeviceSafeTimeFuzzTest,
+    AudioVolumeManagerGetRestoreVolumeLevelFuzzTest,
+    AudioVolumeManagerSetDeviceSafeStatusFuzzTest,
+    AudioVolumeManagerSetDeviceSafeTimeFuzzTest,
+    AudioVolumeManagerSetRestoreVolumeLevelFuzzTest,
+    AudioVolumeManagerGetMuteKeyForKvStoreFuzzTest,
+    AudioVolumeManagerSetSystemSoundUriFuzzTest,
+    AudioVolumeManagerGetSystemSoundUriFuzzTest,
+    AudioVolumeManagerGetSystemVolumeInDbFuzzTest,
+    AudioVolumeManagerGetPositionInVolumePointsFuzzTest,
+    AudioVolumeManagerInitVolumeMapIndexFuzzTest,
+    AudioVolumeManagerUpdateVolumeMapIndexFuzzTest,
+    AudioVolumeManagerSetAbsVolumeSceneFuzzTest,
+    AudioVolumeManagerSetAbsVolumeMuteFuzzTest,
+    AudioVolumeManagerSetAudioVolumeFuzzTest,
+    AudioVolumeManagerNotifyAccountsChangedFuzzTest,
+    AudioVolumeManagerDoRestoreDataFuzzTest,
+    AudioVolumeManagerSetFirstBootFuzzTest,
+    AudioVolumeManagerSafeVolumeDumpFuzzTest,
+    AudioVolumeManagerSetVgsVolumeSupportedFuzzTest,
+    AudioVolumeManagerSetAppVolumeLevelFuzzTest,
+    AudioVolumeManagerSetAdjustVolumeForZoneFuzzTest,
+    AudioVolumeManagerSetZoneMuteFuzzTest,
+    AudioVolumeManagerSetZoneMuteFuzzTest,
+    AudioVolumeManagerGetZoneMuteFuzzTest,
+    AudioVolumeManagerGetZoneVolumeLevelFuzzTest,
+    AudioVolumeManagerSetZoneVolumeLevelFuzzTest,
+    AudioVolumeManagerGetDeviceVolumeFuzzTest,
+    AudioVolumeManagerHandleRingerModeFuzzTest,
+    AudioVolumeManagerSetAppVolumeDbFuzzTest,
+    AudioVolumeManagerSetAppVolumeMutedDBFuzzTest,
+    AudioVolumeManagerGetAppVolumeLevelFuzzTest,
+    AudioVolumeManagerSetPersistMicMuteStateFuzzTest,
+    AudioVolumeManagerSetSourceOutputStreamMuteFuzzTest,
+    AudioVolumeManagerGetStreamMuteFuzzTest,
+    AudioVolumeManagerGetAppMuteFuzzTest,
+    AudioVolumeManagerSetRingerModeFuzzTest,
+};
 } // namespace AudioStandard
 } // namesapce OHOS
-
-OHOS::AudioStandard::TestPtr g_testPtrs[] = {
-    OHOS::AudioStandard::AudioVolumeManagerIsAppVolumeMuteFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSaveSpecifiedDeviceVolumeFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerHandleStreamMuteStatusFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetOffloadVolumeFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetOffloadSessionIdFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerConnectServiceAdapterFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerHandleKvDataFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerReInitKVStoreFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSaveRingtoneVolumeToLocalFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerUpdateSafeVolumeByS4FuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetAppVolumeMutedFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetSystemVolumeLevelFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetDoubleRingVolumeDbFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetInnerStreamMuteFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetStreamMuteFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetSinkMuteFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSelectDeviceFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetDeviceActiveFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerAdjustBluetoothVoiceAssistantVolumeFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSaveRingerModeInfoFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetSinkIdInfoAndIdTypeFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerOpenNotPaAudioPortFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerUpdateSinkArgsFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetModuleArgsFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetHdiSinkIdInfoFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetHdiSourceIdInfoFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetVolumeKeyForKvStoreFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetStreamIDByTypeFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetDeviceCategoryFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerDeleteAudioPolicyKvStoreFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerUpdateSafeVolumeFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerInitVolumeMapFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetDefaultVolumeLevelFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerResetRemoteCastDeviceVolumeFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerInitRingerModeFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerHandleDistributedVolumeFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerInitMuteStatusMapFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerCheckAndDealMuteStatusFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetVolumeCallbackAfterCloneFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerOpenPaAudioPortFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerCloneMuteStatusMapFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerLoadMuteStatusMapFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerInitSafeStatusFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerInitSafeTimeFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerConvertSafeTimeFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetCurrentDeviceSafeStatusFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetCurentDeviceSafeTimeFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetRestoreVolumeLevelFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetDeviceSafeStatusFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetDeviceSafeTimeFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetRestoreVolumeLevelFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetMuteKeyForKvStoreFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetSystemSoundUriFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetSystemSoundUriFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetSystemVolumeInDbFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetPositionInVolumePointsFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerInitVolumeMapIndexFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerUpdateVolumeMapIndexFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetAbsVolumeSceneFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetAbsVolumeMuteFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetAudioVolumeFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerNotifyAccountsChangedFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerDoRestoreDataFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetFirstBootFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSafeVolumeDumpFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetVgsVolumeSupportedFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetAppVolumeLevelFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetAdjustVolumeForZoneFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetZoneMuteFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetZoneMuteFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetZoneMuteFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetZoneVolumeLevelFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetZoneVolumeLevelFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetDeviceVolumeFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerHandleRingerModeFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetAppVolumeDbFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetAppVolumeMutedDBFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetAppVolumeLevelFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetPersistMicMuteStateFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetSourceOutputStreamMuteFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetStreamMuteFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetAppMuteFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetRingerModeFuzzTest,
-};
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    /* Run your code on data */
-    if (data == nullptr || size <= 1) {
+    if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
         return 0;
     }
-    uint32_t len = OHOS::AudioStandard::GetArrLength(g_testPtrs);
-    if (len > 0) {
-        uint8_t firstByte = *data % len;
-        if (firstByte >= len) {
-            return 0;
-        }
-        data = data + 1;
-        size = size - 1;
-        g_testPtrs[firstByte](data, size);
-    }
+
+    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testPtrs);
     return 0;
 }

@@ -26,6 +26,9 @@ using namespace std;
 FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
 const int32_t TEST_RTG_ID = 2;
+const int32_t NUM_1 = 1;
+const int32_t NUM_2 = 2;
+const int32_t NUM_3 = 3;
 
 typedef void (*TestFuncs)();
 
@@ -37,6 +40,16 @@ public:
     bool AddDeathRecipient(const sptr<DeathRecipient> &recipient) { return true; };
     bool RemoveDeathRecipient(const sptr<DeathRecipient> &recipient) { return true; };
     int Dump(int fd, const std::vector<std::u16string> &args) { return 0; };
+};
+
+class AudioWorkgroupCallbackForMonitorTest : public AudioWorkgroupCallbackForMonitor {
+public:
+    AudioWorkgroupCallbackForMonitorTest() = default;
+    ~AudioWorkgroupCallbackForMonitorTest() override
+    {
+        AUDIO_INFO_LOG("AudioWorkgroupCallbackForMonitorTest destroyed");
+    }
+    void OnWorkgroupChange(const AudioWorkgroupChangeInfo &info) override {}
 };
 
 void ResourceServiceCreateAudioWorkgroupFuzzTest()
@@ -89,28 +102,154 @@ void ResourceServiceOnWorkgroupRemoteDiedFuzzTest()
 void ResourceServiceReleaseWorkgroupDeathRecipientFuzzTest()
 {
     std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(TEST_RTG_ID);
+    CHECK_AND_RETURN(workgroup != nullptr);
     sptr<IRemoteObject> remoteObj = new RemoteObjectTestStub();
+    CHECK_AND_RETURN(remoteObj != nullptr);
+    AudioResourceService::GetInstance()->deathRecipientMap_[workgroup] =
+        std::make_pair(remoteObj, new AudioResourceService::AudioWorkgroupDeathRecipient());
     AudioResourceService::GetInstance()->ReleaseWorkgroupDeathRecipient(workgroup, remoteObj);
 }
 
 void ResourceServiceWorkgroupRendererMonitorFuzzTest()
 {
+    std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(TEST_RTG_ID);
+    if (!workgroup) {
+        return;
+    }
+    workgroup->callback = std::make_shared<AudioWorkgroupCallbackForMonitorTest>();
+    if (!workgroup->callback) {
+        return;
+    }
     auto audioResourceService = AudioResourceService::GetInstance();
     int32_t testPid = g_fuzzUtils.GetData<int32_t>();
     if (audioResourceService == nullptr) {
         return;
     }
+    int32_t pid = g_fuzzUtils.GetData<int32_t>();
     audioResourceService->audioWorkgroupMap_[testPid].permission = g_fuzzUtils.GetData<bool>();
+    audioResourceService->audioWorkgroupMap_[testPid].groups[pid] = {workgroup};
     audioResourceService->WorkgroupRendererMonitor(testPid, true);
 }
 
 void ResourceServiceDumpAudioWorkgroupMapFuzzTest()
 {
+    std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(TEST_RTG_ID);
+    if (!workgroup) {
+        return;
+    }
     auto audioResourceService = AudioResourceService::GetInstance();
     if (audioResourceService == nullptr) {
         return;
     }
+    int32_t pid = g_fuzzUtils.GetData<int32_t>();
+    audioResourceService->audioWorkgroupMap_[0].groups[pid] = {workgroup};
     audioResourceService->DumpAudioWorkgroupMap();
+}
+
+void AudioWorkgroupCheckFuzzTest()
+{
+    std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(TEST_RTG_ID);
+    if (!workgroup) {
+        return;
+    }
+    auto audioResourceService = AudioResourceService::GetInstance();
+    if (audioResourceService == nullptr) {
+        return;
+    }
+    int32_t pid = g_fuzzUtils.GetData<int32_t>();
+    audioResourceService->audioWorkgroupMap_[pid].groups[TEST_RTG_ID] = {workgroup};
+    audioResourceService->AudioWorkgroupCheck(pid);
+    pid = g_fuzzUtils.GetData<int32_t>() + 1;
+    audioResourceService->AudioWorkgroupCheck(pid);
+}
+
+void CreateAudioWorkgroupFuzzTest()
+{
+    auto audioResourceService = AudioResourceService::GetInstance();
+    if (audioResourceService == nullptr) {
+        return;
+    }
+    int32_t pid = g_fuzzUtils.GetData<int32_t>();
+    sptr<IRemoteObject> object = new RemoteObjectTestStub();
+    if (object == nullptr) {
+        return;
+    }
+    audioResourceService->CreateAudioWorkgroup(pid, object);
+}
+
+void ReleaseAudioWorkgroupFuzzTest()
+{
+    std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(TEST_RTG_ID);
+    if (!workgroup) {
+        return;
+    }
+    auto audioResourceService = AudioResourceService::GetInstance();
+    if (audioResourceService == nullptr) {
+        return;
+    }
+    int32_t pid = g_fuzzUtils.GetData<int32_t>();
+    int32_t workgroupId = g_fuzzUtils.GetData<int32_t>();
+    audioResourceService->audioWorkgroupMap_[pid].groups[workgroupId] = {workgroup};
+    audioResourceService->ReleaseAudioWorkgroup(pid, workgroupId);
+}
+
+void AddThreadToGroupFuzzTest()
+{
+    std::shared_ptr<AudioWorkgroup> workgroup1 = std::make_shared<AudioWorkgroup>(TEST_RTG_ID);
+    std::shared_ptr<AudioWorkgroup> workgroup2 = std::make_shared<AudioWorkgroup>(TEST_RTG_ID);
+    std::shared_ptr<AudioWorkgroup> workgroup3 = std::make_shared<AudioWorkgroup>(TEST_RTG_ID);
+    std::shared_ptr<AudioWorkgroup> workgroup4 = std::make_shared<AudioWorkgroup>(TEST_RTG_ID);
+    if (!workgroup1 || !workgroup2 || !workgroup3 || !workgroup4) {
+        return;
+    }
+    auto audioResourceService = AudioResourceService::GetInstance();
+    if (audioResourceService == nullptr) {
+        return;
+    }
+    int32_t pid = g_fuzzUtils.GetData<int32_t>();
+    int32_t workgroupId = g_fuzzUtils.GetData<int32_t>();
+    int32_t tokenId = g_fuzzUtils.GetData<int32_t>();
+    audioResourceService->audioWorkgroupMap_[pid].groups[workgroupId] = {workgroup1};
+    audioResourceService->audioWorkgroupMap_[pid].groups[workgroupId + NUM_1] = {workgroup2};
+    audioResourceService->audioWorkgroupMap_[pid].groups[workgroupId + NUM_2] = {workgroup3};
+    audioResourceService->audioWorkgroupMap_[pid].groups[workgroupId + NUM_3] = {workgroup4};
+    audioResourceService->AddThreadToGroup(pid, workgroupId, tokenId);
+    audioResourceService->RemoveThreadFromGroup(pid, workgroupId, tokenId);
+}
+
+void StartGroupFuzzTest()
+{
+    std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(TEST_RTG_ID);
+    if (!workgroup) {
+        return;
+    }
+    auto audioResourceService = AudioResourceService::GetInstance();
+    if (audioResourceService == nullptr) {
+        return;
+    }
+    int32_t pid = g_fuzzUtils.GetData<int32_t>();
+    int32_t workgroupId = g_fuzzUtils.GetData<int32_t>();
+    uint64_t startTime = g_fuzzUtils.GetData<uint64_t>();
+    uint64_t deadlineTime = g_fuzzUtils.GetData<uint64_t>();
+    audioResourceService->audioWorkgroupMap_[pid].groups[workgroupId] = {workgroup};
+    audioResourceService->StartGroup(pid, workgroupId, startTime, deadlineTime);
+    audioResourceService->StopGroup(pid, workgroupId);
+}
+
+void GetThreadsNumPerProcessFuzzTest()
+{
+    std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(TEST_RTG_ID);
+    if (!workgroup) {
+        return;
+    }
+    auto audioResourceService = AudioResourceService::GetInstance();
+    if (audioResourceService == nullptr) {
+        return;
+    }
+    int32_t pid = g_fuzzUtils.GetData<int32_t>();
+    int32_t workgroupId = g_fuzzUtils.GetData<int32_t>();
+    audioResourceService->audioWorkgroupMap_[pid].groups[workgroupId] = {workgroup};
+    audioResourceService->GetThreadsNumPerProcess(pid);
 }
 
 vector<TestFuncs> g_testFuncs = {
@@ -121,6 +260,12 @@ vector<TestFuncs> g_testFuncs = {
     ResourceServiceReleaseWorkgroupDeathRecipientFuzzTest,
     ResourceServiceWorkgroupRendererMonitorFuzzTest,
     ResourceServiceDumpAudioWorkgroupMapFuzzTest,
+    AudioWorkgroupCheckFuzzTest,
+    CreateAudioWorkgroupFuzzTest,
+    ReleaseAudioWorkgroupFuzzTest,
+    AddThreadToGroupFuzzTest,
+    StartGroupFuzzTest,
+    GetThreadsNumPerProcessFuzzTest,
 };
 
 } // namespace AudioStandard
