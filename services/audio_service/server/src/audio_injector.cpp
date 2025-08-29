@@ -40,7 +40,7 @@ int32_t AudioInjector::MoveStream(uint32_t renderId, bool flag)
 {
     return 0;
 }
-int32_t AudioInjector::PeekAudioData(uint32_t capturePortIdx, uint8_t *destBuff, size_t buffSize)
+int32_t AudioInjector::PeekAudioData(uint32_t rendererPortIdx, uint8_t *destBuff, size_t buffSize)
 {
     return 0;
 }
