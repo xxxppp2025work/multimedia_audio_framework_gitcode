@@ -153,6 +153,25 @@ void AudioCoreService::DumpPipeManager(std::string &dumpString)
     audioOffloadStream_.Dump(dumpString);
 }
 
+void AudioCoreService::FetchOutputDupDevice(std::string caller, uint32_t &sessionId,
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    FetchDeviceInfo info = {};
+    AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
+    AudioServerProxy::GetInstance().GetPrivacyType(sessionId, privacyType);
+
+    info.streamUsage = streamDesc->rendererInfo_.streamUsage;
+    info.clientUID = GetRealUid(streamDesc);
+    info.caller = caller;
+    info.privacyType = privacyType;
+
+    streamDesc->oldDupDeviceDescs_ = streamDesc->newDupDeviceDescs_;
+    streamDesc->newDupDeviceDescs_ =
+        audioRouterCenter_.FetchDupDevices(info);
+    HILOG_COMM_INFO("[DeviceFetchInfo] dup device %{public}s for stream %{public}d",
+        streamDesc->GetNewDupDevicesTypeString().c_str(), sessionId);
+}
+
 int32_t AudioCoreService::CreateRendererClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId, std::string &networkId)
 {
@@ -184,6 +203,7 @@ int32_t AudioCoreService::CreateRendererClient(
     HILOG_COMM_INFO("[DeviceFetchInfo] device %{public}s for stream %{public}d",
         streamDesc->GetNewDevicesTypeString().c_str(), sessionId);
 
+    FetchOutputDupDevice("CreateRendererClient", sessionId, streamDesc);
     if (isModemStream) {
         return SUCCESS;
     }
@@ -1323,6 +1343,8 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
             streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->sessionId_, streamDesc->streamStatus_);
         AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}u",
             streamDesc->audioFlag_, streamDesc->sessionId_);
+
+        FetchOutputDupDevice(caller + "FetchOutputDeviceAndRoute", streamDesc->sessionId_, streamDesc);
     }
 
     audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
