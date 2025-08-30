@@ -1246,6 +1246,13 @@ bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
         }
         AudioVolumeType rendererVolumeType = GetVolumeTypeFromContentUsage((changeInfo->rendererInfo).contentType,
             (changeInfo->rendererInfo).streamUsage);
+        if (rendererVolumeType == STREAM_VOICE_ASSISTANT) {
+            if (!CheckoutSystemAppUtil::CheckoutSystemApp(changeInfo->clientUID)) {
+                AUDIO_INFO_LOG("matched clientUid: %{public}d id: %{public}d",
+                    changeInfo->clientUID, changeInfo->sessionId);
+                rendererVolumeType = STREAM_MUSIC;
+            }
+        }
         if (rendererVolumeType == volumeType) {
             // An active stream has been found, return true directly.
             AUDIO_INFO_LOG("matched clientUid: %{public}d id: %{public}d",
@@ -1453,9 +1460,10 @@ int32_t AudioStreamCollector::UpdateCapturerInfoMuteStatus(int32_t uid, bool mut
     return SUCCESS;
 }
 
-std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction>& AudioStreamCollector::GetConcurrencyMap()
+ConcurrencyAction AudioStreamCollector::GetConcurrencyAction(
+    const AudioPipeType existingPipe, const AudioPipeType commingPipe)
 {
-    return audioConcurrencyService_->GetConcurrencyMap();
+    return audioConcurrencyService_->GetConcurrencyAction(existingPipe, commingPipe);
 }
 
 void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)

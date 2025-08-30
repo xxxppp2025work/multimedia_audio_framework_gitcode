@@ -239,6 +239,10 @@ static void SetAudioSceneForAllSource(AudioScene audioScene)
     if (primarySource != nullptr && primarySource->IsInited()) {
         primarySource->SetAudioScene(audioScene);
     }
+    std::shared_ptr<IAudioCaptureSource> aiSource = GetSourceByProp(HDI_ID_TYPE_AI);
+    if (aiSource != nullptr && aiSource->IsInited()) {
+        aiSource->SetAudioScene(audioScene);
+    }
 #ifdef SUPPORT_LOW_LATENCY
     std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
     if (fastSource != nullptr && fastSource->IsInited()) {
@@ -284,6 +288,10 @@ static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &sourc
         fastVoipSource->UpdateActiveDevice(type);
     }
 #endif
+    std::shared_ptr<IAudioCaptureSource> aiSource = GetSourceByProp(HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT);
+    if (aiSource != nullptr && aiSource->IsInited()) {
+        aiSource->UpdateActiveDevice(type);
+    }
 }
 
 // std::vector<StringPair> -> std::vector<std::pair<std::string, std::string>>
@@ -344,6 +352,7 @@ public:
     {
     }
 
+// LCOV_EXCL_START
     void OnCaptureState(bool isActive) override final
     {
         std::lock_guard<std::mutex> lock(captureIdMtx_);
@@ -358,6 +367,7 @@ public:
             captureId_, preNum, curNum, isActive);
         callback_(isActive, preNum, curNum);
     }
+// LCOV_EXCL_STOP
 
 private:
     static inline std::unordered_set<uint32_t> captureIds_;
@@ -572,6 +582,7 @@ void DataTransferStateChangeCallbackInnerImpl::SetDataTransferMonitorParam(
     param_.badFramesRatio = param.badFramesRatio;
 }
 
+// LCOV_EXCL_START
 void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
     const int32_t &callbackId, const AudioRendererDataTransferStateChangeInfo &info)
 {
@@ -590,6 +601,7 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
         }
     }
 }
+// LCOV_EXCL_STOP
 
 void DataTransferStateChangeCallbackInnerImpl::ReportEvent(
     const AudioRendererDataTransferStateChangeInfo &info)
@@ -608,6 +620,7 @@ void DataTransferStateChangeCallbackInnerImpl::ReportEvent(
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
+// LCOV_EXCL_START
 void AudioServer::InitMaxRendererStreamCntPerUid()
 {
     bool result = GetSysPara("const.multimedia.audio.stream_cnt_uid", maxRendererStreamCntPerUid_);
@@ -666,6 +679,7 @@ void AudioServer::OnStart()
     DlopenUtils::DeInit();
     RegisterDataTransferStateChangeCallback();
 }
+// LCOV_EXCL_STOP
 
 void AudioServer::ParseAudioParameter()
 {
@@ -818,6 +832,7 @@ bool AudioServer::ProcessKeyValuePairs(const std::string &key,
     return true;
 }
 
+// LCOV_EXCL_START
 bool AudioServer::CacheExtraParameters(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs)
 {
@@ -851,6 +866,7 @@ void AudioServer::SetA2dpAudioParameter(const std::string &renderValue)
         AUDIO_INFO_LOG("HasBlueToothEndpoint");
     }
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string &value)
 {
@@ -902,6 +918,8 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
     } else if (key == "mute_call") {
         deviceManager->SetAudioParameter("primary", parmKey, "", key + "=" + value);
         return SUCCESS;
+    } else if (key == "LOUD_VOLUMN_MODE") {
+        parmKey = AudioParamKey::NONE;
     } else {
         AUDIO_ERR_LOG("key %{public}s is invalid for hdi interface", key.c_str());
         return SUCCESS;
@@ -1396,6 +1414,7 @@ int32_t AudioServer::UpdateActiveDevicesRoute(const std::vector<IntPair> &active
     return SetIORoutes(activeOutputDevices, static_cast<BluetoothOffloadState>(a2dpOffloadFlag), deviceName);
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -1847,6 +1866,7 @@ void AudioServer::NotifyProcessStatus()
 #endif
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
     const AudioPlaybackCaptureConfig &filterConfig, sptr<IRemoteObject>& client)
 {
@@ -2286,8 +2306,8 @@ bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig 
         CAPTURER_PREPARED,
     };
     if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_CREATED)) {
-        AUDIO_INFO_LOG("Recreating stream for callerUid:%{public}d need not VerifyBackgroundCapture",
-            config.callerUid);
+        AUDIO_INFO_LOG("switchStream is recreating, callerUid:%{public}d", config.callerUid);
+        AudioService::GetInstance()->UpdateSwitchStreamMap(config.originalSessionId, SWITCH_STATE_CREATED);
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
         return true;
     }
@@ -2314,12 +2334,28 @@ int32_t AudioServer::SetForegroundList(const std::vector<std::string> &list)
     return SUCCESS;
 }
 
+int32_t AudioServer::SendInterruptEventToAudioServer(uint32_t sessionId, const InterruptEventInternal &interruptEvent)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "Refused for %{public}d", callingUid);
+    AudioService::GetInstance()->SendInterruptEventToAudioService(sessionId, interruptEvent);
+    return SUCCESS;
+}
+
 int32_t AudioServer::SetRenderWhitelist(const std::vector<std::string> &list)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d",
         IPCSkeleton::GetCallingUid());
     AudioService::GetInstance()->SaveRenderWhitelist(list);
     return SUCCESS;
+}
+
+int32_t AudioServer::GetVolumeBySessionId(uint32_t sessionId, float &volume)
+{
+    bool result = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    return AudioStreamMonitor::GetInstance().GetVolumeBySessionId(sessionId, volume);
 }
 
 bool AudioServer::CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId)
@@ -2394,6 +2430,10 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
         }
 #endif
         if (type == HDI_ID_TYPE_BLUETOOTH) {
+            return info == HDI_ID_INFO_DEFAULT;
+        }
+
+        if (type == HDI_ID_TYPE_AI) {
             return info == HDI_ID_INFO_DEFAULT;
         }
         return false;
@@ -2815,6 +2855,7 @@ int32_t AudioServer::SetInnerCapLimit(uint32_t innerCapLimit)
 }
 // LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 int32_t AudioServer::ReleaseCaptureLimit(int32_t innerCapId)
 {
 #if defined(AUDIO_BUILD_VARIANT_ROOT) && defined(HAS_FEATURE_INNERCAPTURER)
@@ -3075,5 +3116,6 @@ int32_t AudioServer::RestoreAudioWorkgroupPrio(int32_t pid, const std::unordered
 {
     return AudioResourceService::GetInstance()->RestoreAudioWorkgroupPrio(pid, threads);
 }
+// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

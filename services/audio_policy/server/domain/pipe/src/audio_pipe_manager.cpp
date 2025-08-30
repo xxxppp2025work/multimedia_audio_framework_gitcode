@@ -139,12 +139,14 @@ const std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetPipeList(
     return curPipeList_;
 }
 
-std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipe()
+std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipe(DeviceType curOutputDeviceType)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
     std::vector<std::shared_ptr<AudioPipeInfo>> newList;
     for (auto pipe : curPipeList_) {
-        if (pipe->streamDescriptors_.empty() && IsSpecialPipe(pipe->routeFlag_)) {
+        CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipe is nullptr");
+        if (pipe->streamDescriptors_.empty() && (IsSpecialPipe(pipe->routeFlag_) ||
+            (pipe->adapterName_ == A2DP_CLASS && curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP))) {
             newList.push_back(pipe);
         }
     }
@@ -174,7 +176,8 @@ bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
     AUDIO_INFO_LOG("Flag %{public}d", routeFlag);
     if ((routeFlag & AUDIO_OUTPUT_FLAG_FAST) ||
         (routeFlag & AUDIO_INPUT_FLAG_FAST) ||
-        (routeFlag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD)) {
+        (routeFlag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) ||
+        (routeFlag & AUDIO_INPUT_FLAG_AI)) {
         return true;
     }
     return false;
@@ -393,6 +396,8 @@ void AudioPipeManager::Dump(std::string &dumpString)
             pipe->Dump(dumpString);
         }
     }
+
+    dumpString += "PipeManager dump end\n";
 }
 
 bool AudioPipeManager::IsModemCommunicationIdExist()
@@ -550,6 +555,27 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllCapt
         }
     }
     return streamDescs;
+}
+
+std::shared_ptr<AudioPipeInfo> AudioPipeManager::FindPipeBySessionId(
+    const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList, uint32_t sessionId)
+{
+    for (const auto &pipe : pipeList) {
+        if (pipe == nullptr) {
+            continue;
+        }
+
+        for (const auto &stream : pipe->streamDescriptors_) {
+            if (stream == nullptr) {
+                continue;
+            }
+            if (stream->sessionId_ == sessionId) {
+                AUDIO_INFO_LOG("find pipe: %{public}s by sessionId: %{public}u", pipe->name_.c_str(), sessionId);
+                return pipe;
+            }
+        }
+    }
+    return std::shared_ptr<AudioPipeInfo>();
 }
 } // namespace AudioStandard
 } // namespace OHOS

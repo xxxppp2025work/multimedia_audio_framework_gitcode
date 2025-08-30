@@ -59,6 +59,7 @@ constexpr int32_t AUDIO_FLAG_VKB_FAST = 1025;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
 constexpr int32_t AUDIO_USAGE_VOIP = 1;
 constexpr uint32_t STREAM_FLAG_FAST = 1;
+constexpr uint32_t DEFAULT_SUSPEND_TIME_IN_MS = 3000;
 constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
 constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
 constexpr float NORMAL_STREAM_SPEED_LEVEL = 1.0f;
@@ -598,6 +599,7 @@ enum AudioLoopbackEqualizerPreset {
 struct AudioRendererInfo : public Parcelable {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
+    bool forceToNormal = false;
     int32_t rendererFlags = AUDIO_FLAG_NORMAL;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     std::string sceneType = "";
@@ -630,11 +632,14 @@ struct AudioRendererInfo : public Parcelable {
         int32_t rendererFlagsIn, AudioVolumeMode volumeModeIn)
         : contentType(contentTypeIn), streamUsage(streamUsageIn),
         rendererFlags(rendererFlagsIn), volumeMode(volumeModeIn) {}
+    AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn)
+        : contentType(contentTypeIn), streamUsage(streamUsageIn) {}
 
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(static_cast<int32_t>(contentType))
             && parcel.WriteInt32(static_cast<int32_t>(streamUsage))
+            && parcel.WriteBool(forceToNormal)
             && parcel.WriteInt32(rendererFlags)
             && parcel.WriteInt32(originalFlag)
             && parcel.WriteString(sceneType)
@@ -659,6 +664,7 @@ struct AudioRendererInfo : public Parcelable {
     {
         contentType = static_cast<ContentType>(parcel.ReadInt32());
         streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        forceToNormal = parcel.ReadBool();
         rendererFlags = parcel.ReadInt32();
         originalFlag = parcel.ReadInt32();
         sceneType = parcel.ReadString();

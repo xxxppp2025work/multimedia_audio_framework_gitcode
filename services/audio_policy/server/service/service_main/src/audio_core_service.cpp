@@ -146,6 +146,8 @@ void AudioCoreService::DumpPipeManager(std::string &dumpString)
     if (pipeManager_ != nullptr) {
         pipeManager_->Dump(dumpString);
     }
+
+    audioOffloadStream_.Dump(dumpString);
 }
 
 int32_t AudioCoreService::CreateRendererClient(
@@ -167,10 +169,6 @@ int32_t AudioCoreService::CreateRendererClient(
         audioFlag = AUDIO_FLAG_NORMAL;
         AddSessionId(sessionId);
         pipeManager_->AddModemCommunicationId(sessionId, streamDesc);
-    } else if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_RINGTONE ||
-        streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
-        std::string bundleName = AudioBundleManager::GetBundleNameFromUid(streamDesc->appInfo_.appUid);
-        Bluetooth::AudioHfpManager::AddVirtualCallBundleName(bundleName, streamDesc->sessionId_);
     }
 
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", sessionId);
@@ -224,7 +222,7 @@ int32_t AudioCoreService::CreateCapturerClient(
     AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d",
         streamDesc->GetNewDevicesTypeString().c_str(), sessionId);
 
-    UpdateRecordStreamFlag(streamDesc);
+    UpdateRecordStreamInfo(streamDesc);
     AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}d",
         streamDesc->audioFlag_, sessionId);
 
@@ -297,6 +295,13 @@ bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &st
 void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess)
 {
     CHECK_AND_RETURN_LOG(streamDesc, "Input param error");
+    
+    if (isCreateProcess && streamDesc->rendererInfo_.forceToNormal) {
+        AUDIO_INFO_LOG("client force create normal");
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        return;
+    }
+
     // fast/normal has done in audioRendererPrivate
     CHECK_AND_RETURN_LOG(IsForcedNormal(streamDesc) == false, "Forced normal cases");
 
@@ -322,8 +327,7 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
     HandlePlaybackStreamInA2dp(streamDesc, isCreateProcess);
     switch (streamDesc->rendererInfo_.originalFlag) {
         case AUDIO_FLAG_MMAP:
-            streamDesc->audioFlag_ =
-                IsFastAllowed(streamDesc->bundleName_) ? AUDIO_OUTPUT_FLAG_FAST : AUDIO_OUTPUT_FLAG_NORMAL;
+            streamDesc->audioFlag_ = SetFlagForMmapStream(streamDesc);
             return;
         case AUDIO_FLAG_VOIP_FAST:
             streamDesc->audioFlag_ =
@@ -336,6 +340,15 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
             break;
     }
     streamDesc->audioFlag_ = SetFlagForSpecialStream(streamDesc, isCreateProcess);
+}
+
+AudioFlag AudioCoreService::SetFlagForMmapStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    if (streamDesc->GetMainNewDeviceType() == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        IsFastAllowed(streamDesc->bundleName_)) {
+        return AUDIO_OUTPUT_FLAG_FAST;
+    }
+    return AUDIO_OUTPUT_FLAG_NORMAL;
 }
 
 AudioFlag AudioCoreService::SetFlagForSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -356,8 +369,19 @@ AudioFlag AudioCoreService::SetFlagForSpecialStream(std::shared_ptr<AudioStreamD
     return AUDIO_OUTPUT_FLAG_NORMAL;
 }
 
-void AudioCoreService::UpdateRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
+    auto sourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    if (sourceStrategyMap != nullptr) {
+        auto strategyIt = sourceStrategyMap->find(streamDesc->capturerInfo_.sourceType);
+        if (strategyIt != sourceStrategyMap->end()) {
+            streamDesc->audioFlag_ = strategyIt->second.audioFlag;
+            AUDIO_INFO_LOG("sourceType: %{public}d, use audioFlag: %{public}u",
+                streamDesc->capturerInfo_.sourceType, strategyIt->second.audioFlag);
+            return;
+        }
+    }
+
     if (streamDesc->capturerInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL ||
         streamDesc->capturerInfo_.capturerFlags == AUDIO_FLAG_FORCED_NORMAL) {
         streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
@@ -391,8 +415,9 @@ void AudioCoreService::UpdateRecordStreamFlag(std::shared_ptr<AudioStreamDescrip
         default:
             break;
     }
-    // In plan: streamDesc to audioFlag;
+
     streamDesc->audioFlag_ = AUDIO_FLAG_NONE;
+    return;
 }
 
 void AudioCoreService::CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t sessionId)
@@ -450,6 +475,11 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     }
 
     CHECK_AND_RETURN_RET_LOG(!streamDesc->newDeviceDescs_.empty(), ERR_INVALID_PARAM, "newDeviceDescs_ is empty");
+
+    // Update a2dp offload flag for update active route, if a2dp offload flag is not true, audioserver
+    // will reset a2dp device to none.
+    audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForStartStream(static_cast<int32_t>(sessionId));
+
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
@@ -497,7 +527,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
         return SUCCESS;
     }
     pipeManager_->RemoveClient(sessionId);
-    audioOffloadStream_.ResetOffloadStatus(sessionId);
+    audioOffloadStream_.UnsetOffloadStatus(sessionId);
     RemoveUnusedPipe();
     if (opMsg == SESSION_OP_MSG_REMOVE_PIPE) {
         RemoveUnusedRecordPipe();
@@ -929,15 +959,6 @@ int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
         return ret; // only update tracker in new and prepared
     }
 
-    const auto &rendererChangeInfo = streamChangeInfo.audioRendererChangeInfo;
-    if ((mode == AUDIO_MODE_PLAYBACK) && (rendererChangeInfo.rendererInfo.streamUsage == STREAM_USAGE_RINGTONE ||
-        rendererChangeInfo.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION)) {
-        if ((rendererState == RENDERER_STOPPED ||rendererState == RENDERER_RELEASED ||
-            rendererState == RENDERER_PAUSED)) {
-            Bluetooth::AudioHfpManager::DeleteVirtualCallStream(rendererChangeInfo.sessionId);
-        }
-    }
-    
     UpdateTracker(mode, streamChangeInfo, rendererState);
 
     if (audioA2dpOffloadManager_) {
@@ -947,7 +968,9 @@ int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
     SendA2dpConnectedWhileRunning(rendererState, streamChangeInfo.audioRendererChangeInfo.sessionId);
 
     if (mode == AUDIO_MODE_PLAYBACK) {
-        CheckOffloadStream(streamChangeInfo);
+        audioOffloadStream_.UpdateOffloadStatusFromUpdateTracker(
+            streamChangeInfo.audioRendererChangeInfo.sessionId,
+            streamChangeInfo.audioRendererChangeInfo.rendererState);
     }
     return ret;
 }
@@ -980,9 +1003,9 @@ bool AudioCoreService::ConnectServiceAdapter()
     return audioPolicyManager_.ConnectServiceAdapter();
 }
 
-void AudioCoreService::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
+void AudioCoreService::OnReceiveUpdateDeviceNameEvent(const std::string macAddress, const std::string deviceName)
 {
-    audioDeviceManager_.OnReceiveBluetoothEvent(macAddress, deviceName);
+    audioDeviceManager_.OnReceiveUpdateDeviceNameEvent(macAddress, deviceName);
     audioConnectedDevice_.SetDisplayName(macAddress, deviceName);
 }
 
@@ -1272,7 +1295,7 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller)
         AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d with status %{public}u",
             streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->sessionId_, streamDesc->streamStatus_);
 
-        UpdateRecordStreamFlag(streamDesc);
+        UpdateRecordStreamInfo(streamDesc);
         if (!HandleInputStreamInRunning(streamDesc)) {
             continue;
         }

@@ -18,6 +18,7 @@
 
 #include "audio_policy_config_manager.h"
 #include "audio_policy_config_parser.h"
+#include "audio_source_strategy_parser.h"
 #include "audio_policy_utils.h"
 #include "audio_policy_service.h"
 #include "audio_ec_manager.h"
@@ -65,6 +66,15 @@ bool AudioPolicyConfigManager::Init(bool isRefresh)
         AUDIO_ERR_LOG("Audio Policy Config Load Configuration failed");
         return ret;
     }
+
+    std::unique_ptr<AudioSourceStrategyParser> audioSourceStrategyParser = make_unique<AudioSourceStrategyParser>();
+    CHECK_AND_RETURN_RET_LOG(audioSourceStrategyParser != nullptr, false, "AudioSourceStrategyParser create failed");
+    ret = audioSourceStrategyParser->LoadConfig();
+    if (ret == false) {
+        AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio SourceStrategy Load Configuration failed");
+        AUDIO_ERR_LOG("Audio SourceStrategy Load Configuration failed");
+    }
+
     xmlHasLoaded_ = true;
     return ret;
 }
@@ -630,7 +640,9 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     CHECK_AND_RETURN_LOG(deviceInfo != nullptr, "Find device failed, none streamProp");
 
     auto pipeIt = deviceInfo->supportPipeMap_.find(desc->routeFlag_);
-    CHECK_AND_RETURN_LOG(pipeIt != deviceInfo->supportPipeMap_.end(), "Find pipeInfo failed;none streamProp");
+    CHECK_AND_RETURN_LOG(pipeIt != deviceInfo->supportPipeMap_.end(),
+        "Find no support pipe for stream %{public}u, route %{public}u",
+        desc->GetSessionId(), desc->GetRoute());
 
     AudioStreamInfo temp = desc->streamInfo_;
     UpdateBasicStreamInfo(desc, pipeIt->second, temp);

@@ -27,6 +27,20 @@ void AudioPolicyManagerUnitTest::TearDownTestCase(void) {}
 void AudioPolicyManagerUnitTest::SetUp(void) {}
 void AudioPolicyManagerUnitTest::TearDown(void) {}
 
+class AudioManagerDeviceChangeCallbackStub : public AudioManagerDeviceChangeCallback {
+public:
+    ~AudioManagerDeviceChangeCallbackStub() {}
+
+    void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override {}
+};
+
+class AudioPreferredOutputDeviceChangeCallbackStub : public AudioPreferredOutputDeviceChangeCallback {
+public:
+    ~AudioPreferredOutputDeviceChangeCallbackStub() {}
+
+    void OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) {}
+};
+
 /**
 * @tc.name  : Test AudioPolicyManager.
 * @tc.number: AudioPolicyManagerUnitTest_001.
@@ -808,6 +822,26 @@ HWTEST(AudioPolicyManager, SetNearlinkDeviceVolume_002, TestSize.Level1)
 
     auto result = audioPolicyManager_->SetNearlinkDeviceVolume(macAddress, volumeType, volume, updateUi);
     EXPECT_EQ(result, ERROR);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManager.
+* @tc.number: SelectOutputDevice_001.
+* @tc.desc  : Test SetNearlinkDeviceVolume.
+*/
+HWTEST(AudioPolicyManager, SelectOutputDevice_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager_ != nullptr);
+    sptr<AudioRendererFilter> audioRendererFilter;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors01;
+    auto ret = audioPolicyManager_->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors01);
+    EXPECT_EQ(ret, -1);
+    
+    // SelectOutputDevice接口中存在直接使用魔鬼数字20作为if的判断条件
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors02(21);
+    ret = audioPolicyManager_->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors02);
+    EXPECT_EQ(ret, -1);
 }
 } // namespace AudioStandard
 } // namespace OHOS

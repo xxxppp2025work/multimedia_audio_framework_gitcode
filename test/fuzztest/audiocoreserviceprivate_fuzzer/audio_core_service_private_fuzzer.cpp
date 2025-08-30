@@ -42,7 +42,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 91;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -120,6 +119,7 @@ vector<AudioFlag> AudioFlagVec = {
     AUDIO_INPUT_FLAG_VOIP,
     AUDIO_INPUT_FLAG_VOIP_FAST,
     AUDIO_INPUT_FLAG_WAKEUP,
+    AUDIO_INPUT_FLAG_AI,
     AUDIO_FLAG_MAX,
 };
 
@@ -1034,28 +1034,6 @@ void AudioCoreServicePrivateHandleDeviceChangeForFetchInputDeviceFuzzTest()
     audioCoreService->HandleDeviceChangeForFetchInputDevice(streamDesc);
 }
 
-void AudioCoreServicePrivateCheckOffloadStreamFuzzTest()
-{
-    static const vector<RendererState> testRendererStates = {
-        RENDERER_INVALID,
-        RENDERER_NEW,
-        RENDERER_PREPARED,
-        RENDERER_RUNNING,
-        RENDERER_STOPPED,
-        RENDERER_RELEASED,
-        RENDERER_PAUSED
-    };
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    if (audioCoreService == nullptr || testRendererStates.size() == 0) {
-        return;
-    }
-
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioRendererChangeInfo.rendererState =
-        testRendererStates[GetData<uint32_t>() % testRendererStates.size()];
-    audioCoreService->CheckOffloadStream(streamChangeInfo);
-}
-
 void AudioCoreServicePrivateActivateInputDeviceFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -1195,22 +1173,6 @@ void AudioCoreServicePrivateReleaseOffloadPipeFuzzTest()
     uint32_t paIndex = GetData<uint32_t>() % NUM_2;
     OffloadType type = LOCAL_OFFLOAD;
     audioCoreService->ReleaseOffloadPipe(id, paIndex, type);
-}
-
-void AudioCoreServicePrivateReConfigOffloadStatusFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    int32_t streamActionCount = static_cast<int32_t>(AudioStreamAction::AUDIO_STREAM_ACTION_RECREATE) + 1;
-    audioStreamDescriptor->streamAction_ = static_cast<AudioStreamAction>(GetData<uint8_t>() % streamActionCount);
-    pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
-    audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
-    uint32_t sessionId = GetData<uint32_t>() % NUM_2;
-    std::string oldSinkName = "oldSinkName";
-    audioCoreService->ReConfigOffloadStatus(sessionId, pipeInfo, oldSinkName);
 }
 
 void AudioCoreServicePrivatePrepareMoveAttrsFuzzTest()
@@ -1383,7 +1345,7 @@ void AudioCoreServicePrivateSwitchActiveHearingAidDeviceFuzzTest()
     audioCoreService->SwitchActiveHearingAidDevice(audioDeviceDescriptor);
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     AudioCoreServicePrivateFetchRendererPipesAndExecuteFuzzTest,
     AudioCoreServicePrivateUpdateActiveDeviceAndVolumeBeforeMoveSessionFuzzTest,
     AudioCoreServicePrivateFetchCapturerPipesAndExecuteFuzzTest,
@@ -1447,7 +1409,6 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     AudioCoreServicePrivateWriteOutputRouteChangeEventFuzzTest,
     AudioCoreServicePrivateHandleDeviceChangeForFetchOutputDeviceFuzzTest,
     AudioCoreServicePrivateHandleDeviceChangeForFetchInputDeviceFuzzTest,
-    AudioCoreServicePrivateCheckOffloadStreamFuzzTest,
     AudioCoreServicePrivateActivateInputDeviceFuzzTest,
     LoadSplitModuleFuzzTest,
     AudioCoreServicePrivateGetSourceOutputsFuzzTest,
@@ -1460,7 +1421,6 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     AudioCoreServicePrivateHandleCommonSourceOpenedFuzzTest,
     AudioCoreServicePrivateDelayReleaseOffloadPipeFuzzTest,
     AudioCoreServicePrivateReleaseOffloadPipeFuzzTest,
-    AudioCoreServicePrivateReConfigOffloadStatusFuzzTest,
     AudioCoreServicePrivatePrepareMoveAttrsFuzzTest,
     AudioCoreServicePrivateMuteSinkPortForSwitchDeviceFuzzTest,
     AudioCoreServicePrivateSetVoiceCallMuteForSwitchDeviceFuzzTest,
