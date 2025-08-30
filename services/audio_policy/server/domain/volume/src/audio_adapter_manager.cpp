@@ -484,7 +484,10 @@ int32_t AudioAdapterManager::SetAdjustVolumeForZone(int32_t zoneId)
         "zone device error");
     if (volumeDataExtMaintainer_.find(devices[0]->GetKey()) == volumeDataExtMaintainer_.end()) {
         volumeDataExtMaintainer_[devices[0]->GetKey()] = std::make_shared<VolumeDataMaintainer>();
-        if (devices[0]->IsDistributedSpeaker()) {
+        if (devices[0]->deviceType_ == currentActiveDevice_.deviceType_ &&
+            devices[0]->networkId_ == currentActiveDevice_.networkId_) {
+            volumeDataExtMaintainer_[devices[0]->GetKey()]->CopyVolumeLevelAndMuteStatusMap(volumeDataMaintainer_);
+        } else if (devices[0]->IsDistributedSpeaker()) {
             for (auto streamType : DISTRIBUTED_VOLUME_TYPE_LIST) {
                 int32_t maxVolumeLevel = GetMaxVolumeLevel(streamType);
                 volumeDataExtMaintainer_[devices[0]->GetKey()]->SetStreamVolume(streamType, maxVolumeLevel);
@@ -494,11 +497,16 @@ int32_t AudioAdapterManager::SetAdjustVolumeForZone(int32_t zoneId)
             LoadMuteStatusMap(devices[0]);
             LoadVolumeMap(devices[0]);
         }
-        auto iter = defaultVolumeTypeList_.begin();
-        while (iter != defaultVolumeTypeList_.end()) {
-            SetVolumeDb(devices[0], *iter);
-            iter++;
+    } else {
+         if (devices[0]->deviceType_ == currentActiveDevice_.deviceType_ &&
+            devices[0]->networkId_ == currentActiveDevice_.networkId_) {
+            volumeDataExtMaintainer_[devices[0]->GetKey()]->CopyVolumeLevelAndMuteStatusMap(volumeDataMaintainer_);
         }
+    }
+    auto iter = defaultVolumeTypeList_.begin();
+    while (iter != defaultVolumeTypeList_.end()) {
+        SetVolumeDb(devices[0], *iter);
+        iter++;
     }
     return SUCCESS;
 }
@@ -611,6 +619,9 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
 
     // Save the volume to volumeLevelMap_.
     volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
+    if (volumeDataExtMaintainer_.find(currentActiveDevice_.GetKey()) != volumeDataExtMaintainer.end()) {
+        volumeDataExtMaintainer_[currentActiveDevice_.GetKey()]->SetStreamVolume(streamType, volumeLevel);
+    }
     // Save the volume to settingsdata.
     if (currentActiveDevice_.volumeBehavior_.databaseVolumeName != "" && IsDistributedVolumeType(streamType)) {
         volumeDataMaintainer_.SaveVolumeWithDatabaseVolumeName(
@@ -1311,6 +1322,9 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
         if (!audioDeviceManager_.IsDeviceConnected(desc)) {
             return;
         }
+    }
+    if (volumeDataExtMaintainer_.find(currentActiveDevice_.GetKey()) != volumeDataExtMaintainer.end()) {
+        volumeDataMaintainer_.CopyVolumeLevelAndMuteStatusMap(volumeDataExtMaintainer_[currentActiveDevice_.GetKey()]);
     }
     // The same device does not set the volume
     bool isSameVolumeGroup = ((GetVolumeGroupForDevice(currentActiveDevice_.deviceType_) ==
