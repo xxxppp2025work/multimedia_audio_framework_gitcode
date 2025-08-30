@@ -1412,6 +1412,11 @@ int32_t RendererInServer::SetRate(int32_t rate)
     return stream_->SetRate(rate);
 }
 
+int32_t RendererInServer::SetTarget(int32_t target)
+{
+    return SUCCESS;
+}
+
 int32_t RendererInServer::SetLowPowerVolume(float volume)
 {
     if (volume < MIN_FLOAT_VOLUME || volume > MAX_FLOAT_VOLUME) {

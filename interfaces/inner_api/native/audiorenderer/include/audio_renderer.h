@@ -589,6 +589,25 @@ public:
     virtual AudioRendererRate GetRenderRate() const = 0;
 
     /**
+     * @brief Set the render target
+     *
+     * @param target The target at which the stream needs to be rendered.
+     * @return Returns {@link SUCCESS} if render rate is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 22
+     */
+    virtual int32_t SetTarget(RenderTarget target) const = 0;
+
+    /**
+     * @brief Obtains the current render target
+     *
+     * @return Returns current render target
+     * @since 22
+     */
+    virtual RenderTarget GetTarget() const = 0;
+    
+
+    /**
      * @brief Set the render sampling rate
      *
      * @param sampleRate The sample rate at which the stream needs to be rendered.
