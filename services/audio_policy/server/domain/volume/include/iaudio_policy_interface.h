@@ -257,6 +257,9 @@ public:
 
     virtual float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType,
         int32_t volumeLevel) = 0;
+    virtual void SetVolumeLimit(AudioStreamType streamType) = 0;
+    virtual void ResetVolumeLimit() = 0;
+    virtual void UpdateOtherStreamVolume(AudioStreamType streamType) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

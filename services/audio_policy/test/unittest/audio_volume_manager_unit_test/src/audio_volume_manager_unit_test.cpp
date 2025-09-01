@@ -1394,5 +1394,51 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_067, TestSize.Level1)
     ret = audioVolumeManager->SetNearlinkDeviceVolumeEx(streamType, volumeLevel);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_VolumeLimit_001
+* @tc.desc  : Test volume limit interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_VolumeLimit_001, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+
+    int32_t zoneId = 0;
+    int32_t volumeLevel = 2;
+    AudioStreamType streamType = STREAM_VOICE_CALL;
+
+    auto &manager = static_cast<AudioAdapterManager &>(audioVolumeManager->audioPolicyManager_);
+    float oldLimit = manager.volumeLimit_.load();
+    audioVolumeManager->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
+    audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, zoneId);
+    audioVolumeManager->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
+    float newLimit = manager.volumeLimit_.load();
+
+    EXPECT_NE(newLimit, oldLimit);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_VolumeLimit_002
+* @tc.desc  : Test reset volume limit interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_VolumeLimit_002, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+
+    AudioDeviceDescriptor audioDeviceDescriptor;
+    audioVolumeManager->audioSceneManager_.SetAudioScenePre(AUDIO_SCENE_PHONE_CALL);
+    int32_t ret = audioVolumeManager->SetVolumeForSwitchDevice(audioDeviceDescriptor, PORT_NONE, false);
+    EXPECT_EQ(ret, SUCCESS);
+    audioVolumeManager->audioSceneManager_.SetAudioScenePre(AUDIO_SCENE_DEFAULT);
+    ret = audioVolumeManager->SetVolumeForSwitchDevice(audioDeviceDescriptor, PORT_NONE, false);
+    EXPECT_EQ(ret, SUCCESS);
+    auto &manager = static_cast<AudioAdapterManager &>(audioVolumeManager->audioPolicyManager_);
+    float newLimit = manager.volumeLimit_.load();
+    EXPECT_EQ(newLimit, 1.0f);
+}
 } // namespace AudioStandard
 } // namespace OHOS

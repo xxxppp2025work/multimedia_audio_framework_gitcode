@@ -751,6 +751,7 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
         volumeDb = 1.0f;
     }
 
+    volumeDb = std::min(volumeDb, volumeLimit_.load());
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
         "SetSystemVolumeLevel audio adapter null");
 
@@ -3403,6 +3404,49 @@ int32_t AudioAdapterManager::SetSystemVolumeToEffect(AudioStreamType streamType,
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "audioServiceAdapter is null");
     return audioServiceAdapter_->SetSystemVolumeToEffect(streamType, volume);
 }
+
+void AudioAdapterManager::SetVolumeLimit(AudioStreamType streamType)
+{
+    int32_t volumeLevel = volumeDataMaintainer_.GetStreamVolume(streamType) * (GetStreamMute(streamType) ? 0 : 1);
+
+    float volumeDb = 1.0f;
+    if (useNonlinearAlgo_) {
+        if (Util::IsDualToneStreamType(streamType) &&
+            currentActiveDevice_.deviceType_ != DEVICE_TYPE_REMOTE_CAST && !VolumeUtils::IsPCVolumeEnable()) {
+            volumeDb = CalculateVolumeDbNonlinear(streamType, DEVICE_TYPE_SPEAKER, volumeLevel);
+        } else {
+            volumeDb = CalculateVolumeDbNonlinear(streamType, currentActiveDevice_.deviceType_, volumeLevel);
+        }
+    } else {
+        volumeDb = CalculateVolumeDb(volumeLevel);
+    }
+    // Set voice call assistant stream to full volume
+    if (streamType == STREAM_VOICE_CALL_ASSISTANT) {
+        volumeDb = 1.0f;
+    }
+
+    volumeLimit_ = volumeDb;
+    AUDIO_INFO_LOG("volume limit set to %{public}f by stream %{public}d)", volumeDb, streamType);
+}
+
+void AudioAdapterManager::ResetVolumeLimit()
+{
+    AUDIO_INFO_LOG("reset volume limit");
+    volumeLimit_ = 1.0f;
+}
+
+void AudioAdapterManager::UpdateOtherStreamVolume(AudioStreamType streamType)
+{
+    auto iter = defaultVolumeTypeList_.begin();
+    while (iter != defaultVolumeTypeList_.end()) {
+        if (*iter == streamType) {
+            continue;
+        }
+        SetVolumeDb(*iter);
+        iter++;
+    }
+}
+
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS
