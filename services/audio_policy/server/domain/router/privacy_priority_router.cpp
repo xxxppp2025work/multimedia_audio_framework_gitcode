@@ -140,8 +140,13 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(
             return desc;
         }
     }
-    vector<shared_ptr<AudioDeviceDescriptor>> descs =
+    vector<shared_ptr<AudioDeviceDescriptor>> originDescs =
         AudioDeviceManager::GetAudioDeviceManager().GetMediaCapturePrivacyDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> descs;
+    for (const auto &desc : originDescs) {
+        CHECK_AND_CONTINUE(desc->deviceType_ != nullptr && desc->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP_IN);
+        descs.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+    }
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(MEDIA_INPUT_DEVICES, descs);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, make_shared<AudioDeviceDescriptor>(), "nullptr desc");
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
