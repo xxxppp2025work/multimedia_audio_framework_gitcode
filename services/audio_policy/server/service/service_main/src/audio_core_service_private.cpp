@@ -912,6 +912,7 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
                 TriggerRecreateRendererStreamCallback(desc, reason);
+                audioIOHandleMap_.NotifyUnmutePort();
                 break;
             default:
                 break;
