@@ -81,12 +81,12 @@ bool AudioCoreServiceUtils::NeedDualHalToneInStatus(AudioRingerMode mode, Stream
     return true;
 }
 
-bool AudioCoreServiceUtils::IsAlarmOnActive(StreamUsage usage, bool isAlarmActive)
+bool AudioCoreServiceUtils::IsDualOnActive()
 {
-    if (usage != STREAM_USAGE_ALARM) {
-        return false;
-    }
-    return isAlarmActive;
+    std::shared_ptr pipeManager = AudioPipeManager::GetPipeManager();
+    return pipeManager->IsStreamUsageActive(STREAM_USAGE_ALARM) ||
+        pipeManager->IsStreamUsageActive(STREAM_USAGE_VOICE_RINGTONE) ||
+        pipeManager->IsStreamUsageActive(STREAM_USAGE_RINGTONE);
 }
 } // namespace AudioStandard
 } // namespace OHOS
