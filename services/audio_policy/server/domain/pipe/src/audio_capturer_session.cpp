@@ -318,7 +318,7 @@ int32_t AudioCapturerSession::ReloadCaptureSessionSoftLink()
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     hearingAidReloadFlag_ = false;
     
-    const std::vector<std::shared_ptr<AudioPipeInfo>> pipes = AudioPipeManager::GetPipeManager()->GetPipeLIst();
+    const std::vector<std::shared_ptr<AudioPipeInfo>> pipes = AudioPipeManager::GetPipeManager()->GetPipeList();
     CHECK_AND_RETURN_RET_LOG(!pipes.empty(), ERR_INVALID_OPERATION, "pipes invalid");
 
     AudioStreamDescriptor targetStream;
