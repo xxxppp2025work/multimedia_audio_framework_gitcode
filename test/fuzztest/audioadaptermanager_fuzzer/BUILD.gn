@@ -14,6 +14,7 @@
 import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../config.gni")
+import("../../../bluetooth_part.gni")
 
 ohos_fuzztest("AudioAdapterManagerFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -41,13 +42,31 @@ ohos_fuzztest("AudioAdapterManagerFuzzTest") {
     "../../../services/audio_policy:audio_policy_service_static",
   ]
   external_deps = [
+    "ability_runtime:wantagent_innerkits",
+    "access_token:libaccesstoken_sdk",
+    "background_task_mgr:bgtaskmgr_innerkits",
+    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
     "data_share:datashare_consumer",
     "eventhandler:libeventhandler",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
     "hilog:libhilog",
     "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
     "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "samgr:samgr_proxy",
+    "safwk:system_ability_fwk",
   ]
+
+  if (bluetooth_part_enable == true) {
+    deps += [ "../../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
+    external_deps += [ "bluetooth:btframework" ]
+  }
 
   defines = []
 }
