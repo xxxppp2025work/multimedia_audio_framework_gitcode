@@ -233,7 +233,7 @@ bool AudioCapturerSession::HandleIndependentInputpipe(const std::vector<std::sha
     }
     return hasSession;
 }
-
+// sessionId 0 is a valid input parameter
 bool AudioCapturerSession::HandleNormalInputPipes(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
     uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession)
 {
