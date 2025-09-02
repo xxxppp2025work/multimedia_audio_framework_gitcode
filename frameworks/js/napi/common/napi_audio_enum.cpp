@@ -547,6 +547,11 @@ const std::map<std::string, int32_t> NapiAudioEnum::outputDeviceChangeRecommende
     {"DEVICE_CHANGE_RECOMMEND_TO_STOP", static_cast<int32_t>(OutputDeviceChangeRecommendedAction::RECOMMEND_TO_STOP)},
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::renderTargetMap = {
+    {"PLAYBACK", PLAY_BACK},
+    {"INJECT_TO_VOICE_COMMUNICATION_CAPTURE", INJECT_TO_VOICE_COMMUNICATION_CAPTURE},
+};
+
 NapiAudioEnum::NapiAudioEnum()
     : env_(nullptr) {
 }
@@ -714,6 +719,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
             CreateEnumObject(env, audioSessionStateChangeHintMap)),
         DECLARE_NAPI_PROPERTY("OutputDeviceChangeRecommendedAction",
             CreateEnumObject(env, outputDeviceChangeRecommendedActionMap)),
+        DECLARE_NAPI_PROPERTY("RenderTarget", CreateEnumObject(env, renderTargetMap)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }
@@ -1168,6 +1174,21 @@ bool NapiAudioEnum::IsLegalCapturerType(int32_t type)
         case TYPE_CAMCORDER:
         case TYPE_UNPROCESSED:
         case TYPE_LIVE:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalRenderTargetType(int32_t type)
+{
+    bool result = false;
+    switch (type) {
+        case PLAY_BACK:
+        case INJECT_TO_VOICE_COMMUNICATION_CAPTURE:
             result = true;
             break;
         default:

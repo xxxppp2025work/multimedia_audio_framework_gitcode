@@ -1944,6 +1944,14 @@ enum BoostTriggerMethod : uint32_t {
     METHOD_WRITE_OR_READ,
     METHOD_MAX
 };
+
+/**
+ * Enumerates the audio playback target
+ */
+enum RenderTarget {
+    PLAY_BACK = 0,
+    INJECT_TO_VOICE_COMMUNICATION_CAPTURE = 1
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H
