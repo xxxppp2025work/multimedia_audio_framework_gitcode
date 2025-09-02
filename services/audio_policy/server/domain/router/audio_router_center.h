@@ -31,11 +31,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-struct FetchDeviceInfo {
-    StreamUsage streamUsage;
-    int32_t clientUID;
-    std::string caller;
-};
 
 class AudioRouterCenter {
 public:
@@ -46,6 +41,7 @@ public:
     }
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(StreamUsage streamUsage,
         int32_t clientUID, std::string caller, const RouterType &bypassType = RouterType::ROUTER_TYPE_NONE);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchDupDevices(const FetchDeviceInfo &fetchDeviceInfo);
     std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(SourceType sourceType, int32_t clientUID,
         const uint32_t sessionID = 0);
     int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object);
