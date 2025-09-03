@@ -58,10 +58,10 @@ static std::shared_ptr<AudioEndpointInner> CreateEndpointInner(AudioEndpoint::En
     const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo)
 {
     std::shared_ptr<AudioEndpointInner> audioEndpoint =
-        std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+        std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
-    if (!audioEndpoint->Config(deviceInfo, streamInfo)) {
+    if (!audioEndpoint->Config(deviceInfo, streamInfo, clientConfig.streamType)) {
         audioEndpoint = nullptr;
     }
     return audioEndpoint;
@@ -75,8 +75,8 @@ static std::shared_ptr<AudioEndpointInner> CreateInputEndpointInner(AudioEndpoin
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpoint =
-        std::make_shared<AudioEndpointInner>(type, AUDIO_ENDPOINT_ID, config);
-    if (!audioEndpoint->Config(deviceInfo, audioStreamInfo)) {
+        std::make_shared<AudioEndpointInner>(type, AUDIO_ENDPOINT_ID, config.audioMode);
+    if (!audioEndpoint->Config(deviceInfo, audioStreamInfo, config.streamType)) {
         audioEndpoint = nullptr;
     }
     return audioEndpoint;
@@ -526,7 +526,7 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_001, TestSize.Level1)
     deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    result = audioEndpointInner->Config(deviceInfo, audioStreamInfo);
+    result = audioEndpointInner->Config(deviceInfo, audioStreamInfo, config.streamType);
     EXPECT_FALSE(result);
 
     processStream->SetInnerCapState(true, 1);
@@ -1006,7 +1006,7 @@ HWTEST_F(AudioEndpointUnitTest, CheckStandBy_001, TestSize.Level1)
 {
     std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
     audioEndpointInner->endpointStatus_ = AudioEndpointInner::RUNNING;
-    audioEndpointInner->clientConfig_.audioMode = AUDIO_MODE_PLAYBACK;
+    audioEndpointInner->audioMode_ = AUDIO_MODE_PLAYBACK;
     audioEndpointInner->CheckStandBy();
     EXPECT_EQ(audioEndpointInner->endpointStatus_, AudioEndpointInner::RUNNING);
 }
@@ -1021,7 +1021,7 @@ HWTEST_F(AudioEndpointUnitTest, CheckStandBy_002, TestSize.Level1)
 {
     std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
     audioEndpointInner->endpointStatus_ = AudioEndpointInner::IDEL;
-    audioEndpointInner->clientConfig_.audioMode = AUDIO_MODE_PLAYBACK;
+    audioEndpointInner->audioMode_ = AUDIO_MODE_PLAYBACK;
     audioEndpointInner->CheckStandBy();
     EXPECT_EQ(audioEndpointInner->endpointStatus_, AudioEndpointInner::IDEL);
 }

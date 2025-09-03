@@ -40,6 +40,8 @@
 #define AUDIO_NS_PER_MILLISECOND 1000000
 #define AUDIO_NS_PER_SECOND ((uint64_t)1000000000)
 
+#define UINT32_INVALID_VALUE 0xFFFFFFFF
+
 #define FLOAT_EPS 1e-9f
 #define OFFSET_BIT_24 3
 #define BIT_DEPTH_TWO 2
@@ -594,6 +596,13 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
     const std::vector<std::map<AudioInterrupt, int32_t>> &from);
 
 std::string GetBundleNameByToken(const uint32_t &tokenIdNum);
+
+std::string ConvertToStringForFormat(const AudioSampleFormat format);
+std::string ConvertToStringForSampleRate(const AudioSamplingRate sampleRate);
+std::string ConvertToStringForChannel(const AudioChannel channel);
+
+uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t bufLength);
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H
