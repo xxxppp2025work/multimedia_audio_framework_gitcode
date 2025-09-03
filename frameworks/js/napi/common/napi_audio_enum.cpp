@@ -514,7 +514,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackStatusMap = {
 const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackReverbPresetMap = {
     {"ORIGINAL", REVERB_PRESET_ORIGINAL},
     {"KTV", REVERB_PRESET_KTV},
-    {"THEATRE", REVERB_PRESET_THEATRE},
+    {"THEATER", REVERB_PRESET_THEATER},
     {"CONCERT", REVERB_PRESET_CONCERT},
 };
 
@@ -550,6 +550,11 @@ const std::map<std::string, int32_t> NapiAudioEnum::outputDeviceChangeRecommende
 const std::map<std::string, int32_t> NapiAudioEnum::renderTargetMap = {
     {"PLAYBACK", PLAY_BACK},
     {"INJECT_TO_VOICE_COMMUNICATION_CAPTURE", INJECT_TO_VOICE_COMMUNICATION_CAPTURE},
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::effectFlagMap = {
+    {"RENDER_EFFECT_FLAG", RENDER_EFFECT_FLAG},
+    {"CAPTURE_EFFECT_FLAG", CAPTURE_EFFECT_FLAG},
 };
 
 NapiAudioEnum::NapiAudioEnum()
@@ -720,6 +725,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("OutputDeviceChangeRecommendedAction",
             CreateEnumObject(env, outputDeviceChangeRecommendedActionMap)),
         DECLARE_NAPI_PROPERTY("RenderTarget", CreateEnumObject(env, renderTargetMap)),
+        DECLARE_NAPI_PROPERTY("EffectFlag", CreateEnumObject(env, effectFlagMap)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }
@@ -1889,7 +1895,7 @@ bool NapiAudioEnum::IsLegalInputArgumentAudioLoopbackReverbPreset(int32_t preset
     switch (preset) {
         case AudioLoopbackReverbPreset::REVERB_PRESET_ORIGINAL:
         case AudioLoopbackReverbPreset::REVERB_PRESET_KTV:
-        case AudioLoopbackReverbPreset::REVERB_PRESET_THEATRE:
+        case AudioLoopbackReverbPreset::REVERB_PRESET_THEATER:
         case AudioLoopbackReverbPreset::REVERB_PRESET_CONCERT:
             result = true;
             break;

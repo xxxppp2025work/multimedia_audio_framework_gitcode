@@ -21,6 +21,7 @@
 #include "parcel.h"
 #include "audio_device_info.h"
 #include "audio_info.h"
+#include <optional>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -47,6 +48,7 @@ public:
         bool hasBTPermission_ = false;
         bool hasSystemPermission_ = false;
         int32_t apiVersion_ = 0;
+        bool isSupportedNearlink_ = true;
 
         ClientInfo() = default;
         ClientInfo(int32_t apiVersion)
@@ -97,7 +99,11 @@ public:
 
     bool IsDistributedSpeaker() const;
 
-    DeviceType MapInternalToExternalDeviceType(int32_t apiVersion) const;
+    bool IsSpeakerOrEarpiece() const;
+
+    bool IsRemote() const;
+
+    DeviceType MapInternalToExternalDeviceType(int32_t apiVersion, bool isSupportedNearlink = true) const;
 
     DeviceStreamInfo GetDeviceStreamInfo(void) const;
 
@@ -114,7 +120,6 @@ public:
                 return 0;
             }
             return std::hash<int32_t>{}(static_cast<int32_t>(deviceDescriptor->deviceType_)) ^
-                std::hash<int32_t>{}(static_cast<int32_t>(deviceDescriptor->deviceRole_)) ^
                 std::hash<std::string>{}(deviceDescriptor->macAddress_) ^
                 std::hash<std::string>{}(deviceDescriptor->networkId_);
         }
@@ -136,7 +141,7 @@ public:
         }
     };
 
-    void SetClientInfo(std::shared_ptr<ClientInfo> clientInfo) const;
+    void SetClientInfo(const ClientInfo &clientInfo) const;
 private:
     static void FixApiCompatibility(int apiVersion, DeviceRole deviceRole,
         DeviceType &deviceType, int32_t &deviceId, std::list<DeviceStreamInfo> &streamInfo);
@@ -144,7 +149,7 @@ private:
     bool MarshallingInner(Parcel &parcel) const;
 
     bool MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
-        int32_t apiVersion) const;
+        int32_t apiVersion, bool isSupportedNearlink = true) const;
 public:
     DeviceType deviceType_ = DEVICE_TYPE_NONE;
     DeviceRole deviceRole_ = DEVICE_ROLE_NONE;
@@ -179,7 +184,7 @@ public:
     bool hasPair_{false};
     RouterType routerType_ = ROUTER_TYPE_NONE;
     bool isVrSupported_ = true;
-    mutable std::shared_ptr<ClientInfo> clientInfo_ = nullptr;
+    mutable std::optional<ClientInfo> clientInfo_ = std::nullopt;
     VolumeBehavior volumeBehavior_;
 
 private:

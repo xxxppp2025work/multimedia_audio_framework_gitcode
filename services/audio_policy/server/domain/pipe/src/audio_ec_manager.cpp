@@ -216,6 +216,29 @@ void AudioEcManager::UpdateEnhanceEffectState(SourceType source)
         isEcFeatureEnable_, isMicRefFeatureEnable_, isMicRefRecordOn_, isMicRefVoipUpOn_);
 }
 
+void AudioEcManager::UpdatePrimaryMicModuleInfo(std::shared_ptr<AudioPipeInfo> &pipeInfo, SourceType sourceType)
+{
+    if (pipeInfo->adapterName_ != "primary") {
+        return;
+    }
+    if (!isEcFeatureEnable_) {
+        return;
+    }
+    shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
+    if (inputDesc == nullptr || inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET
+            || inputDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
+        return;
+    }
+ 
+    // update primary info for ec config to get later
+    primaryMicModuleInfo_.channels = pipeInfo->moduleInfo_.channels;
+    primaryMicModuleInfo_.rate = pipeInfo->moduleInfo_.rate;
+    primaryMicModuleInfo_.format = pipeInfo->moduleInfo_.format;
+    AUDIO_INFO_LOG("channels: %{public}s, rate: %{public}s, format: %{public}s",
+        primaryMicModuleInfo_.channels.c_str(), primaryMicModuleInfo_.rate.c_str(),
+        primaryMicModuleInfo_.format.c_str());
+}
+
 void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStreamPropInfo &targetInfo,
     SourceType sourceType)
 {
@@ -227,6 +250,7 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStr
         moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
         moduleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
         moduleInfo.sourceType = std::to_string(sourceType);
+        moduleInfo.channelLayout = std::to_string(targetInfo.channelLayout_);
     } else {
         shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
         if (inputDesc != nullptr && inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
@@ -240,6 +264,7 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStr
             moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
             moduleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
             moduleInfo.sourceType = std::to_string(sourceType);
+            moduleInfo.channelLayout = std::to_string(targetInfo.channelLayout_);
             if (inputDesc != nullptr) {
                 moduleInfo.deviceType = std::to_string(static_cast<int32_t>(inputDesc->deviceType_));
             }
@@ -247,6 +272,7 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStr
             primaryMicModuleInfo_.channels = std::to_string(targetInfo.channels_);
             primaryMicModuleInfo_.rate = std::to_string(targetInfo.sampleRate_);
             primaryMicModuleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
+            primaryMicModuleInfo_.channelLayout = std::to_string(targetInfo.channelLayout_);
         }
     }
 }
@@ -613,6 +639,16 @@ void AudioEcManager::GetTargetSourceTypeAndMatchingFlag(SourceType source,
     }
 }
 
+int32_t AudioEcManager::ReloadSourceSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo,
+    const AudioModuleInfo &moduleInfo)
+{
+    int32_t ret = audioIOHandleMap_.ReloadPortAndUpdateIOHandle(pipeInfo, moduleInfo, true);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "reload softLink failed");
+    normalSourceOpened_ = SOURCE_TYPE_VOICE_CALL;
+    AUDIO_INFO_LOG("reload hearingAid");
+    return SUCCESS;
+}
+
 void AudioEcManager::ReloadSourceForSession(SessionInfo sessionInfo)
 {
     AUDIO_INFO_LOG("reload session for source: %{public}d", sessionInfo.sourceType);
@@ -741,13 +777,14 @@ void AudioEcManager::SetOpenedNormalSource(SourceType sourceType)
     normalSourceOpened_ = sourceType;
 }
 
-void AudioEcManager::PrepareNormalSource(AudioModuleInfo &moduleInfo,
+void AudioEcManager::PrepareNormalSource(std::shared_ptr<AudioPipeInfo> &pipeInfo,
     std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     SourceType sourceType = streamDesc->capturerInfo_.sourceType;
     AUDIO_INFO_LOG("prepare normal source for source type: %{public}d", sourceType);
     UpdateEnhanceEffectState(sourceType);
-    UpdateStreamEcAndMicRefInfo(moduleInfo, sourceType);
+    UpdatePrimaryMicModuleInfo(pipeInfo, sourceType);
+    UpdateStreamEcAndMicRefInfo(pipeInfo->moduleInfo_, sourceType);
     SetOpenedNormalSource(sourceType);
     SetOpenedNormalSourceSessionId(streamDesc->sessionId_);
 }

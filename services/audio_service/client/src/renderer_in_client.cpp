@@ -195,6 +195,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
     config.streamInfo.encoding = static_cast<AudioEncodingType>(curStreamParams_.encoding);
     config.streamInfo.format = static_cast<AudioSampleFormat>(curStreamParams_.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(curStreamParams_.samplingRate);
+    config.streamInfo.customSampleRate = curStreamParams_.customSampleRate;
     config.streamInfo.channelLayout = static_cast<AudioChannelLayout>(curStreamParams_.channelLayout);
     config.originalSessionId = curStreamParams_.originalSessionId;
 
@@ -343,6 +344,19 @@ bool RendererInClientInner::WaitForRunning()
     return true;
 }
 
+void RendererInClientInner::RecordDropPosition(size_t bufLength)
+{
+    CHECK_AND_RETURN_LOG(isHdiSpeed_.load(), "record drop position only when is hdi speed ");
+    uint32_t channels = clientConfig_.streamInfo.channels;
+    uint32_t samplePerFrame = Util::GetSamplePerFrame(clientConfig_.streamInfo.format);
+    // calculate samples by dropped buffer size
+    uint32_t dropPostion = bufLength / (channels * samplePerFrame);
+    dropPosition_ += dropPostion;
+    dropHdiPosition_ += dropPostion / GetSpeed();
+    AUDIO_WARNING_LOG("RendererInClientInner::RecordDropPosition dropPosition_:%{public}" PRIu64
+        ",dropHdiPosition_:%{public}" PRIu64, dropPosition_.load(), dropHdiPosition_.load());
+}
+
 int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
 {
     int32_t result = 0; // Ensure result with default value.
@@ -370,6 +384,7 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     }
     if (result < 0) {
         AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, bufferDesc.bufLength);
+        RecordDropPosition(bufferDesc.bufLength);
     }
     return result;
 }
@@ -378,8 +393,8 @@ bool RendererInClientInner::CheckBufferNeedWrite()
 {
     uint32_t totalSizeInFrame = clientBuffer_->GetTotalSizeInFrame();
     size_t totalSizeInByte = totalSizeInFrame * sizePerFrameInByte_;
-    int32_t writableInFrame = clientBuffer_ -> GetWritableDataFrames();
-    size_t writableSizeInByte = writableInFrame * sizePerFrameInByte_;
+    int32_t writableInFrame = clientBuffer_->GetWritableDataFrames();
+    size_t writableSizeInByte = static_cast<size_t>(writableInFrame) * sizePerFrameInByte_;
 
     if (writableInFrame <= 0) {
         return false;
@@ -703,6 +718,8 @@ void RendererInClientInner::ResetFramePosition()
         lastFramePosAndTimePairWithSpeed_[base].first = 0;
         lastSwitchPosition_[base] = 0;
     }
+    dropPosition_ = 0;
+    dropHdiPosition_ = 0;
     unprocessedFramesBytes_ = 0;
     totalBytesWrittenAfterFlush_ = 0;
     writtenAtSpeedChange_.store(WrittenFramesWithSpeed{0, speed_});

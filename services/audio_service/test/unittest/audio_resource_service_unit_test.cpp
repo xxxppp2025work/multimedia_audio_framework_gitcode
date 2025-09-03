@@ -56,6 +56,7 @@ AudioResourceService::AudioWorkgroupDeathRecipient deathRecipient;
 AudioResourceService audioResourceService;
 const int32_t testRtgId = 2;
 static constexpr int32_t AUDIO_MAX_PROCESS = 2;
+static constexpr int32_t AUDIO_MAX_GRP_PER_PROCESS = 4;
 
 class RemoteObjectTestStub : public IRemoteObject {
 public:
@@ -265,7 +266,7 @@ HWTEST(AudioResourceServiceUnitTest, RestoreAudioWorkgroupPrio_002, TestSize.Lev
  * @tc.name  : Test AudioWorkgroupCheck
  * @tc.type  : FUNC
  * @tc.number: AudioWorkgroupCheck
- * @tc.desc  : Test ReleaseWorkgroupDeathRecipient when find workgroup
+ * @tc.desc  : Test AudioWorkgroupCheck method with invalid and valid pid
  */
 HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_001, TestSize.Level0)
 {
@@ -282,7 +283,7 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_001, TestSize.Level0)
  * @tc.name  : Test ReleaseAudioWorkgroup
  * @tc.type  : FUNC
  * @tc.number: ReleaseAudioWorkgroup
- * @tc.desc  : Test ReleaseWorkgroupDeathRecipient when find workgroup
+ * @tc.desc  : Test ReleaseAudioWorkgroup method with invalid and valid pid
  */
 HWTEST(AudioResourceServiceUnitTest, ReleaseAudioWorkgroup_001, TestSize.Level0)
 {
@@ -797,6 +798,64 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_004, TestSize.Level0)
 }
 
 /**
+ * @tc.name  : Test WorkgroupRendererMonitor
+ * @tc.type  : FUNC
+ * @tc.number: WorkgroupRendererMonitor
+ * @tc.desc  : Test WorkgroupRendererMonitor when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, WorkgroupRendererMonitor_002, TestSize.Level0)
+{
+    int32_t testPid = 321;
+    audioResourceService.audioWorkgroupMap_[testPid].permission = false;
+    audioResourceService.WorkgroupRendererMonitor(testPid, true);
+
+    EXPECT_TRUE(audioResourceService.audioWorkgroupMap_[testPid].permission);
+}
+
+/**
+ * @tc.name  : Test deathRecipient
+ * @tc.type  : FUNC
+ * @tc.number: OnWorkgroupRemoteDied_001
+ * @tc.desc  : Test OnWorkgroupRemoteDied when called
+ */
+HWTEST(AudioResourceServiceUnitTest, OnWorkgroupRemoteDied_001, TestSize.Level0)
+{
+    std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(testRtgId);
+    std::shared_ptr<AudioWorkgroup> workGroup = std::make_shared<AudioWorkgroup>(testRtgId);
+    sptr<IRemoteObject> remoteObj = nullptr;
+
+    audioResourceService.audioWorkgroupMap_[10].groups[testRtgId] = {workGroup};
+    audioResourceService.OnWorkgroupRemoteDied(workgroup, remoteObj);
+    EXPECT_EQ(audioResourceService.audioWorkgroupMap_[10].groups.count(testRtgId), 1);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroupCheck
+ * @tc.type  : FUNC
+ * @tc.number: AudioWorkgroupCheck
+ * @tc.desc  : Test ReleaseWorkgroupDeathRecipient when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_008, TestSize.Level0)
+{
+    int32_t pid = 4321;
+    for (int i = 0; i <= AUDIO_MAX_GRP_PER_PROCESS; i++) {
+        audioResourceService.audioWorkgroupMap_[pid].groups[i] = nullptr;
+    }
+    EXPECT_TRUE(audioResourceService.IsProcessInWorkgroup(pid));
+    EXPECT_EQ(audioResourceService.AudioWorkgroupCheck(pid), ERR_NOT_SUPPORTED);
+
+    pid = 532;
+    audioResourceService.audioWorkgroupMap_[pid].groups[pid] = nullptr;
+    audioResourceService.audioWorkgroupMap_[pid].hasSystemPermission = false;
+
+    for (int i = 0; i <= AUDIO_MAX_PROCESS; i++) {
+        audioResourceService.audioWorkgroupMap_[i].groups[i] = nullptr;
+    }
+    EXPECT_FALSE(audioResourceService.IsProcessInWorkgroup(pid + 1));
+    EXPECT_EQ(audioResourceService.AudioWorkgroupCheck(pid + 1), ERR_NOT_SUPPORTED);
+}
+
+/**
  * @tc.name  : AudioWorkgroupCheck
  * @tc.type  : FUNC
  * @tc.number: AudioWorkgroupCheck_005
@@ -845,6 +904,86 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_007, TestSize.Level1)
     }
     int32_t pid = 8888;
     EXPECT_EQ(service->AudioWorkgroupCheck(pid), ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test FillAudioWorkgroupCgroupLimit
+ * @tc.type  : FUNC
+ * @tc.number: FillAudioWorkgroupCgroupLimit_001
+ * @tc.desc  : Test FillAudioWorkgroupCgroupLimit when no used group id
+ */
+HWTEST(AudioResourceServiceUnitTest, FillAudioWorkgroupCgroupLimit_NoUsedGroupId, TestSize.Level0)
+{
+    AudioResourceService service;
+    int32_t pid = 2;
+    std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(123);
+    service.FillAudioWorkgroupCgroupLimit(pid, workgroup);
+    EXPECT_EQ(workgroup->cgroupLimit.globalCgroupId, 0);
+    EXPECT_EQ(workgroup->cgroupLimit.clientPid, pid);
+}
+ 
+/**
+ * @tc.name  : Test FillAudioWorkgroupCgroupLimit
+ * @tc.type  : FUNC
+ * @tc.number: FillAudioWorkgroupCgroupLimit_002
+ * @tc.desc  : Test FillAudioWorkgroupCgroupLimit when all group ids are used
+ */
+HWTEST(AudioResourceServiceUnitTest, FillAudioWorkgroupCgroupLimit_AllGroupIdsUsed, TestSize.Level0)
+{
+    AudioResourceService service;
+    int32_t pid = 4;
+    for (int i = 0; i < 4; ++i) {
+        auto g = std::make_shared<AudioWorkgroup>(300+i);
+        g->SetCgroupLimitParams(pid, i);
+        service.audioWorkgroupMap_[pid].groups[i] = g;
+    }
+    std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(888);
+    service.FillAudioWorkgroupCgroupLimit(pid, workgroup);
+    EXPECT_EQ(workgroup->cgroupLimit.globalCgroupId, -1);
+    EXPECT_EQ(workgroup->cgroupLimit.clientPid, pid);
+}
+ 
+/**
+ * @tc.name  : Test GetCgroupLimitId
+ * @tc.type  : FUNC
+ * @tc.number: GetCgroupLimitId_001
+ * @tc.desc  : Test GetCgroupLimitId returns default value
+ */
+HWTEST(AudioWorkgroupUnitTest, GetCgroupLimitId_DefaultValue, TestSize.Level0)
+{
+    AudioWorkgroup workgroup(1);
+    EXPECT_EQ(workgroup.GetCgroupLimitId(), -1);
+}
+ 
+/**
+ * @tc.name  : Test SetCgroupLimitParams and GetCgroupLimitId
+ * @tc.type  : FUNC
+ * @tc.number: SetCgroupLimitParams_001
+ * @tc.desc  : Test SetCgroupLimitParams sets globalCgroupId and can be retrieved by GetCgroupLimitId
+ */
+HWTEST(AudioWorkgroupUnitTest, SetCgroupLimitParams_SetAndGet, TestSize.Level0)
+{
+    AudioWorkgroup workgroup(2);
+    int32_t testPid = 100;
+    int32_t testCgroupId = 7;
+    workgroup.SetCgroupLimitParams(testPid, testCgroupId);
+    EXPECT_EQ(workgroup.GetCgroupLimitId(), testCgroupId);
+    EXPECT_EQ(workgroup.cgroupLimit.clientPid, testPid);
+}
+ 
+/**
+ * @tc.name  : Test SetCgroupLimitParams overwrite
+ * @tc.type  : FUNC
+ * @tc.number: SetCgroupLimitParams_002
+ * @tc.desc  : Test SetCgroupLimitParams can overwrite previous values
+ */
+HWTEST(AudioWorkgroupUnitTest, SetCgroupLimitParams_Overwrite, TestSize.Level0)
+{
+    AudioWorkgroup workgroup(3);
+    workgroup.SetCgroupLimitParams(200, 5);
+    workgroup.SetCgroupLimitParams(201, 9);
+    EXPECT_EQ(workgroup.GetCgroupLimitId(), 9);
+    EXPECT_EQ(workgroup.cgroupLimit.clientPid, 201);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -168,6 +168,7 @@ public:
 
         audioStreamParams.format = params.sampleFormat;
         audioStreamParams.samplingRate = params.sampleRate;
+        audioStreamParams.customSampleRate = params.customSampleRate;
         audioStreamParams.channels = params.channelCount;
         audioStreamParams.encoding = params.encodingType;
         audioStreamParams.channelLayout = params.channelLayout;
@@ -216,7 +217,6 @@ private:
         IAudioStream::SwitchInfo &info);
     bool GenerateNewStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo, RendererState previousState,
         IAudioStream::SwitchInfo &info);
-    bool ContinueAfterConcede(IAudioStream::StreamClass &targetClass, RestoreInfo restoreInfo);
     bool ContinueAfterSplit(RestoreInfo restoreInfo);
     bool InitTargetStream(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> &audioStream);
     void HandleAudioInterruptWhenServerDied();

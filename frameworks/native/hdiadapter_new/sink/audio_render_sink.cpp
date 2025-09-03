@@ -528,7 +528,24 @@ int32_t AudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevic
     currentActiveDevice_ = outputDevices[0];
     currentDevicesSize_ = static_cast<int32_t>(outputDevices.size());
     SetAudioRouteInfoForEnhanceChain();
+    bool isA2dp = false;
+    if (currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_SCO || currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        isA2dp = true;
+    }
+    HandleDeviceCallback(isA2dp);
     return DoSetOutputRoute(outputDevices);
+}
+
+void AudioRenderSink::RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback)
+{
+    deviceCallback_ = callback;
+}
+
+void AudioRenderSink::HandleDeviceCallback(const bool state)
+{
+    if (deviceCallback_ != nullptr) {
+        deviceCallback_(state);
+    }
 }
 
 void AudioRenderSink::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
@@ -763,6 +780,8 @@ AudioPortPin AudioRenderSink::GetAudioPortPin(void) const noexcept
             return PIN_OUT_USB_EXT;
         case DEVICE_TYPE_HDMI:
              return PIN_OUT_HDMI;
+        case DEVICE_TYPE_NEARLINK:
+            return PIN_OUT_NEARLINK;
         case DEVICE_TYPE_NONE:
             return PIN_NONE;
         default:

@@ -126,7 +126,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
         "handle special deviceType failed.");
     CHECK_AND_RETURN_LOG(result == SUCCESS, "handle special deviceType failed.");
 
-    AUDIO_WARNING_LOG("[ADeviceEvent] device[%{public}d] address[%{public}s] role[%{public}d] connect[%{public}d]",
+    HILOG_COMM_INFO("[ADeviceEvent] device[%{public}d] address[%{public}s] role[%{public}d] connect[%{public}d]",
         devType, GetEncryptStr(macAddress).c_str(), role, isConnected);
 
     AudioDeviceDescriptor updatedDesc(devType, role == DEVICE_ROLE_NONE ?
@@ -740,9 +740,15 @@ void AudioDeviceStatus::OnDeviceConfigurationChanged(DeviceType deviceType, cons
         "macAddress:[%{public}s], activeBTDevice:[%{public}s]",
         deviceType, audioActiveDevice_.GetCurrentOutputDeviceType(),
         GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(btDevice).c_str());
-    // only for the active a2dp device.
+
+    // Bt configuration changed cases:
+    // 1) To another stream info: Reload pipe by new stream info.
+    // 2) To another bt device: Reload pipe by new stream info.
+    // 3) To SBC/L2HC codec: Re-fetch pipes for all streams, may change from a2dp to a2dp offload.
     if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(btDevice)) {
-        int32_t activeSessionsSize = 0;
+        AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("BtConfigurationChanged");
+        AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("BtConfigurationChanged");
+        uint32_t activeSessionsSize = 0;
         BluetoothOffloadState state = NO_A2DP_DEVICE;
         if (audioA2dpOffloadManager_) {
             activeSessionsSize = audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
@@ -847,7 +853,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioDeviceStatus::GetDeviceByStatusInfo(
 
 void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
 {
-    AUDIO_WARNING_LOG("[ADeviceEvent] remote HDI_PIN[%{public}d] connet[%{public}d] "
+    HILOG_COMM_INFO("[ADeviceEvent] remote HDI_PIN[%{public}d] connet[%{public}d] "
         "networkId[%{public}s]", statusInfo.hdiPin, statusInfo.isConnected,
         GetEncryptStr(statusInfo.networkId).c_str());
     if (isStop) {
@@ -1072,7 +1078,6 @@ int32_t AudioDeviceStatus::OnServiceConnected(AudioServiceIndex serviceIndex)
             if (OpenPortAndAddDeviceOnServiceConnected(moduleInfo)) {
                 result = SUCCESS;
             }
-            audioOffloadStream_.SetOffloadAvailableFromXML(moduleInfo);
         }
     }
 
@@ -1141,7 +1146,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     std::string macAddress, std::string deviceName, bool isActualConnection, AudioStreamInfo streamInfo,
     bool isConnected)
 {
-    AUDIO_WARNING_LOG("[ADeviceEvent] bt device[%{public}d] mac[%{public}s] connect[%{public}d]",
+    HILOG_COMM_INFO("[ADeviceEvent] bt device[%{public}d] mac[%{public}s] connect[%{public}d]",
         devType, GetEncryptStr(macAddress).c_str(), isConnected);
 
     auto devDesc = make_shared<AudioDeviceDescriptor>(updatedDesc);
@@ -1396,8 +1401,8 @@ void AudioDeviceStatus::RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDe
     audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(desc, descForCb);
     TriggerDeviceChangedCallback(descForCb, false);
     TriggerAvailableDeviceChangedCallback(descForCb, false);
-    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
-    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
+    AudioCoreService::GetCoreService()->GetEventEntry()->FetchOutputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
+    AudioCoreService::GetCoreService()->GetEventEntry()->FetchInputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
 }
 
 void AudioDeviceStatus::AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc)
@@ -1408,8 +1413,8 @@ void AudioDeviceStatus::AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDes
     audioDeviceCommon_.UpdateConnectedDevicesWhenConnecting(desc, descForCb);
     TriggerDeviceChangedCallback(descForCb, true);
     TriggerAvailableDeviceChangedCallback(descForCb, true);
-    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("AddDeviceBackToGlobalOnly");
-    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("AddDeviceBackToGlobalOnly");
+    AudioCoreService::GetCoreService()->GetEventEntry()->FetchOutputDeviceAndRoute("AddDeviceBackToGlobalOnly");
+    AudioCoreService::GetCoreService()->GetEventEntry()->FetchInputDeviceAndRoute("AddDeviceBackToGlobalOnly");
 }
 
 void AudioDeviceStatus::HandleOfflineDistributedDevice()
