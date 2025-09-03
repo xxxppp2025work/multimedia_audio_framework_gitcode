@@ -16,6 +16,7 @@
 #include <cstdio>
 #include "hpae_no_lock_queue.h"
 #include "audio_engine_log.h"
+#include "hpae_message_queue_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -54,6 +55,8 @@ void HpaeNoLockQueue::PushRequest(Request &&request)
 {
     const uint64_t freeRequestIndex = GetRequestNode(&freeRequestHeadIndex_);
     if (GetRequsetIndex(freeRequestIndex) == INVALID_REQUEST_ID) {
+        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_NO_LOCK_QUEUE_TYPE, __func__,
+            "reached Queue Capacity");
         AUDIO_WARNING_LOG("reached Queue Capacity: drop this request");
         return;
     }
@@ -67,14 +70,14 @@ void HpaeNoLockQueue::HandleRequests()
     uint64_t requestHeadindex;
     do {
         requestHeadindex = requestHeadIndex_.load();
-        oldRequestFlag = (GetRequsetFlag(requestHeadindex) << 32) + INVALID_REQUEST_ID;
+        oldRequestFlag = (GetRequsetFlag(requestHeadindex) << SHIFT_32_OFFSET) + INVALID_REQUEST_ID;
     } while (!std::atomic_compare_exchange_strong(&requestHeadIndex_, &requestHeadindex, oldRequestFlag));
     ProcessRequests(requestHeadindex, true);
 }
 
 void HpaeNoLockQueue::Reset()
 {
-    const uint64_t oldRequestFlag = (GetRequsetFlag(requestHeadIndex_) << 32) + INVALID_REQUEST_ID;
+    const uint64_t oldRequestFlag = (GetRequsetFlag(requestHeadIndex_) << SHIFT_32_OFFSET) + INVALID_REQUEST_ID;
     const uint64_t oldRequestHeadindex = requestHeadIndex_.exchange(oldRequestFlag);
     ProcessRequests(oldRequestHeadindex, false);
 }

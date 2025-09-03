@@ -17,7 +17,6 @@
 #endif
 
 #include "audio_effect_chain.h"
-#include "audio_effect_chain_adapter.h"
 #include "audio_effect.h"
 #include "audio_errors.h"
 #include "audio_effect_log.h"
@@ -269,6 +268,7 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
 {
     int32_t ret;
     int32_t replyData = 0;
+    int32_t latencyData = 0;
     currSceneType_ = currSceneType;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
@@ -281,7 +281,7 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     CHECK_AND_RETURN_LOG(CheckHandleAndRelease(handle, libHandle, ret) == SUCCESS,
         "[%{public}s] with mode [%{public}s], %{public}s effect EFFECT_CMD_ENABLE fail",
         sceneType_.c_str(), effectMode_.c_str(), effectName.c_str());
-    ret = SetEffectParamToHandle(handle, replyData);
+    ret = SetEffectParamToHandle(handle, latencyData);
     CHECK_AND_RETURN_LOG(CheckHandleAndRelease(handle, libHandle, ret) == SUCCESS,
         "[%{public}s] with mode [%{public}s], %{public}s effect EFFECT_CMD_SET_PARAM fail",
         sceneType_.c_str(), effectMode_.c_str(), effectName.c_str());
@@ -314,7 +314,7 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     standByEffectHandles_.emplace_back(handle);
     effectNames_.emplace_back(effectName);
     libHandles_.emplace_back(libHandle);
-    latency_ += static_cast<uint32_t>(replyData);
+    latency_ += static_cast<uint32_t>(latencyData);
 }
 
 int32_t AudioEffectChain::UpdateEffectParam()
@@ -573,7 +573,7 @@ int32_t AudioEffectChain::updatePrimaryChannel()
     if (isSupportedChannelLayoutFlage == false) {
         ioBufferConfig_.inputCfg.channels = DEFAULT_NUM_CHANNEL;
         ioBufferConfig_.inputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-        AUDIO_INFO_LOG("currChannelLayout is not supported, change to default channelLayout");
+        HILOG_COMM_INFO("currChannelLayout is not supported, change to default channelLayout");
         return ERROR;
     }
 

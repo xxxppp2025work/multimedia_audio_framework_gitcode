@@ -38,6 +38,7 @@ const uint64_t CH_MODE_MASK = ((1ULL << 4) - 1ULL) << CH_MODE_OFFSET;
 const uint64_t CH_HOA_ORDNUM_MASK = ((1ULL << 8) - 1ULL) << CH_HOA_ORDNUM_OFFSET;
 const uint64_t CH_HOA_COMORD_MASK = ((1ULL << 4) - 1ULL) << CH_HOA_COMORD_OFFSET;
 const uint64_t CH_HOA_NOR_MASK = ((1ULL << 4) - 1ULL) << CH_HOA_NOR_OFFSET;
+const uint32_t SAMPLE_RATE_RESOLUTION_10 = 10;
 
 enum AudioStreamType {
     /**
@@ -253,6 +254,7 @@ enum AudioPipeType {
     PIPE_TYPE_SPATIALIZATION = 12,
     PIPE_TYPE_DIRECT_MUSIC = 13,
     PIPE_TYPE_DIRECT_VOIP = 14,
+    PIPE_TYPE_NORMAL_IN_AI = 15,
 };
 
 enum AudioPreloadType {
@@ -263,6 +265,8 @@ enum AudioPreloadType {
 
 struct AudioStreamParams {
     uint32_t samplingRate = 0;
+    // Add customSampleRate
+    uint32_t customSampleRate = 0;
     uint8_t encoding = 0;
     uint8_t format = 0;
     uint8_t channels = 0;
@@ -285,7 +289,8 @@ enum AudioSamplingRate {
     SAMPLE_RATE_88200 = 88200,
     SAMPLE_RATE_96000 = 96000,
     SAMPLE_RATE_176400 = 176400,
-    SAMPLE_RATE_192000 = 192000
+    SAMPLE_RATE_192000 = 192000,
+    SAMPLE_RATE_384000 = 384000
 };
 
 enum AudioEncodingType {
@@ -553,6 +558,19 @@ const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
     STREAM_USAGE_VOICE_CALL_ASSISTANT,
 };
 
+enum FunctionHoldType {
+    FUNCTION_HOLD_INVALID = -1,
+    FUNCTION_HOLD_MUSIC,
+    FUNCTION_HOLD_SYSTEM,
+};
+
+enum SetLoudVolMode {
+    LOUD_VOLUME_SWITCH_INVALID = -1,
+    LOUD_VOLUME_SWITCH_UNSET,
+    LOUD_VOLUME_SWITCH_OFF,
+    LOUD_VOLUME_SWITCH_ON,
+};
+
 class AudioStreamInfo : public Parcelable {
 public:
     AudioSamplingRate samplingRate;
@@ -560,10 +578,13 @@ public:
     AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
     AudioChannel channels;
     AudioChannelLayout channelLayout  = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
+    // Add customSampleRate Init Value 0
+    uint32_t customSampleRate = 0;
+
     AudioStreamInfo(AudioSamplingRate samplingRate_, AudioEncodingType encoding_, AudioSampleFormat format_,
         AudioChannel channels_, AudioChannelLayout channelLayout_ = AudioChannelLayout::CH_LAYOUT_UNKNOWN)
-        : samplingRate(samplingRate_), encoding(encoding_), format(format_), channels(channels_),
-        channelLayout(channelLayout_)
+        : samplingRate(samplingRate_), encoding(encoding_), format(format_),
+        channels(channels_), channelLayout(channelLayout_)
     {}
     AudioStreamInfo() = default;
     bool Marshalling(Parcel &parcel) const override
@@ -572,7 +593,8 @@ public:
             && parcel.WriteInt32(static_cast<int32_t>(encoding))
             && parcel.WriteInt32(static_cast<int32_t>(format))
             && parcel.WriteInt32(static_cast<int32_t>(channels))
-            && parcel.WriteInt64(static_cast<int64_t>(channelLayout));
+            && parcel.WriteInt64(static_cast<int64_t>(channelLayout))
+            && parcel.WriteUint32(customSampleRate);
     }
 
     void UnmarshallingSelf(Parcel &parcel)
@@ -582,11 +604,18 @@ public:
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
         channels = static_cast<AudioChannel>(parcel.ReadInt32());
         channelLayout = static_cast<AudioChannelLayout>(parcel.ReadInt64());
+        customSampleRate = parcel.ReadUint32();
+    }
+
+    bool operator==(const AudioStreamInfo &info) const
+    {
+        return encoding == info.encoding && format == info.format && channels == info.channels &&
+            channelLayout == info.channelLayout && samplingRate == info.samplingRate;
     }
 
     static AudioStreamInfo *Unmarshalling(Parcel &parcel)
     {
-        auto info = new AudioStreamInfo();
+        auto info = new(std::nothrow) AudioStreamInfo();
         if (info == nullptr) {
             return nullptr;
         }
@@ -607,6 +636,7 @@ struct AudioStreamData {
 
 struct AudioCallBackStreamInfo {
     uint64_t framePosition = 0;
+    uint64_t hdiFramePosition = 0;
     uint64_t framesWritten = 0;
     std::vector<uint64_t> timestamp = {Timestamp::Timestampbase::BASESIZE, 0};
     uint64_t latency = 0;
@@ -615,6 +645,7 @@ struct AudioCallBackStreamInfo {
     std::string deviceClass;
     std::string deviceNetId;
     bool needData = false;
+    bool forceData = false;
 };
 
 struct AudioCallBackCapturerStreamInfo {

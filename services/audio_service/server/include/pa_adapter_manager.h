@@ -15,7 +15,7 @@
 
 #ifndef PA_ADAPTER_MANAGER_H
 #define PA_ADAPTER_MANAGER_H
-
+#ifdef SUPPORT_OLD_ENGINE
 #include <map>
 #include <set>
 #include <mutex>
@@ -66,7 +66,8 @@ class PaAdapterManager : public IStreamManager {
 public:
     PaAdapterManager(ManagerType type);
 
-    int32_t CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream) override;
+    int32_t CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream,
+        std::optional<std::string_view> originDeviceName = std::nullopt) override;
     int32_t ReleaseRender(uint32_t streamIndex_) override;
     int32_t StartRender(uint32_t streamIndex) override;
     int32_t StopRender(uint32_t streamIndex) override;
@@ -146,4 +147,5 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
+#endif // SUPPORT_OLD_ENGINE
 #endif // PA_ADAPTER_MANAGER_H

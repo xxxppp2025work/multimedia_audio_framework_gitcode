@@ -21,18 +21,40 @@
 #include "linear_pos_time_model.h"
 #include "oh_audio_buffer.h"
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #include "hpae_renderer_stream_impl.h"
 #include "policy_handler.h"
 #include "hpae_adapter_manager.h"
 #include "audio_capturer_private.h"
 #include "audio_system_manager.h"
-#include "audio_system_manager.h"
 
 using namespace testing::ext;
+using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 const int32_t CAPTURER_FLAG = 10;
+static constexpr uint32_t SAMPLE_RATE_16010 = 16010;
+static constexpr uint32_t SAMPLE_RATE_16050 = 16050;
+static constexpr uint32_t FRAME_LEN_100MS = 100;
+static constexpr uint32_t FRAME_LEN_40MS = 40;
+static constexpr uint32_t FRAME_LEN_20MS = 20;
+static constexpr int32_t MIN_BUFFER_SIZE = 2;
+
+static inline int32_t GetSizeFromFormat(int32_t format)
+{
+    return format != SAMPLE_F32LE ? ((format) + 1) : (4); // float 4
+}
+
 static std::shared_ptr<HpaeAdapterManager> adapterManager;
+
+class MockWriteCallback : public IWriteCallback {
+public:
+    MockWriteCallback() = default;
+    virtual ~MockWriteCallback() = default;
+    MOCK_METHOD(int32_t, OnWriteData, (size_t length), (override));
+    MOCK_METHOD(int32_t, OnWriteData, (int8_t *inputData, size_t requestDataLen), (override));
+    MOCK_METHOD(int32_t, GetAvailableSize, (size_t &length), (override));
+};
 
 class HpaeRendererStreamUnitTest : public ::testing::Test {
 public:
@@ -76,6 +98,127 @@ std::shared_ptr<HpaeRendererStreamImpl> HpaeRendererStreamUnitTest::CreateHpaeRe
     std::shared_ptr<HpaeRendererStreamImpl> rendererStreamImpl =
         std::static_pointer_cast<HpaeRendererStreamImpl>(rendererStream);
     return rendererStreamImpl;
+}
+
+/**
+ * @tc.name  : Test HpaeRendererStreamImpl Construct
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererStreamImplConstruct_001
+ * @tc.desc  : Test branch when samplingRate = 11025
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_001, TestSize.Level0)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_11025;
+    processConfig.rendererInfo.expectedPlaybackDurationBytes = 1024;
+
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_40MS *
+        static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S);
+    EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *
+        static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
+    EXPECT_EQ(rendererStreamImpl.minBufferSize_, MIN_BUFFER_SIZE * rendererStreamImpl.byteSizePerFrame_ *
+        rendererStreamImpl.spanSizeInFrame_);
+    EXPECT_EQ(rendererStreamImpl.expectedPlaybackDurationMs_, processConfig.rendererInfo.expectedPlaybackDurationBytes *
+        AUDIO_MS_PER_S / rendererStreamImpl.byteSizePerFrame_ / processConfig.streamInfo.samplingRate);
+    EXPECT_TRUE(rendererStreamImpl.isMoveAble_);
+    EXPECT_FALSE(rendererStreamImpl.isCallbackMode_);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererStreamImpl Construct
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererStreamImplConstruct_002
+ * @tc.desc  : Test branch when customSampleRate = 16010
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_002, TestSize.Level0)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.streamInfo.customSampleRate = SAMPLE_RATE_16010;
+    processConfig.rendererInfo.expectedPlaybackDurationBytes = 1024;
+
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_100MS *
+        static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S);
+    EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *
+        static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
+    EXPECT_EQ(rendererStreamImpl.minBufferSize_, MIN_BUFFER_SIZE * rendererStreamImpl.byteSizePerFrame_ *
+        rendererStreamImpl.spanSizeInFrame_);
+    EXPECT_EQ(rendererStreamImpl.expectedPlaybackDurationMs_, processConfig.rendererInfo.expectedPlaybackDurationBytes *
+        AUDIO_MS_PER_S / rendererStreamImpl.byteSizePerFrame_ / processConfig.streamInfo.customSampleRate);
+    EXPECT_TRUE(rendererStreamImpl.isMoveAble_);
+    EXPECT_FALSE(rendererStreamImpl.isCallbackMode_);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererStreamImpl Construct
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererStreamImplConstruct_003
+ * @tc.desc  : Test branch when customSampleRate = 16050
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_003, TestSize.Level0)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.streamInfo.customSampleRate = SAMPLE_RATE_16050;
+    processConfig.rendererInfo.expectedPlaybackDurationBytes = 1024;
+
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_20MS *
+        static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S);
+    EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *
+        static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
+    EXPECT_EQ(rendererStreamImpl.minBufferSize_, MIN_BUFFER_SIZE * rendererStreamImpl.byteSizePerFrame_ *
+        rendererStreamImpl.spanSizeInFrame_);
+    EXPECT_EQ(rendererStreamImpl.expectedPlaybackDurationMs_, processConfig.rendererInfo.expectedPlaybackDurationBytes *
+        AUDIO_MS_PER_S / rendererStreamImpl.byteSizePerFrame_ / processConfig.streamInfo.customSampleRate);
+    EXPECT_TRUE(rendererStreamImpl.isMoveAble_);
+    EXPECT_FALSE(rendererStreamImpl.isCallbackMode_);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererStreamImpl Construct
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererStreamImplConstruct_004
+ * @tc.desc  : Test branch when channels = 0, byteSizePerFrame_ = 0
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_004, TestSize.Level0)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.streamInfo.channels = CHANNEL_UNKNOW;
+
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_20MS *
+        static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S);
+    EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, 0);
+    EXPECT_EQ(rendererStreamImpl.minBufferSize_, 0);
+    EXPECT_EQ(rendererStreamImpl.expectedPlaybackDurationMs_, 0);
+    EXPECT_TRUE(rendererStreamImpl.isMoveAble_);
+    EXPECT_FALSE(rendererStreamImpl.isCallbackMode_);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererStreamImpl Construct
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererStreamImplConstruct_005
+ * @tc.desc  : Test branch when customSampleRate = 11025
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_005, TestSize.Level0)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.streamInfo.customSampleRate = SAMPLE_RATE_11025;
+    processConfig.rendererInfo.expectedPlaybackDurationBytes = 1024;
+
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_40MS *
+        static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S);
+    EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *
+        static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
+    EXPECT_EQ(rendererStreamImpl.minBufferSize_, MIN_BUFFER_SIZE * rendererStreamImpl.byteSizePerFrame_ *
+        rendererStreamImpl.spanSizeInFrame_);
+    EXPECT_EQ(rendererStreamImpl.expectedPlaybackDurationMs_, processConfig.rendererInfo.expectedPlaybackDurationBytes *
+        AUDIO_MS_PER_S / rendererStreamImpl.byteSizePerFrame_ / processConfig.streamInfo.customSampleRate);
+    EXPECT_TRUE(rendererStreamImpl.isMoveAble_);
+    EXPECT_FALSE(rendererStreamImpl.isCallbackMode_);
 }
 
 /**
@@ -566,6 +709,172 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_029, TestSize.Level1)
     EXPECT_NE(unit, nullptr);
     int32_t ret = unit->StartWithSyncId(syncId);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OnDeviceClassChange.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_030
+ * @tc.desc  : Test OnDeviceClassChange.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_030, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+
+    AudioCallBackStreamInfo info = {
+        .deviceClass = "remote_offload",
+        .framePosition = 10000
+    };
+    unit->deviceClass_ = "primary";
+    unit->OnDeviceClassChange(info);
+    EXPECT_EQ(unit->lastHdiFramePosition_, 10000);
+    EXPECT_EQ(unit->lastFramePosition_, 10000);
+
+    info.deviceClass = "offload";
+    unit->OnDeviceClassChange(info);
+    EXPECT_EQ(unit->lastHdiFramePosition_, 10000);
+    EXPECT_EQ(unit->lastFramePosition_, 10000);
+
+    info.hdiFramePosition = 10000;
+    unit->OnDeviceClassChange(info);
+    EXPECT_GT(unit->lastHdiFramePosition_, 10000);
+}
+
+/**
+ * @tc.name  : Test WriteDataFromRingBuffer.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_031
+ * @tc.desc  : Test WriteDataFromRingBuffer.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_031, TestSize.Level0)
+{
+    std::shared_ptr<HpaeRendererStreamImpl> hpaeRenderer = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(hpaeRenderer, nullptr);
+
+    // 10 bytes
+    constexpr size_t bufferSize = 10;
+
+    hpaeRenderer->ringBuffer_ = AudioRingCache::Create(bufferSize);
+    std::vector<int8_t> tmpBuffer(bufferSize, 1);
+    hpaeRenderer->ringBuffer_->Enqueue({reinterpret_cast<uint8_t *>(tmpBuffer.data()), bufferSize});
+    tmpBuffer = std::vector<int8_t>(bufferSize, 0);
+    size_t requestDataLen = bufferSize;
+    int32_t ret = hpaeRenderer->WriteDataFromRingBuffer(false, tmpBuffer.data(), requestDataLen);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(requestDataLen, bufferSize);
+    EXPECT_THAT(tmpBuffer, Each(Eq(1)));
+}
+
+/**
+ * @tc.name  : Test WriteDataFromRingBuffer.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_032
+ * @tc.desc  : Test WriteDataFromRingBuffer.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_032, TestSize.Level0)
+{
+    std::shared_ptr<HpaeRendererStreamImpl> hpaeRenderer = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(hpaeRenderer, nullptr);
+
+    // 10 bytes
+    constexpr size_t bufferSize = 10;
+
+    hpaeRenderer->ringBuffer_ = AudioRingCache::Create(bufferSize);
+    std::vector<int8_t> tmpBuffer(bufferSize, 1);
+    hpaeRenderer->ringBuffer_->Enqueue({reinterpret_cast<uint8_t *>(tmpBuffer.data()), bufferSize - 1});
+    tmpBuffer = std::vector<int8_t>(bufferSize, 0);
+    size_t requestDataLen = bufferSize;
+    int32_t ret = hpaeRenderer->WriteDataFromRingBuffer(false, tmpBuffer.data(), requestDataLen);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test WriteDataFromRingBuffer.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_033
+ * @tc.desc  : Test WriteDataFromRingBuffer.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_033, TestSize.Level0)
+{
+    std::shared_ptr<HpaeRendererStreamImpl> hpaeRenderer = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(hpaeRenderer, nullptr);
+
+    // 10 bytes
+    constexpr size_t bufferSize = 10;
+
+    hpaeRenderer->ringBuffer_ = AudioRingCache::Create(bufferSize);
+    std::vector<int8_t> tmpBuffer(bufferSize, 1);
+    hpaeRenderer->ringBuffer_->Enqueue({reinterpret_cast<uint8_t *>(tmpBuffer.data()), bufferSize - 1});
+    tmpBuffer = std::vector<int8_t>(bufferSize, 2);
+    size_t requestDataLen = bufferSize;
+    int32_t ret = hpaeRenderer->WriteDataFromRingBuffer(true, tmpBuffer.data(), requestDataLen);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(requestDataLen, bufferSize - 1);
+    EXPECT_THAT(std::vector<int8_t>(tmpBuffer.begin(), tmpBuffer.end() - 1), Each(Eq(1)));
+    EXPECT_EQ(tmpBuffer[bufferSize - 1], 0);
+}
+
+/**
+ * @tc.name  : Test OnStreamData.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_034
+ * @tc.desc  : Test OnStreamData.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_034, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(nullptr, unit);
+ 
+    AudioCallBackStreamInfo info = {
+        .deviceClass = "remote_offload",
+        .framePosition = 10000,
+    };
+   
+    unit->OnStreamData(info);
+    EXPECT_EQ(10000, unit->lastHdiFramePosition_);
+    EXPECT_EQ(10000, unit->lastFramePosition_);
+
+    unit->isCallbackMode_ = false;
+    info.needData = true;
+    info.requestDataLen = 0;
+    unit->OnStreamData(info);
+    EXPECT_EQ(OFFLOAD_DEFAULT, unit->offloadStatePolicy_);
+    EXPECT_EQ(INVALID, unit->state_);
+}
+
+/**
+ * @tc.name  : Test OnStreamDataPrimary.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_035
+ * @tc.desc  : Test OnStreamDataPrimary.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_035, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 1); // callback mode
+ 
+    AudioCallBackStreamInfo info = {
+        .needData = false
+    };
+
+    EXPECT_NE(unit->OnStreamData(info), SUCCESS); // writecallback nullptr
+
+    auto mockWriteCallback = std::make_shared<MockWriteCallback>();
+    unit->writeCallback_ = mockWriteCallback;
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // needData false, noneed callback
+
+    info.needData = true;
+    size_t framesize = 0;
+    EXPECT_CALL(*mockWriteCallback, GetAvailableSize(framesize))
+        .WillOnce(Return(0))
+        .WillOnce(Return(0));
+    EXPECT_CALL(*mockWriteCallback, OnWriteData(nullptr, 0))
+        .WillOnce(Return(0))
+        .WillOnce(Return(-1));
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // onwritedata success
+
+    EXPECT_NE(unit->OnStreamData(info), SUCCESS); // onwritedata error
 }
 }
 }

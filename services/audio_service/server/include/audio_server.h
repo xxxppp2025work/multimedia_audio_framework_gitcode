@@ -28,7 +28,9 @@
 
 #include "audio_manager_base.h"
 #include "audio_server_death_recipient.h"
+#ifdef SUPPORT_OLD_ENGINE
 #include "audio_server_dump.h"
+#endif
 #include "i_audio_server_hpae_dump.h"
 #include "audio_system_manager.h"
 #include "audio_inner_call.h"
@@ -107,7 +109,7 @@ public:
     int32_t UpdateActiveDevicesRoute(const std::vector<IntPair> &activeDevices,
         int32_t a2dpOffloadFlag, const std::string &deviceName) override;
     int32_t SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType) override;
-    int32_t UpdateDualToneState(bool enable, int32_t sessionId) override;
+    int32_t UpdateDualToneState(bool enable, int32_t sessionId, const std::string &dupSinkName) override;
     int32_t SetAudioMonoState(bool audioMono) override;
     int32_t SetAudioBalanceValue(float audioBalance) override;
     int32_t SuspendRenderSink(const std::string &sinkName) override;
@@ -262,7 +264,12 @@ public:
     int32_t UnregisterDataTransferMonitorParam(int32_t callbackId) override;
     void OnDataTransferStateChange(const int32_t &pid, const int32_t &callbackId,
         const AudioRendererDataTransferStateChangeInfo &info) override;
+    void OnMuteStateChange(const int32_t &pid, const int32_t &callbackId,
+        const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) override;
     int32_t SetBtHdiInvalidState() override;
+    int32_t SendInterruptEventToAudioServer(uint32_t sessionId,
+        const InterruptEventInternal &interruptEvent) override;
+    int32_t GetVolumeBySessionId(uint32_t sessionId, float &volume) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -356,6 +363,7 @@ private:
         const std::vector<std::string> &subKeys, std::vector<std::pair<std::string, std::string>> &result);
     int32_t ImproveAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, bool> &threads) override;
     int32_t RestoreAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, int32_t> &threads) override;
+    int32_t GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &privacyType, int32_t &ret) override;
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;
@@ -411,6 +419,8 @@ public:
     virtual ~DataTransferStateChangeCallbackInnerImpl() = default;
     void OnDataTransferStateChange(const int32_t &callbackId,
         const AudioRendererDataTransferStateChangeInfo &info) override;
+    void OnMuteStateChange(const int32_t &callbackId, const int32_t &uid,
+        const uint32_t &sessionId, const bool &isMuted) override {}
     void SetDataTransferMonitorParam(const DataTransferMonitorParam &param);
 private:
     void ReportEvent(const AudioRendererDataTransferStateChangeInfo &info);

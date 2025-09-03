@@ -18,6 +18,7 @@
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_system_manager.h"
+#include "audio_workgroup_callback_impl.h"
 
 using namespace testing::ext;
 
@@ -46,6 +47,7 @@ public:
 class DataTransferStateChangeCallbackTest : public AudioRendererDataTransferStateChangeCallback {
 public:
     void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) override {}
+    void OnMuteStateChange(const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) override {}
 };
 
 class SystemVolumeChangeCallbackTest : public SystemVolumeChangeCallback {
@@ -88,6 +90,80 @@ HWTEST(AudioSystemManagerUnitTest, GetMinVolume_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test GetDeviceMaxVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetDeviceMaxVolume_001
+ * @tc.desc  : Test GetDeviceMaxVolume interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetDeviceMaxVolume_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMaxVolume_001 start");
+    int32_t result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_ALL, DEVICE_TYPE_NONE);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMaxVolume_001 result1:%{public}d", result);
+    EXPECT_GT(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_ULTRASONIC, DEVICE_TYPE_NONE);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMaxVolume_001 result2:%{public}d", result);
+    EXPECT_GT(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_MUSIC, DEVICE_TYPE_SPEAKER);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMaxVolume_001 result3:%{public}d", result);
+    EXPECT_GT(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_MUSIC, DEVICE_TYPE_BLUETOOTH_A2DP);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMaxVolume_001 result4:%{public}d", result);
+    EXPECT_GT(result, TEST_RET_NUM);
+}
+
+/**
+ * @tc.name  : Test GetDeviceMaxVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetDeviceMaxVolume_002
+ * @tc.desc  : Test GetDeviceMaxVolume interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetDeviceMaxVolume_002, TestSize.Level1)
+{
+    int32_t result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_ALL, DEVICE_TYPE_SPEAKER);
+    EXPECT_NE(result, ERR_PERMISSION_DENIED);
+    result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_ULTRASONIC, DEVICE_TYPE_SPEAKER);
+    EXPECT_NE(result, ERR_PERMISSION_DENIED);
+}
+
+/**
+ * @tc.name  : Test GetDeviceMinVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetDeviceMinVolume_001
+ * @tc.desc  : Test GetDeviceMinVolume interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetDeviceMinVolume_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMinVolume_001 start");
+    int32_t result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_ALL, DEVICE_TYPE_NONE);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMinVolume_001 result1:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_ULTRASONIC, DEVICE_TYPE_NONE);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMinVolume_001 result2:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_MUSIC, DEVICE_TYPE_SPEAKER);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMinVolume_001 result3:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_MUSIC, DEVICE_TYPE_BLUETOOTH_A2DP);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMinVolume_001 result4:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+}
+
+/**
+ * @tc.name  : Test GetDeviceMinVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetDeviceMinVolume_002
+ * @tc.desc  : Test GetDeviceMinVolume interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetDeviceMinVolume_002, TestSize.Level1)
+{
+    int32_t result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_ALL, DEVICE_TYPE_NONE);
+    EXPECT_NE(result, ERR_PERMISSION_DENIED);
+    result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_ULTRASONIC, DEVICE_TYPE_NONE);
+    EXPECT_NE(result, ERR_PERMISSION_DENIED);
+}
+
+/**
  * @tc.name  : Test IsStreamMute API
  * @tc.type  : FUNC
  * @tc.number: IsStreamMute_001
@@ -107,6 +183,20 @@ HWTEST(AudioSystemManagerUnitTest, IsStreamMute_001, TestSize.Level1)
     result = AudioSystemManager::GetInstance()->IsStreamMute(STREAM_NOTIFICATION);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_001 result3:%{public}d", result);
     EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test IsStreamMute API
+ * @tc.type  : FUNC
+ * @tc.number: IsStreamMute_002
+ * @tc.desc  : Test IsStreamMute interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, IsStreamMute_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_002 start");
+    bool result = AudioSystemManager::GetInstance()->IsStreamMute(STREAM_ALL);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_002 result1:%{public}d", result);
+    EXPECT_EQ(result, true);
 }
 
 /**
@@ -1357,6 +1447,440 @@ HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_003, TestSize.Level1)
     EXPECT_EQ(manager.startGroupPermissionMap_[info.pid][info.groupId], info.startAllowed);
     // Check if the recorder is nullptr
     EXPECT_EQ(manager.GetRecorderByGrpId(info.groupId), nullptr);
+}
+
+/**
+ * @tc.name   : Test GetMaxVolumeByUsage API
+ * @tc.number : GetMaxVolumeByUsage_002
+ * @tc.desc   : Test GetMaxVolumeByUsage interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, GetMaxVolumeByUsage_002, TestSize.Level1)
+{
+    StreamUsage streamUsage = STREAM_USAGE_ULTRASONIC;
+    AudioSystemManager audioSystemManager;
+    EXPECT_NE(audioSystemManager.GetMaxVolumeByUsage(streamUsage), SUCCESS);
+}
+
+/**
+ * @tc.name   : Test GetMaxVolumeByUsage API
+ * @tc.number : GetMaxVolumeByUsage_003
+ * @tc.desc   : Test GetMaxVolumeByUsage interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, GetMaxVolumeByUsage_003, TestSize.Level4)
+{
+    StreamUsage streamUsage = static_cast<StreamUsage>(1000);
+    AudioSystemManager audioSystemManager;
+    EXPECT_EQ(audioSystemManager.GetMaxVolumeByUsage(streamUsage), ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name   : Test GetMaxVolumeByUsage API
+ * @tc.number : GetMinVolumeByUsage_002
+ * @tc.desc   : Test GetMaxVolumeByUsage interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, GetMinVolumeByUsage_002, TestSize.Level1)
+{
+    StreamUsage  streamUsage = STREAM_USAGE_ULTRASONIC;
+    AudioSystemManager audioSystemManager;
+    EXPECT_NE(audioSystemManager.GetMinVolumeByUsage(streamUsage), ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name   : Test GetMaxVolumeByUsage API
+ * @tc.number : GetMaxVolumeByUsage_003
+ * @tc.desc   : Test GetMaxVolumeByUsage interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, GetMinVolumeByUsage_003, TestSize.Level4)
+{
+    StreamUsage  streamUsage = static_cast<StreamUsage>(1000);
+    AudioSystemManager audioSystemManager;
+    EXPECT_EQ(audioSystemManager.GetMinVolumeByUsage(streamUsage), ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name   : Test IsStreamMuteByUsage API
+ * @tc.number : IsStreamMuteByUsage_002
+ * @tc.desc   : Test IsStreamMuteByUsage interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, IsStreamMuteByUsage_002, TestSize.Level1)
+{
+    StreamUsage  streamUsage = STREAM_USAGE_ULTRASONIC;
+    AudioSystemManager audioSystemManager;
+    bool isMute = 0;
+    EXPECT_NE(audioSystemManager.IsStreamMuteByUsage(streamUsage, isMute), ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name   : Test IsStreamMuteByUsage API
+ * @tc.number : IsStreamMuteByUsage_003
+ * @tc.desc   : Test IsStreamMuteByUsage interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, IsStreamMuteByUsage_003, TestSize.Level4)
+{
+    StreamUsage  streamUsage = static_cast<StreamUsage>(1000);
+    AudioSystemManager audioSystemManager;
+    bool isMute = 0;
+    EXPECT_EQ(audioSystemManager.IsStreamMuteByUsage(streamUsage, isMute), ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name   : Test GetStreamType API
+ * @tc.number : GetStreamType_001
+ * @tc.desc   : Test GetStreamType interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetStreamType_001, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    ContentType contentType = CONTENT_TYPE_MUSIC;
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    EXPECT_EQ(audioSystemManager.GetStreamType(contentType, streamUsage), STREAM_MUSIC);
+}
+
+/**
+ * @tc.name   : Test GetStreamType API
+ * @tc.number : GetStreamType_002
+ * @tc.desc   : Test GetStreamType interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetStreamType_002, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    ContentType contentType = CONTENT_TYPE_MUSIC;
+    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
+    EXPECT_EQ(audioSystemManager.GetStreamType(contentType, streamUsage), STREAM_MUSIC);
+}
+
+/**
+ * @tc.name   : Test GetStreamType API
+ * @tc.number : GetStreamType_003
+ * @tc.desc   : Test GetStreamType interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetStreamType_003, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    ContentType contentType = CONTENT_TYPE_MUSIC;
+    StreamUsage streamUsage = STREAM_USAGE_AUDIOBOOK;
+    EXPECT_EQ(audioSystemManager.GetStreamType(contentType, streamUsage), STREAM_MUSIC);
+}
+
+/**
+ * @tc.name   : Test GetAudioScene API
+ * @tc.number : GetAudioScene_001
+ * @tc.desc   : Test GetAudioScene interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetAudioScene_001, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    AudioSystemManager::GetInstance()->SetAudioScene(AUDIO_SCENE_DEFAULT);
+    int result = audioSystemManager.GetAudioScene();
+    EXPECT_EQ(result, AUDIO_SCENE_DEFAULT);
+}
+
+/**
+ * @tc.name   : Test GetAudioScene API
+ * @tc.number : GetAudioScene_002
+ * @tc.desc   : Test GetAudioScene interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetAudioScene_002, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    AudioSystemManager::GetInstance()->SetAudioScene(AUDIO_SCENE_VOICE_RINGING);
+    int result = audioSystemManager.GetAudioScene();
+    EXPECT_NE(result, AUDIO_SCENE_INVALID);
+}
+
+/**
+ * @tc.name   : Test IsDeviceActive API
+ * @tc.number : IsDeviceActive_001
+ * @tc.desc   : Test IsDeviceActive interface
+ */
+HWTEST(AudioSystemManagerUnitTest, IsDeviceActive_001, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    int result = audioSystemManager.IsDeviceActive(DeviceType::DEVICE_TYPE_INVALID);
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name   : Test IsDeviceActive API
+ * @tc.number : IsDeviceActive_002
+ * @tc.desc   : Test IsDeviceActive interface
+ */
+HWTEST(AudioSystemManagerUnitTest, IsDeviceActive_002, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    int result = audioSystemManager.IsDeviceActive(DeviceType::DEVICE_TYPE_MIC);
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name   : Test GetVolume API
+ * @tc.number : GetVolume_001
+ * @tc.desc   : Test GetVolume interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetVolume_001, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    AudioVolumeType volumeType = STREAM_MUSIC;
+    EXPECT_NE(audioSystemManager.GetVolume(volumeType), ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name   : Test GetVolume API
+ * @tc.number : GetVolume_002
+ * @tc.desc   : Test GetVolume interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetVolume_002, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    AudioVolumeType volumeType = STREAM_ULTRASONIC;
+    EXPECT_NE(audioSystemManager.GetVolume(volumeType), ERR_PERMISSION_DENIED);
+}
+
+/**
+ * @tc.name   : Test IsDeviceActive API
+ * @tc.number : IsDeviceActive_003
+ * @tc.desc   : Test IsDeviceActive interface
+ */
+HWTEST(AudioSystemManagerUnitTest, IsDeviceActive_003, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    int result = audioSystemManager.IsDeviceActive(DeviceType::DEVICE_TYPE_NONE);
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name   : Test GetVolume API
+ * @tc.number : GetVolume_003
+ * @tc.desc   : Test GetVolume interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetVolume_003, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    AudioVolumeType volumeType = STREAM_ALL;
+    EXPECT_NE(audioSystemManager.GetVolume(volumeType), ERR_PERMISSION_DENIED);
+}
+
+/**
+ * @tc.name  : Test GetPinValueForPeripherals API
+ * @tc.type  : FUNC
+ * @tc.number: GetPinValueForPeripherals_001
+ * @tc.desc  : Test GetPinValueForPeripherals interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetPinValueForPeripherals_001, TestSize.Level4)
+{
+    AudioPin pinValue = AudioSystemManager::GetInstance()->GetPinValueForPeripherals(DEVICE_TYPE_FILE_SINK,
+        OUTPUT_DEVICE, DM_DEVICE_TYPE_UWB);
+    EXPECT_EQ(pinValue, AUDIO_PIN_NONE);
+}
+
+/**
+ * @tc.name  : Test GetPinValueForPeripherals API
+ * @tc.type  : FUNC
+ * @tc.number: GetPinValueForPeripherals_002
+ * @tc.desc  : Test GetPinValueForPeripherals interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetPinValueForPeripherals_002, TestSize.Level4)
+{
+    AudioPin pinValue = AudioSystemManager::GetInstance()->GetPinValueForPeripherals(DEVICE_TYPE_ACCESSORY,
+        OUTPUT_DEVICE, DM_DEVICE_TYPE_UWB);
+    EXPECT_EQ(pinValue, AUDIO_PIN_NONE);
+}
+
+/**
+ * @tc.name  : Test GetTypeValueFromPin API
+ * @tc.type  : FUNC
+ * @tc.number: GetTypeValueFromPin_001
+ * @tc.desc  : Test GetTypeValueFromPin interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetTypeValueFromPin_001, TestSize.Level4)
+{
+    DeviceType deviceValue = AudioSystemManager::GetInstance()->GetTypeValueFromPin(AUDIO_PIN_OUT_HEADSET);
+    EXPECT_EQ(deviceValue, DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : Test GetTypeValueFromPin API
+ * @tc.type  : FUNC
+ * @tc.number: GetTypeValueFromPin_002
+ * @tc.desc  : Test GetTypeValueFromPin interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetTypeValueFromPin_002, TestSize.Level4)
+{
+    DeviceType deviceValue = AudioSystemManager::GetInstance()->GetTypeValueFromPin(static_cast<AudioPin>(1000));
+    EXPECT_EQ(deviceValue, DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name   : Test IsValidToStartGroup API
+ * @tc.number : IsValidToStartGroup_002
+ * @tc.desc   : Test IsValidToStartGroup interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, IsValidToStartGroup_002, TestSize.Level4)
+{
+    int workgroupId = 1;
+
+    AudioSystemManager audioSystemManager;
+    audioSystemManager.hasSystemPermission_ = false;
+    bool result = audioSystemManager.IsValidToStartGroup(workgroupId);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name   : Test OnWorkgroupChange API
+ * @tc.number : OnWorkgroupChange_004
+ * @tc.desc   : Test OnWorkgroupChange interface
+ */
+HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_004, TestSize.Level4)
+{
+    AudioWorkgroupCallbackImpl audioWorkgroupCallbackImpl;
+    AudioWorkgroupChangeInfoIpc info;
+    audioWorkgroupCallbackImpl.workgroupCb_ = nullptr;
+    EXPECT_EQ(audioWorkgroupCallbackImpl.OnWorkgroupChange(info), ERROR);
+}
+
+/**
+ * @tc.name   : Test RemoveWorkgroupChangeCallback API
+ * @tc.number : RemoveWorkgroupChangeCallback_001
+ * @tc.desc   : Test RemoveWorkgroupChangeCallback interface
+ */
+HWTEST(AudioSystemManagerUnitTest, RemoveWorkgroupChangeCallback_001, TestSize.Level4)
+{
+    AudioWorkgroupCallbackImpl audioWorkgroupCallbackImpl;
+    audioWorkgroupCallbackImpl.RemoveWorkgroupChangeCallback();
+    EXPECT_EQ(nullptr, audioWorkgroupCallbackImpl.workgroupCb_);
+}
+
+/**
+ * @tc.name   : Test SetVolumeWithDevice API
+ * @tc.number : SetVolumeWithDevice_002
+ * @tc.desc   : Test SetVolumeWithDevice interface
+ */
+HWTEST(AudioSystemManagerUnitTest, SetVolumeWithDevice_002, TestSize.Level4)
+{
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    AudioSystemManager audioSystemManager;
+    int32_t volumeLevel = 5;
+    EXPECT_EQ(audioSystemManager.SetVolumeWithDevice(STREAM_ULTRASONIC, volumeLevel, deviceType),
+        ERR_PERMISSION_DENIED);
+}
+
+/**
+ * @tc.name   : Test SetVolumeWithDevice API
+ * @tc.number : SetVolumeWithDevice_003
+ * @tc.desc   : Test SetVolumeWithDevice interface
+ */
+HWTEST(AudioSystemManagerUnitTest, SetVolumeWithDevice_003, TestSize.Level4)
+{
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    AudioSystemManager audioSystemManager;
+    int32_t volumeLevel = 5;
+    EXPECT_EQ(audioSystemManager.SetVolumeWithDevice(STREAM_INTERNAL_FORCE_STOP, volumeLevel, deviceType),
+        ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test GetPinValueForPeripherals API
+ * @tc.type  : FUNC
+ * @tc.number: GetPinValueForPeripherals_003
+ * @tc.desc  : Test GetPinValueForPeripherals interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetPinValueForPeripherals_003, TestSize.Level4)
+{
+    AudioPin pinValue = AudioSystemManager::GetInstance()->GetPinValueForPeripherals(DEVICE_TYPE_WIRED_HEADPHONES,
+        OUTPUT_DEVICE, DM_DEVICE_TYPE_UWB);
+    EXPECT_EQ(pinValue, AUDIO_PIN_OUT_HEADPHONE);
+}
+
+/**
+ * @tc.name   : Test StartGroup API
+ * @tc.number : StartGroup_002
+ * @tc.desc   : Test StartGroup interface
+ */
+HWTEST(AudioSystemManagerUnitTest, StartGroup_002, TestSize.Level4)
+{
+    AudioSystemManager manager;
+    bool needUpdatePrio = true;
+    int32_t testWorkgroupid = 1;
+    int32_t startTimeMs = 500;
+    int32_t endTimeMs = 1000;
+    std::unordered_map<int32_t, bool> threads = {
+        {101, true},
+        {102, true}
+    };
+    int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs, threads, needUpdatePrio);
+    EXPECT_EQ(result, AUDIO_ERR);
+}
+
+/**
+* @tc.name   : Test ConfigDistributedRoutingRole API
+* @tc.number : ConfigDistributedRoutingRoleTest_002
+* @tc.desc   : Test ConfigDistributedRoutingRole interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, ConfigDistributedRoutingRoleTest_002, TestSize.Level4)
+{
+    CastType castType = CAST_TYPE_ALL;
+    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();;
+    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
+    int32_t result = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDevDesc, castType);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test GetTypeValueFromPin API
+ * @tc.type  : FUNC
+ * @tc.number: GetTypeValueFromPin_003
+ * @tc.desc  : Test GetTypeValueFromPin interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetTypeValueFromPin_003, TestSize.Level4)
+{
+    DeviceType deviceValue = AudioSystemManager::GetInstance()->GetTypeValueFromPin(AUDIO_PIN_IN_UWB);
+    EXPECT_EQ(deviceValue, DEVICE_TYPE_ACCESSORY);
+}
+
+/**
+ * @tc.name   : Test StartGroup API
+ * @tc.number : StartGroup_003
+ * @tc.desc   : Test StartGroup interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, StartGroup_003, TestSize.Level4)
+{
+    AudioSystemManager manager;
+    bool needUpdatePrio = false;
+    int32_t testWorkgroupid = 1;
+    int32_t startTimeMs = 1000;
+    int32_t endTimeMs = 500;
+    std::unordered_map<int32_t, bool> threads = {
+        {101, true},
+        {102, true}
+    };
+    int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs, threads, needUpdatePrio);
+    EXPECT_EQ(result, AUDIO_ERR);
+}
+
+/**
+* @tc.name   : Test ConfigDistributedRoutingRole API
+* @tc.number : ConfigDistributedRoutingRoleTest_003
+* @tc.desc   : Test ConfigDistributedRoutingRole interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, ConfigDistributedRoutingRoleTest_003, TestSize.Level4)
+{
+    CastType castType = CAST_TYPE_ALL;
+    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();
+    constexpr size_t VALID_REMOTE_NETWORK_ID_LENGTH = 64;
+    constexpr char invalidLocalNetworkId[] = "123456";
+    audioDevDesc->networkId_ = invalidLocalNetworkId;
+    int32_t result = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDevDesc, castType);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+
+    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
+    audioDevDesc->networkId_.resize(VALID_REMOTE_NETWORK_ID_LENGTH);
+    result = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDevDesc, castType);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+
+    constexpr size_t INVALID_REMOTE_NETWORK_ID_LENGTH = 100;
+    audioDevDesc->networkId_.resize(INVALID_REMOTE_NETWORK_ID_LENGTH);
+    result = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDevDesc, castType);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
 }
 } // namespace AudioStandard
 } // namespace OHOS

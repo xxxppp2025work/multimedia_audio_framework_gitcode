@@ -18,18 +18,27 @@
 #include <any>
 #include "audio_module_info.h"
 #include "hpae_capturer_manager.h"
+#include "hpae_virtual_capturer_manager.h"
 #include "hpae_renderer_manager.h"
 #include "hpae_inner_capturer_manager.h"
 #include "hpae_msg_channel.h"
 #include "i_hpae_manager.h"
 #include "i_hpae_renderer_manager.h"
 #include "hpae_policy_manager.h"
+#include "high_resolution_timer.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
 class HpaeManager;
+
+struct PendingStateTransition {
+    uint32_t sessionId = 0;
+    HpaeSessionState state = HPAE_SESSION_INVALID;
+    IOperation operation = OPERATION_INVALID;
+    TimePoint time;
+};
 
 class HpaeManagerThread {
 public:
@@ -79,10 +88,10 @@ public:
     uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) override;
     uint32_t ReloadAudioPort(const AudioModuleInfo &audioModuleInfo) override;
     int32_t CloseAudioPort(int32_t audioHandleIndex) override;
-    int32_t GetSinkInfoByIdx(const int32_t &renderIdx, HpaeSinkInfo &sinkInfo, int32_t &result,
-        std::function<void()> callback) override;
-    int32_t GetSourceInfoByIdx(const int32_t &captureIdx, HpaeSourceInfo &sourceInfo, int32_t &result,
-        std::function<void()> callback) override;
+    int32_t GetSinkInfoByIdx(const int32_t &sinkIdx,
+        std::function<void(const HpaeSinkInfo &sinkInfo, int32_t result)> callback) override;
+    int32_t GetSourceInfoByIdx(const int32_t &sourceIdx,
+        std::function<void(const HpaeSourceInfo &sourceInfo, int32_t result)> callback) override;
 
     int32_t GetAllSinkInputs() override;
     int32_t GetAllSourceOutputs() override;
@@ -104,6 +113,7 @@ public:
     int32_t GetMsgCount();
 
     void Invoke(HpaeMsgCode cmdID, const std::any &args) override;
+    void InvokeSync(HpaeMsgCode cmdID, const std::any &args) override;
     // play and record stream interface
     int32_t CreateStream(const HpaeStreamInfo &streamInfo) override;
     int32_t DestroyStream(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
@@ -181,9 +191,19 @@ public:
     bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
+    void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) override;
+    void DeleteStreamVolumeToEffect(const std::string stringSessionID) override;
+    uint64_t ProcessPendingTransitionsAndGetNextDelay();
+    // interfaces for injector
+    void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) override;
+    void AddCaptureInjector(
+        const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) override;
+    void RemoveCaptureInjector(
+        const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) override;
+    int32_t PeekAudioData(
+        const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) override;
 private:
     int32_t CloseOutAudioPort(std::string sinkName);
-    void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo);
     int32_t CloseInAudioPort(std::string sourceName);
     template <typename... Args>
     void RegisterHandler(HpaeMsgCode cmdID, void (HpaeManager::*func)(Args...));
@@ -191,7 +211,6 @@ private:
         HpaeStreamClassType streamClassType, uint32_t sessionId, HpaeSessionState status, IOperation operation);
     void HandleReloadDeviceResult(std::string deviceName, int32_t result);
     void HandleInitDeviceResult(std::string deviceName, int32_t result);
-    void HandleDeInitDeviceResult(std::string deviceName, int32_t result);
     void HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> sinkInputNode, std::string sinkName);
     void HandleMoveAllSinkInputs(std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName,
         MoveSessionType moveType);
@@ -214,6 +233,7 @@ private:
     void CreateStreamForCapInner(const HpaeStreamInfo &streamInfo);
     int32_t CreateRendererManager(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex,
         bool isReload = false);
+    void UpdateStatus(const std::weak_ptr<IStreamStatusCallback> &callback, IOperation operation, uint32_t sessionId);
 
     std::shared_ptr<IHpaeRendererManager> GetRendererManagerById(uint32_t sessionId);
     std::shared_ptr<IHpaeCapturerManager> GetCapturerManagerById(uint32_t sessionId);
@@ -221,7 +241,7 @@ private:
     std::shared_ptr<IHpaeCapturerManager> GetCapturerManagerByName(const std::string &sourceName);
     void AddStreamToCollection(const HpaeStreamInfo &streamInfo, const std::string &name);
 
-    void MoveToPreferSink(const std::string& name, std::shared_ptr<AudioServiceHpaeCallback> serviceCallback);
+    void MoveToPreferSink(const std::string& name, std::shared_ptr<AudioServiceHpaeCallback> &serviceCallback);
     int32_t ReloadRenderManager(const AudioModuleInfo &audioModuleInfo, bool isReload = false);
     void DestroyCapture(uint32_t sessionId);
     void LoadEffectLive();
@@ -232,6 +252,12 @@ private:
     void AddPreferSinkForDefaultChange(bool isAdd, const std::string &sinkName);
     void OnCallbackOpenOrReloadFailed(bool isReload);
     bool ShouldNotSkipProcess(const HpaeStreamClassType &streamType, const uint32_t &sessionId);
+    bool CheckMoveSinkInput(uint32_t sinkInputId, const std::string &sinkName);
+    bool CheckMoveSourceOutput(uint32_t sourceOutputId, const std::string &sourceName);
+    void CreateCoreSourceManager();
+    void DequeuePendingTransition(uint32_t sessionId);
+    void EnqueuePendingTransition(uint32_t sessionId, HpaeSessionState state, IOperation operation);
+    bool IsValidUpdateStatus(IOperation operation, HpaeSessionState currentState);
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
@@ -251,9 +277,11 @@ private:
     std::string coreSink_ = "";
     std::unordered_map<std::string, uint32_t> sourceNameSourceIdMap_;
     std::unordered_map<uint32_t, std::string> sourceIdSourceNameMap_;
-    std::string defaultSource_ = "Built_in_mic";
+    std::string defaultSource_ = "";
+    std::string coreSource_ = "";
     std::atomic<int32_t> sinkSourceIndex_ = 0;
     std::atomic<bool> isInit_ = false;
+    std::list<PendingStateTransition> pendingTransitionsTracker_;
 
     HpaeNoLockQueue hpaeNoLockQueue_;
 

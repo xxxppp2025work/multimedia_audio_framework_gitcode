@@ -63,8 +63,9 @@ void HpaeSourceOutputNode::DoProcess()
         GetNodeInfo().sourceType != SOURCE_TYPE_REMOTE_CAST) {
         return;
     }
+    int32_t ret = ERROR;
     if (isMute_) {
-        int32_t ret = memset_s(sourceOutputData_.data(), sourceOutputData_.size(), 0, sourceOutputData_.size());
+        ret = memset_s(sourceOutputData_.data(), sourceOutputData_.size(), 0, sourceOutputData_.size());
         CHECK_AND_RETURN_LOG(ret == EOK, "memset_s failed with error:%{public}d", ret);
     } else {
         ConvertFromFloat(GetBitWidth(), GetChannelCount() * GetFrameLen(),
@@ -80,8 +81,12 @@ void HpaeSourceOutputNode::DoProcess()
         .outputData = (int8_t *)sourceOutputData_.data(),
         .requestDataLen = sourceOutputData_.size(),
     };
-    CHECK_AND_RETURN_LOG(readCallback_.lock(), "sessionId %{public}u, readCallback_ is nullptr", GetSessionId());
-    int32_t ret = readCallback_.lock()->OnStreamData(streamInfo_);
+    if (auto readCallback = readCallback_.lock()) {
+        ret = readCallback->OnStreamData(streamInfo_);
+    } else {
+        AUDIO_ERR_LOG("sessionId %{public}u, readCallback_ is nullptr", GetSessionId());
+        return;
+    }
     if (ret == ERR_WRITE_FAILED) {
         AUDIO_DEBUG_LOG("sessionId %{public}u, readCallback_ write read data overflow", GetSessionId());
         return;
@@ -179,7 +184,7 @@ void HpaeSourceOutputNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<H
 
 int32_t HpaeSourceOutputNode::SetState(HpaeSessionState captureState)
 {
-    AUDIO_INFO_LOG(" Capturer[%{public}s]->Session[%{public}u - %{public}d] state change:[%{public}s]-->[%{public}s]",
+    HILOG_COMM_INFO(" Capturer[%{public}s]->Session[%{public}u - %{public}d] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass().c_str(), GetSessionId(), GetStreamType(), ConvertSessionState2Str(state_).c_str(),
         ConvertSessionState2Str(captureState).c_str());
     state_ = captureState;

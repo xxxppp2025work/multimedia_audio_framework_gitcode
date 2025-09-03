@@ -40,10 +40,10 @@ public:
     uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) override;
     int32_t CloseAudioPort(int32_t audioHandleIndex) override;
     uint32_t ReloadAudioPort(const AudioModuleInfo &audioModuleInfo) override;
-    int32_t GetSinkInfoByIdx(const int32_t &renderIdx, HpaeSinkInfo &sinkInfo, int32_t &result,
-        std::function<void()> callback) override;
-    int32_t GetSourceInfoByIdx(const int32_t &captureIdx, HpaeSourceInfo &sourceInfo, int32_t &result,
-        std::function<void()> callback) override;
+    int32_t GetSinkInfoByIdx(const int32_t &sinkIdx,
+        std::function<void(const HpaeSinkInfo &sinkInfo, int32_t result)> callback) override;
+    int32_t GetSourceInfoByIdx(const int32_t &sourceIdx,
+        std::function<void(const HpaeSourceInfo &sourceInfo, int32_t result)> callback) override;
 
     int32_t GetAllSinkInputs() override;
     int32_t GetAllSourceOutputs() override;
@@ -137,6 +137,17 @@ public:
     bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
+    void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) override;
+    void DeleteStreamVolumeToEffect(const std::string stringSessionID) override;
+
+    // interfaces for injector
+    void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) override;
+    void AddCaptureInjector(
+        const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) override;
+    void RemoveCaptureInjector(
+        const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) override;
+    int32_t PeekAudioData(
+        const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) override;
 private:
     std::shared_ptr<HpaeManager> manager_;
 };

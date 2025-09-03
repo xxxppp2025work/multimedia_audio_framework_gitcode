@@ -15,8 +15,8 @@
   global:
     *GetInstance*;
     *GetRecorderManager*;
-    *EnableDualToneList*;
-    *DisableDualToneList*;
+    *EnableDualStream*;
+    *DisableDualStream*;
     *GetAndSaveClientType*;
     *IsExceedingMaxStreamCntPerUid*;
     *ConfigPolicyProvider*;
@@ -79,6 +79,12 @@
     *RestoreAudioWorkgroupPrio*;
     *SaveRenderWhitelist*;
     *InRenderWhitelist*;
+    *HpaeCapturerStreamImpl*;
+    *UpdateSwitchStreamMap*;
+    *UpdateBackgroundCaptureMap*;
+    *SendInterruptEventToAudioServer*;
+    *SendInterruptEventToAudioService*;
+    *GetPrivacyType*;
   local:
     *;
 };

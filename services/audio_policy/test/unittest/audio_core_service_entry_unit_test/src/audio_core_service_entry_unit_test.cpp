@@ -197,8 +197,9 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_008, TestSize.Level1)
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     uint32_t audioFlag = 0;
     uint32_t sessionId = 0;
+    std::string networkId = "";
 
-    auto ret = eventEntry->CreateRendererClient(streamDesc, audioFlag, sessionId);
+    auto ret = eventEntry->CreateRendererClient(streamDesc, audioFlag, sessionId, networkId);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -275,11 +276,11 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_012, TestSize.Level1)
 
     uint32_t sessionId = 0;
     AudioDeviceDescriptor deviceInfo;
-
-    auto ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo);
+    AudioStreamInfo info;
+    auto ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, true);
+    ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, true);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -602,23 +603,6 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_026, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreService_027
- * @tc.desc  : Test AudioCoreService::EventEntry::RegisteredTrackerClientDied()
- */
-HWTEST(AudioCoreServiceEntryTest, AudioCoreService_027, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
-    EXPECT_NE(eventEntry, nullptr);
-
-    pid_t uid = 0;
-    pid_t pid = 0;
-    eventEntry->RegisteredTrackerClientDied(uid, pid);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreService_028
  * @tc.desc  : Test AudioCoreService::EventEntry::ConnectServiceAdapter()
  */
@@ -860,6 +844,86 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_039, TestSize.Level1)
     DeviceType type = DEVICE_TYPE_INVALID;
     auto ret = eventEntry->GetSessionDefaultOutputDevice(0, type);
     EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreService_040
+ * @tc.desc  : Test AudioCoreService::HandlePlaybackStreamInA2dp
+ */
+HWTEST(AudioCoreServiceEntryTest, AudioCoreService_040, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
+
+    audioCoreService->HandlePlaybackStreamInA2dp(audioStreamDescriptor, false);
+    std::shared_ptr<AudioDeviceDescriptor> temp = audioStreamDescriptor->newDeviceDescs_.front();
+    EXPECT_NE(temp, nullptr);
+    EXPECT_NE(temp->a2dpOffloadFlag_, A2DP_OFFLOAD);
+}
+
+/**
+ * @tc.name  : Test FetchOutputDeviceAndRoute.
+ * @tc.number: FetchOutputDeviceAndRoute_041
+ * @tc.desc  : Test AudioCoreService::EventEntry::FetchOutputDeviceAndRoute
+ */
+HWTEST(AudioCoreServiceEntryTest, FetchOutputDeviceAndRoute_041, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    EXPECT_NE(eventEntry, nullptr);
+
+    std::string caller;
+    AudioStreamDeviceChangeReasonExt reason;
+
+    auto ret =  eventEntry->FetchOutputDeviceAndRoute(caller, reason);
+    EXPECT_NE(ret, ERR_UNKNOWN);
+}
+
+/**
+ * @tc.name  : Test UpdateSessionOperation.
+ * @tc.number: UpdateSessionOperation_042
+ * @tc.desc  : Test AudioCoreService::EventEntry::UpdateSessionOperation
+ */
+HWTEST(AudioCoreServiceEntryTest, UpdateSessionOperation_042, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    EXPECT_NE(eventEntry, nullptr);
+
+    uint32_t sessionId = 0;
+    SessionOperation operation = SessionOperation::SESSION_OPERATION_START;
+    SessionOperationMsg opMsg = SESSION_OP_MSG_REMOVE_PIPE;
+
+    auto ret = eventEntry->UpdateSessionOperation(sessionId, operation, opMsg);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCoreServUpdateSessionOperationice.
+ * @tc.number: AudioCoreService_043
+ * @tc.desc  : Test AudioCoreService::EventEntry::UpdateSessionOperation
+ */
+HWTEST(AudioCoreServiceEntryTest, UpdateSessionOperation_043, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    EXPECT_NE(eventEntry, nullptr);
+
+    uint32_t sessionId = 0;
+    SessionOperation operation = SessionOperation::SESSION_OPERATION_START;
+    SessionOperationMsg opMsg = (SessionOperationMsg)3;
+
+    auto ret = eventEntry->UpdateSessionOperation(sessionId, operation, opMsg);
+    EXPECT_NE(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

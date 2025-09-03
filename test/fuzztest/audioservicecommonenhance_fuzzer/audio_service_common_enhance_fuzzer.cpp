@@ -37,6 +37,7 @@ const uint8_t BUFFER_CONSTANT = 1;
 const uint32_t FRAMESIZE = 5;
 const uint32_t FRAMESIZE_NEW = 1;
 const size_t SIZE_FLOAT = 5;
+const uint32_t CHANNEL_COUNT = 2;
 const float FLOAT_BUFFER = 5.0f;
 constexpr int32_t AUDIO_SAMPLE_FORMAT_8BIT = 0;
 constexpr int32_t AUDIO_SAMPLE_FORMAT_16BIT = 1;
@@ -47,6 +48,8 @@ static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
+const int32_t TEST_MAX_REQUEST = 7680;
+const int32_t NUM_10 = 10;
 
 /*
 * describe: get data from outside untrusted data(RAW_DATA) which size is according to sizeof(T)
@@ -81,6 +84,17 @@ uint32_t GetArrLength(T& arr)
 void AudioCommonConverterFuzzTest()
 {
     BufferBaseInfo srcBuffer;
+    std::unique_ptr<int32_t[]> buffer = std::make_unique<int32_t[]>(FRAMESIZE);
+    for (size_t i = 0; i < FRAMESIZE; ++i) {
+        buffer[i] = static_cast<int32_t>(i);
+    }
+    srcBuffer.buffer = reinterpret_cast<uint8_t *>(buffer.get());
+    srcBuffer.samplePerFrame = 1;
+    srcBuffer.channelCount = CHANNEL_COUNT;
+    srcBuffer.volumeBg = 0.0f;
+    srcBuffer.volumeEd = 1.0f;
+    srcBuffer.bufLength = FRAMESIZE;
+    srcBuffer.format = AUDIO_SAMPLE_FORMAT_8BIT;
     srcBuffer.frameSize = FRAMESIZE;
     size_t floatBufferSize = SIZE_FLOAT;
     std::vector<float> floatBuffer(floatBufferSize, FLOAT_BUFFER);
@@ -88,6 +102,10 @@ void AudioCommonConverterFuzzTest()
     AudioCommonConverter::ConvertFloatToFloatWithVolume(srcBuffer, floatBuffer);
 
     BufferBaseInfo srcBufferTo;
+    srcBufferTo.buffer = reinterpret_cast<uint8_t *>(buffer.get());
+    srcBufferTo.channelCount = CHANNEL_COUNT;
+    srcBufferTo.volumeBg = 0.0f;
+    srcBufferTo.volumeEd = 1.0f;
     srcBufferTo.frameSize = FRAMESIZE_NEW;
     std::vector<char> dstBuffer32Bit{'0', '0', '0', '0'};
     std::vector<char> dstBuffer16Bit{'0', '0'};
@@ -111,13 +129,15 @@ void AudioDownMixStereoFuzzTest()
     std::shared_ptr<AudioDownMixStereo> audioDownMixStereo = std::make_shared<AudioDownMixStereo>();
 
     AudioChannelLayout mode = GetData<AudioChannelLayout>();
-    int32_t channels = GetData<int32_t>();
+    int32_t channels = (GetData<int32_t>() % NUM_10) + 1;
     audioDownMixStereo->InitMixer(mode, channels);
 
-    int32_t frameLength = GetData<int32_t>();
-    float *input = GetData<float*>();
-    float *output = GetData<float*>();
-    audioDownMixStereo->Apply(frameLength, input, output);
+    int32_t frameLen = TEST_MAX_REQUEST / SAMPLE_F32LE;
+    std::vector<float> inBufferVector(frameLen, 0);
+    std::vector<float> outBufferVector(frameLen, 0);
+    float *input = inBufferVector.data();
+    float *output = outBufferVector.data();
+    audioDownMixStereo->Apply(NUM_10, input, output);
 }
 
 void AudioLogUtilsFuzzTest()

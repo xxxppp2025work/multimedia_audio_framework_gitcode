@@ -85,7 +85,8 @@ enum InterruptHint {
     INTERRUPT_HINT_DUCK,
     INTERRUPT_HINT_UNDUCK,
     INTERRUPT_HINT_MUTE,
-    INTERRUPT_HINT_UNMUTE
+    INTERRUPT_HINT_UNMUTE,
+    INTERRUPT_HINT_EXIT_STANDALONE
 };
 
 enum InterruptForceType {
@@ -115,7 +116,7 @@ struct InterruptEvent : public Parcelable {
 
     static InterruptEvent *Unmarshalling(Parcel &parcel)
     {
-        auto info = new InterruptEvent();
+        auto info = new(std::nothrow) InterruptEvent();
         if (info == nullptr) {
             return nullptr;
         }
@@ -129,16 +130,16 @@ struct InterruptEvent : public Parcelable {
     /**
      * Interrupt event type, begin or end
      */
-    InterruptType eventType;
+    InterruptType eventType = INTERRUPT_TYPE_BEGIN;
     /**
      * Interrupt force type, force or share
      */
-    InterruptForceType forceType;
+    InterruptForceType forceType = INTERRUPT_FORCE;
     /**
      * Interrupt hint type. In force type, the audio state already changed,
      * but in share mode, only provide a hint for application to decide.
      */
-    InterruptHint hintType;
+    InterruptHint hintType = INTERRUPT_HINT_NONE;
     /**
      * Should callback to app. Default true;
      * If false, interruptEvent should not callback to app.
@@ -148,11 +149,12 @@ struct InterruptEvent : public Parcelable {
 
 // Used internally only by AudioFramework
 struct InterruptEventInternal : public Parcelable {
-    InterruptType eventType;
-    InterruptForceType forceType;
-    InterruptHint hintType;
-    float duckVolume;
+    InterruptType eventType = INTERRUPT_TYPE_BEGIN;
+    InterruptForceType forceType = INTERRUPT_FORCE;
+    InterruptHint hintType = INTERRUPT_HINT_NONE;
+    float duckVolume = 1.0f;
     bool callbackToApp = true;
+    int64_t eventTimestamp = 0;
 
     InterruptEventInternal() = default;
 
@@ -163,6 +165,7 @@ struct InterruptEventInternal : public Parcelable {
         forceType = forcetype;
         hintType = hinttype;
         duckVolume = duckvolume;
+        eventTimestamp = 0;
     }
 
     bool Marshalling(Parcel &parcel) const override
@@ -171,21 +174,23 @@ struct InterruptEventInternal : public Parcelable {
             && parcel.WriteInt32(static_cast<int32_t>(forceType))
             && parcel.WriteInt32(static_cast<int32_t>(hintType))
             && parcel.WriteFloat(duckVolume)
-            && parcel.WriteBool(callbackToApp);
+            && parcel.WriteBool(callbackToApp)
+            && parcel.WriteInt64(eventTimestamp);
     }
 
     static InterruptEventInternal *Unmarshalling(Parcel &parcel)
     {
-        auto interupt = new InterruptEventInternal();
-        if (interupt == nullptr) {
+        auto interrupt = new(std::nothrow) InterruptEventInternal();
+        if (interrupt == nullptr) {
             return nullptr;
         }
-        interupt->eventType = static_cast<InterruptType>(parcel.ReadInt32());
-        interupt->forceType = static_cast<InterruptForceType>(parcel.ReadInt32());
-        interupt->hintType = static_cast<InterruptHint>(parcel.ReadInt32());
-        interupt->duckVolume = parcel.ReadFloat();
-        interupt->callbackToApp = parcel.ReadBool();
-        return interupt;
+        interrupt->eventType = static_cast<InterruptType>(parcel.ReadInt32());
+        interrupt->forceType = static_cast<InterruptForceType>(parcel.ReadInt32());
+        interrupt->hintType = static_cast<InterruptHint>(parcel.ReadInt32());
+        interrupt->duckVolume = parcel.ReadFloat();
+        interrupt->callbackToApp = parcel.ReadBool();
+        interrupt->eventTimestamp = parcel.ReadInt64();
+        return interrupt;
     }
 };
 
@@ -390,7 +395,7 @@ public:
 
     static AudioInterrupt *Unmarshalling(Parcel &parcel)
     {
-        auto interrupt = new AudioInterrupt();
+        auto interrupt = new(std::nothrow) AudioInterrupt();
         if (interrupt == nullptr) {
             return nullptr;
         }

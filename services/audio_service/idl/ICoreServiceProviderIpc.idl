@@ -17,7 +17,9 @@ package OHOS.AudioStandard;
 
 import AudioServiceTypes;
 
+sequenceable audio_stream_info..OHOS.AudioStandard.AudioStreamInfo;
 sequenceable audio_device_descriptor..OHOS.AudioStandard.AudioDeviceDescriptor;
+sequenceable audio_info..OHOS.AudioStandard.AudioProcessConfig;
 interface ICoreServiceProviderIpc {
     [ipccode 0] void UpdateSessionOperation(
         [in] unsigned int sessionId,
@@ -27,14 +29,19 @@ interface ICoreServiceProviderIpc {
         [in] int defaultOutputDevice, /* DeviceType */
         [in] unsigned int sessionID,
         [in] int streamUsage, /* StreamUsage */
-        [in] boolean isRunning);
+        [in] boolean isRunning,
+        [in] boolean skipForce);
     void GetAdapterNameBySessionId([in] unsigned int sessionID, [out] String name);
     void GetProcessDeviceInfoBySessionId(
         [in] unsigned int sessionID,
         [out] AudioDeviceDescriptor deviceInfo,
+        [out] AudioStreamInfo streamInfo,
         [in] boolean isReloadProcess);
     void GenerateSessionId([out] unsigned int sessionId);
     void ReloadCaptureSession(
         [in] unsigned int sessionId,
         [in] unsigned int operation /* SessionOperation */);
+    void SetWakeUpAudioCapturerFromAudioServer(
+        [in] AudioProcessConfig config,
+        [out] int ret);
 }

@@ -71,6 +71,7 @@ public:
     void OnDeviceConfigurationChanged(DeviceType deviceType,
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo);
+    std::shared_ptr<AudioDeviceDescriptor> GetDeviceByStatusInfo(const DStatusInfo &statusInfo);
     void OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop = false);
     int32_t OnServiceConnected(AudioServiceIndex serviceIndex);
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
@@ -153,6 +154,7 @@ private:
 
     void HandleOfflineDistributedDevice();
     DeviceType GetDeviceTypeFromPin(AudioPin pin);
+    string GetModuleNameByType(ClassType type);
     bool NoNeedChangeUsbDevice(const string &address);
     void WriteAllDeviceSysEvents(
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);

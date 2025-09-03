@@ -46,6 +46,8 @@ using namespace std;
 constexpr unsigned int GET_BUNDLE_INFO_TIME_OUT_SECONDS = 10;
 constexpr unsigned int XCOLLIE_TIME_OUT_SECONDS = 10;
 constexpr unsigned int MS_PER_SECOND = 1000;
+constexpr unsigned int AUDIO_DEADLINE_PARAM_MIN = 10;
+constexpr unsigned int AUDIO_DEADLINE_PARAM_MAX = 50;
 constexpr size_t VALID_REMOTE_NETWORK_ID_LENGTH = 64;
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::streamTypeMap_
     = AudioSystemManager::CreateStreamMap();
@@ -300,8 +302,8 @@ std::string AudioSystemManager::GetSelfBundleName(int32_t uid)
     sptr<AppExecFwk::IBundleMgr> iBundleMgr = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     CHECK_AND_RETURN_RET_LOG(iBundleMgr != nullptr, bundleName, "bundlemgr interface is null");
 
-    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetSelfBundleName");
-    iBundleMgr->GetNameForUid(uid, bundleName);
+    WatchTimeout reguard("bundleMgrProxy->GetBundleNameForUid:GetSelfBundleName");
+    iBundleMgr->GetBundleNameForUid(uid, bundleName);
     reguard.CheckCurrTimeout();
     return bundleName;
 }
@@ -568,6 +570,13 @@ int32_t AudioSystemManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppVolumeMuted: No system permission");
     return AudioPolicyManager::GetInstance().SetAppVolumeMuted(appUid, muted, volumeFlag);
 }
+
+int32_t AudioSystemManager::SetAppRingMuted(int32_t appUid, bool muted)
+{
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppRingMuted: No system permission");
+    return AudioPolicyManager::GetInstance().SetAppRingMuted(appUid, muted);
+}
 // LCOV_EXCL_STOP
 
 int32_t AudioSystemManager::UnsetSelfAppVolumeCallback(
@@ -622,7 +631,7 @@ int32_t AudioSystemManager::SetActiveVolumeTypeCallback(
     return AudioPolicyManager::GetInstance().SetActiveVolumeTypeCallback(callback);
 }
 
-int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel) const
+int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel, int32_t uid) const
 {
     AUDIO_INFO_LOG("SetSystemVolume: volumeType[%{public}d], volumeLevel[%{public}d]", volumeType, volumeLevel);
 
@@ -650,7 +659,7 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
     }
 
     /* Call Audio Policy SetSystemVolumeLevel */
-    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, true);
+    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, uid == 0, 0, uid);
 }
 
 int32_t AudioSystemManager::SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
@@ -686,7 +695,7 @@ int32_t AudioSystemManager::SetVolumeWithDevice(AudioVolumeType volumeType, int3
     return AudioPolicyManager::GetInstance().SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType);
 }
 
-int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
+int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType, int32_t uid) const
 {
     switch (volumeType) {
         case STREAM_MUSIC:
@@ -711,7 +720,7 @@ int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
             return ERR_NOT_SUPPORTED;
     }
 
-    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(volumeType);
+    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(volumeType, uid);
 }
 
 int32_t AudioSystemManager::SetLowPowerVolume(int32_t streamId, float volume) const
@@ -761,6 +770,36 @@ int32_t AudioSystemManager::GetMinVolume(AudioVolumeType volumeType)
     }
 
     return AudioPolicyManager::GetInstance().GetMinVolumeLevel(volumeType);
+}
+
+int32_t AudioSystemManager::GetDeviceMaxVolume(AudioVolumeType volumeType, DeviceType deviceType)
+{
+    if (volumeType == STREAM_ALL) {
+        bool ret1 = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret1, ERR_PERMISSION_DENIED, "No system permission");
+    }
+
+    if (volumeType == STREAM_ULTRASONIC) {
+        bool ret2 = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret2, ERR_PERMISSION_DENIED, "STREAM_ULTRASONIC No system permission");
+    }
+
+    return AudioPolicyManager::GetInstance().GetMaxVolumeLevel(volumeType, deviceType);
+}
+
+int32_t AudioSystemManager::GetDeviceMinVolume(AudioVolumeType volumeType, DeviceType deviceType)
+{
+    if (volumeType == STREAM_ALL) {
+        bool ret1 = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret1, ERR_PERMISSION_DENIED, "No system permission");
+    }
+
+    if (volumeType == STREAM_ULTRASONIC) {
+        bool ret2 = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret2, ERR_PERMISSION_DENIED, "STREAM_ULTRASONIC No system permission");
+    }
+
+    return AudioPolicyManager::GetInstance().GetMinVolumeLevel(volumeType, deviceType);
 }
 
 int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType) const
@@ -993,7 +1032,8 @@ std::string AudioSystemManager::GetSelectedDeviceInfo(int32_t uid, int32_t pid, 
 }
 
 int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
+    const int32_t audioDeviceSelectMode) const
 {
     // basic check
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr && audioDeviceDescriptors.size() != 0,
@@ -1004,7 +1044,7 @@ int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         audioDeviceDescriptors[0] != nullptr, ERR_INVALID_OPERATION, "device error");
     audioRendererFilter->streamType = AudioSystemManager::GetStreamType(audioRendererFilter->rendererInfo.contentType,
         audioRendererFilter->rendererInfo.streamUsage);
-    // operation chack
+    // operation check
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE,
         ERR_INVALID_OPERATION, "not an output device.");
 
@@ -1014,11 +1054,16 @@ int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter->uid >= 0 || (audioRendererFilter->uid == -1),
         ERR_INVALID_PARAM, "invalid uid.");
 
-    AUDIO_DEBUG_LOG("[%{public}d] SelectOutputDevice: uid<%{public}d> streamType<%{public}d> device<name:%{public}s>",
-        getpid(), audioRendererFilter->uid, static_cast<int32_t>(audioRendererFilter->streamType),
-        (audioDeviceDescriptors[0]->networkId_.c_str()));
+    CHECK_AND_RETURN_RET_LOG(audioDeviceSelectMode == 0 || audioDeviceSelectMode == 1,
+        ERR_INVALID_PARAM, "invalid audioDeviceSelectMode.");
 
-    return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
+    AUDIO_DEBUG_LOG("[%{public}d] SelectOutputDevice: uid<%{public}d> streamType<%{public}d> device<name:%{public}s> " \
+        " audioDeviceSelectMode<%{public}d>", getpid(), audioRendererFilter->uid,
+        static_cast<int32_t>(audioRendererFilter->streamType), (audioDeviceDescriptors[0]->networkId_.c_str()),
+        audioDeviceSelectMode);
+
+    return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors,
+        audioDeviceSelectMode);
 }
 
 int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
@@ -1291,6 +1336,28 @@ int32_t AudioSystemManager::ActivateAudioInterrupt(AudioInterrupt &audioInterrup
 {
     AUDIO_DEBUG_LOG("stub implementation");
     return AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
+}
+
+int32_t AudioSystemManager::SetAppConcurrencyMode(const int32_t appUid, const int32_t mode)
+{
+    bool ret = PermissionUtil::VerifyIsSystemApp();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED,
+        "SetAppConcurrencyMode: No system permission");
+    ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
+        "SetAppConcurrencyMode: No system permission");
+    return AudioPolicyManager::GetInstance().SetAppConcurrencyMode(appUid, mode);
+}
+
+int32_t AudioSystemManager::SetAppSilentOnDisplay(const int32_t displayId)
+{
+    bool ret = PermissionUtil::VerifyIsSystemApp();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED,
+        "SetAppSilentOnDisplay: No system permission");
+    ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
+        "SetAppSilentOnDisplay: No system permission");
+    return AudioPolicyManager::GetInstance().SetAppSilentOnDisplay(displayId);
 }
 
 int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const
@@ -1623,6 +1690,7 @@ AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRo
             pin = AUDIO_PIN_IN_MIC;
             break;
         case OHOS::AudioStandard::DEVICE_TYPE_WIRED_HEADSET:
+        case OHOS::AudioStandard::DEVICE_TYPE_WIRED_HEADPHONES:
         case OHOS::AudioStandard::DEVICE_TYPE_DP:
         case OHOS::AudioStandard::DEVICE_TYPE_USB_HEADSET:
         case OHOS::AudioStandard::DEVICE_TYPE_HDMI:
@@ -1663,6 +1731,9 @@ AudioPin AudioSystemManager::GetPinValueForPeripherals(DeviceType deviceType, De
             } else {
                 pin = AUDIO_PIN_OUT_HEADSET;
             }
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_WIRED_HEADPHONES:
+            pin = AUDIO_PIN_OUT_HEADPHONE;
             break;
         case OHOS::AudioStandard::DEVICE_TYPE_DP:
             pin = AUDIO_PIN_OUT_DP;
@@ -2008,48 +2079,136 @@ int32_t AudioSystemManager::NotifyProcessBackgroundState(const int32_t uid, cons
 
 int32_t AudioSystemManager::GetMaxVolumeByUsage(StreamUsage streamUsage)
 {
-    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
-        ERR_INVALID_PARAM, "Invalid streamUsage");
-
-    if (streamUsage == STREAM_USAGE_ULTRASONIC) {
-        bool ret = PermissionUtil::VerifySelfPermission();
-        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "STREAM_USAGE_ULTRASONIC No system permission");
+    AUDIO_INFO_LOG("GetMaxVolumeByUsage for streamUsage [%{public}d]", streamUsage);
+    switch (streamUsage) {
+        case STREAM_USAGE_UNKNOWN:
+        case STREAM_USAGE_MUSIC:
+        case STREAM_USAGE_VOICE_COMMUNICATION:
+        case STREAM_USAGE_VOICE_ASSISTANT:
+        case STREAM_USAGE_ALARM:
+        case STREAM_USAGE_VOICE_MESSAGE:
+        case STREAM_USAGE_RINGTONE:
+        case STREAM_USAGE_NOTIFICATION:
+        case STREAM_USAGE_ACCESSIBILITY:
+        case STREAM_USAGE_MOVIE:
+        case STREAM_USAGE_GAME:
+        case STREAM_USAGE_AUDIOBOOK:
+        case STREAM_USAGE_NAVIGATION:
+        case STREAM_USAGE_VIDEO_COMMUNICATION:
+            break;
+        case STREAM_USAGE_SYSTEM:
+        case STREAM_USAGE_DTMF:
+        case STREAM_USAGE_ENFORCED_TONE:
+        case STREAM_USAGE_ULTRASONIC: {
+            bool ret = PermissionUtil::VerifySelfPermission();
+            CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
+            break;
+        }
+        default:
+            AUDIO_ERR_LOG("streamUsage=%{public}d not supported", streamUsage);
+            return ERR_NOT_SUPPORTED;
     }
     return AudioPolicyManager::GetInstance().GetMaxVolumeLevelByUsage(streamUsage);
 }
 
 int32_t AudioSystemManager::GetMinVolumeByUsage(StreamUsage streamUsage)
 {
-    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
-        ERR_INVALID_PARAM, "Invalid streamUsage");
-
-    if (streamUsage == STREAM_USAGE_ULTRASONIC) {
-        bool ret = PermissionUtil::VerifySelfPermission();
-        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "STREAM_USAGE_ULTRASONIC No system permission");
+    AUDIO_INFO_LOG("GetMinVolumeByUsage for streamUsage [%{public}d]", streamUsage);
+    switch (streamUsage) {
+        case STREAM_USAGE_UNKNOWN:
+        case STREAM_USAGE_MUSIC:
+        case STREAM_USAGE_VOICE_COMMUNICATION:
+        case STREAM_USAGE_VOICE_ASSISTANT:
+        case STREAM_USAGE_ALARM:
+        case STREAM_USAGE_VOICE_MESSAGE:
+        case STREAM_USAGE_RINGTONE:
+        case STREAM_USAGE_NOTIFICATION:
+        case STREAM_USAGE_ACCESSIBILITY:
+        case STREAM_USAGE_MOVIE:
+        case STREAM_USAGE_GAME:
+        case STREAM_USAGE_AUDIOBOOK:
+        case STREAM_USAGE_NAVIGATION:
+        case STREAM_USAGE_VIDEO_COMMUNICATION:
+            break;
+        case STREAM_USAGE_SYSTEM:
+        case STREAM_USAGE_DTMF:
+        case STREAM_USAGE_ENFORCED_TONE:
+        case STREAM_USAGE_ULTRASONIC: {
+            bool ret = PermissionUtil::VerifySelfPermission();
+            CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
+            break;
+        }
+        default:
+            AUDIO_ERR_LOG("streamUsage=%{public}d not supported", streamUsage);
+            return ERR_NOT_SUPPORTED;
     }
     return AudioPolicyManager::GetInstance().GetMinVolumeLevelByUsage(streamUsage);
 }
 
 int32_t AudioSystemManager::GetVolumeByUsage(StreamUsage streamUsage)
 {
-    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
-        ERR_INVALID_PARAM, "Invalid streamUsage");
-
-    if (streamUsage == STREAM_USAGE_ULTRASONIC) {
-        bool ret = PermissionUtil::VerifySelfPermission();
-        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "STREAM_USAGE_ULTRASONIC No system permission");
+    AUDIO_INFO_LOG("GetVolumeByUsage for streamUsage [%{public}d]", streamUsage);
+    switch (streamUsage) {
+        case STREAM_USAGE_UNKNOWN:
+        case STREAM_USAGE_MUSIC:
+        case STREAM_USAGE_VOICE_COMMUNICATION:
+        case STREAM_USAGE_VOICE_ASSISTANT:
+        case STREAM_USAGE_ALARM:
+        case STREAM_USAGE_VOICE_MESSAGE:
+        case STREAM_USAGE_RINGTONE:
+        case STREAM_USAGE_NOTIFICATION:
+        case STREAM_USAGE_ACCESSIBILITY:
+        case STREAM_USAGE_MOVIE:
+        case STREAM_USAGE_GAME:
+        case STREAM_USAGE_AUDIOBOOK:
+        case STREAM_USAGE_NAVIGATION:
+        case STREAM_USAGE_VIDEO_COMMUNICATION:
+            break;
+        case STREAM_USAGE_SYSTEM:
+        case STREAM_USAGE_DTMF:
+        case STREAM_USAGE_ENFORCED_TONE:
+        case STREAM_USAGE_ULTRASONIC: {
+            bool ret = PermissionUtil::VerifySelfPermission();
+            CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
+            break;
+        }
+        default:
+            AUDIO_ERR_LOG("streamUsage=%{public}d not supported", streamUsage);
+            return ERR_NOT_SUPPORTED;
     }
     return AudioPolicyManager::GetInstance().GetVolumeLevelByUsage(streamUsage);
 }
 
 int32_t AudioSystemManager::IsStreamMuteByUsage(StreamUsage streamUsage, bool &isMute)
 {
-    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
-        ERR_INVALID_PARAM, "Invalid streamUsage");
-
-    if (streamUsage == STREAM_USAGE_ULTRASONIC) {
-        bool ret = PermissionUtil::VerifySelfPermission();
-        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "STREAM_USAGE_ULTRASONIC No system permission");
+    AUDIO_INFO_LOG("IsStreamMuteByUsage for streamUsage [%{public}d]", streamUsage);
+    switch (streamUsage) {
+        case STREAM_USAGE_UNKNOWN:
+        case STREAM_USAGE_MUSIC:
+        case STREAM_USAGE_VOICE_COMMUNICATION:
+        case STREAM_USAGE_VOICE_ASSISTANT:
+        case STREAM_USAGE_ALARM:
+        case STREAM_USAGE_VOICE_MESSAGE:
+        case STREAM_USAGE_RINGTONE:
+        case STREAM_USAGE_NOTIFICATION:
+        case STREAM_USAGE_ACCESSIBILITY:
+        case STREAM_USAGE_MOVIE:
+        case STREAM_USAGE_GAME:
+        case STREAM_USAGE_AUDIOBOOK:
+        case STREAM_USAGE_NAVIGATION:
+        case STREAM_USAGE_VIDEO_COMMUNICATION:
+            break;
+        case STREAM_USAGE_SYSTEM:
+        case STREAM_USAGE_DTMF:
+        case STREAM_USAGE_ENFORCED_TONE:
+        case STREAM_USAGE_ULTRASONIC: {
+            bool ret = PermissionUtil::VerifySelfPermission();
+            CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
+            break;
+        }
+        default:
+            AUDIO_ERR_LOG("streamUsage=%{public}d not supported", streamUsage);
+            return ERR_NOT_SUPPORTED;
     }
     isMute = AudioPolicyManager::GetInstance().GetStreamMuteByUsage(streamUsage);
     return SUCCESS;
@@ -2057,24 +2216,58 @@ int32_t AudioSystemManager::IsStreamMuteByUsage(StreamUsage streamUsage, bool &i
 
 float AudioSystemManager::GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType)
 {
-    AUDIO_INFO_LOG("enter AudioSystemManager::GetVolumeInDbByStream");
+    AUDIO_INFO_LOG("GetVolumeInDbByStream for streamUsage [%{public}d]", streamUsage);
+    switch (streamUsage) {
+        case STREAM_USAGE_UNKNOWN:
+        case STREAM_USAGE_MUSIC:
+        case STREAM_USAGE_VOICE_COMMUNICATION:
+        case STREAM_USAGE_VOICE_ASSISTANT:
+        case STREAM_USAGE_ALARM:
+        case STREAM_USAGE_VOICE_MESSAGE:
+        case STREAM_USAGE_RINGTONE:
+        case STREAM_USAGE_NOTIFICATION:
+        case STREAM_USAGE_ACCESSIBILITY:
+        case STREAM_USAGE_MOVIE:
+        case STREAM_USAGE_GAME:
+        case STREAM_USAGE_AUDIOBOOK:
+        case STREAM_USAGE_NAVIGATION:
+        case STREAM_USAGE_VIDEO_COMMUNICATION:
+            break;
+        case STREAM_USAGE_SYSTEM:
+        case STREAM_USAGE_DTMF:
+        case STREAM_USAGE_ENFORCED_TONE:
+        case STREAM_USAGE_ULTRASONIC: {
+            bool ret = PermissionUtil::VerifySelfPermission();
+            CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
+            break;
+        }
+        default:
+            AUDIO_ERR_LOG("streamUsage=%{public}d not supported", streamUsage);
+            return ERR_NOT_SUPPORTED;
+    }
     return AudioPolicyManager::GetInstance().GetVolumeInDbByStream(streamUsage, volumeLevel, deviceType);
 }
 
 std::vector<AudioVolumeType> AudioSystemManager::GetSupportedAudioVolumeTypes()
 {
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, {}, "No system App");
     AUDIO_INFO_LOG("enter AudioSystemManager::GetSupportedAudioVolumeTypes");
     return AudioPolicyManager::GetInstance().GetSupportedAudioVolumeTypes();
 }
 
 AudioVolumeType AudioSystemManager::GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage)
 {
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, STREAM_DEFAULT, "No system App");
     AUDIO_INFO_LOG("enter AudioSystemManager::GetAudioVolumeTypeByStreamUsage");
     return AudioPolicyManager::GetInstance().GetAudioVolumeTypeByStreamUsage(streamUsage);
 }
 
 std::vector<StreamUsage> AudioSystemManager::GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType)
 {
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, {}, "No system App");
     AUDIO_INFO_LOG("enter AudioSystemManager::GetStreamUsagesByVolumeType");
     return AudioPolicyManager::GetInstance().GetStreamUsagesByVolumeType(audioVolumeType);
 }
@@ -2127,7 +2320,7 @@ int32_t AudioSystemManager::CreateAudioWorkgroup()
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS && workgroupId >= 0, AUDIO_ERR,
         "CreateAudioWorkgroup failed, res:%{public}d workgroupId:%{public}d", res, workgroupId);
 
-    std::lock_guard<std::mutex> lock(workgroupPrioRecorderMutex_);
+    std::lock_guard<std::mutex> recorderLock(workgroupPrioRecorderMutex_);
     workgroupPrioRecorderMap_.emplace(workgroupId, std::make_shared<WorkgroupPrioRecorder>(workgroupId));
     return workgroupId;
 }
@@ -2143,7 +2336,7 @@ int32_t AudioSystemManager::ReleaseAudioWorkgroup(int32_t workgroupId)
         if (recorder->RestoreGroupPrio(false) != AUDIO_OK) {
             AUDIO_ERR_LOG("[WorkgroupInClient] restore grp:%{public}d prio failed", workgroupId);
         } else {
-            std::lock_guard<std::mutex> lock(workgroupPrioRecorderMutex_);
+            std::lock_guard<std::mutex> recorderLock(workgroupPrioRecorderMutex_);
             workgroupPrioRecorderMap_.erase(workgroupId);
         }
     }
@@ -2185,7 +2378,7 @@ int32_t AudioSystemManager::RemoveThreadFromGroup(int32_t workgroupId, int32_t t
     return gasp->RemoveThreadFromGroup(getpid(), workgroupId, tokenId);
 }
 
-int32_t AudioSystemManager::ExcuteAudioWorkgroupPrioImprove(int32_t workgroupId,
+int32_t AudioSystemManager::ExecuteAudioWorkgroupPrioImprove(int32_t workgroupId,
     const std::unordered_map<int32_t, bool> threads, bool &needUpdatePrio)
 {
     bool restoreByPermission = false;
@@ -2216,16 +2409,20 @@ int32_t AudioSystemManager::StartGroup(int32_t workgroupId, uint64_t startTime, 
     const std::unordered_map<int32_t, bool> threads, bool &needUpdatePrio)
 {
     if (!IsValidToStartGroup(workgroupId)) {
+        StopGroup(workgroupId);
         return AUDIO_ERR;
     }
 
     Trace trace("[WorkgroupInClient] StartGroup workgroupId:" + std::to_string(workgroupId) +
         " startTime:" + std::to_string(startTime) + " deadlineTime:" + std::to_string(deadlineTime));
     CHECK_AND_RETURN_RET_LOG(deadlineTime > startTime, ERR_INVALID_PARAM, "Invalid Audio Deadline params");
-    RME::SetFrameRateAndPrioType(workgroupId, MS_PER_SECOND/(deadlineTime - startTime), 0);
+    int32_t audioDeadlineRate = MS_PER_SECOND / (deadlineTime - startTime);
+    CHECK_AND_RETURN_RET_LOG(audioDeadlineRate >= AUDIO_DEADLINE_PARAM_MIN &&
+        audioDeadlineRate <= AUDIO_DEADLINE_PARAM_MAX, ERR_INVALID_PARAM, "Invalid Audio Deadline Rate");
+    RME::SetFrameRateAndPrioType(workgroupId, audioDeadlineRate, 0);
 
-    if (ExcuteAudioWorkgroupPrioImprove(workgroupId, threads, needUpdatePrio) != AUDIO_OK) {
-        AUDIO_ERR_LOG("[WorkgroupInClient] excute audioworkgroup prio improve failed");
+    if (ExecuteAudioWorkgroupPrioImprove(workgroupId, threads, needUpdatePrio) != AUDIO_OK) {
+        AUDIO_ERR_LOG("[WorkgroupInClient] execute audioworkgroup prio improve failed");
         return AUDIO_ERR;
     }
 
@@ -2393,12 +2590,23 @@ int32_t AudioSystemManager::WorkgroupPrioRecorder::GetGrpId()
  
 std::shared_ptr<AudioSystemManager::WorkgroupPrioRecorder> AudioSystemManager::GetRecorderByGrpId(int32_t grpId)
 {
-    std::lock_guard<std::mutex> lock(workgroupPrioRecorderMutex_);
+    std::lock_guard<std::mutex> recorderLock(workgroupPrioRecorderMutex_);
     auto it = workgroupPrioRecorderMap_.find(grpId);
     if (it != workgroupPrioRecorderMap_.end()) {
         return it->second;
     }
     return nullptr;
+}
+
+int32_t AudioSystemManager::GetVolumeBySessionId(const uint32_t &sessionId, float &volume)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t ret = gasp->GetVolumeBySessionId(sessionId, volume);
+    IPCSkeleton::SetCallingIdentity(identity);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed: %{public}d", ret);
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS

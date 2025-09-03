@@ -78,6 +78,8 @@ public:
 
     int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base) override;
 
+    int32_t GetSpeedPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base) override;
+
     int32_t GetLatency(uint64_t &latency) override;
 
     int32_t SetRate(int32_t rate) override; // SetRenderRate
@@ -119,7 +121,7 @@ public:
 
     int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method) override;
 
-    int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice) override;
+    int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice, bool skipForce = false) override;
 
     int32_t SetSourceDuration(int64_t duration) override;
 

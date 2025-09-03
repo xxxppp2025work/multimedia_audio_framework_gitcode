@@ -80,6 +80,7 @@ public:
 
     int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp);
     int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base);
+    int32_t GetSpeedPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base);
     int32_t GetLatency(uint64_t &latency);
     int32_t SetRate(int32_t rate);
     int32_t SetTarget(int32_t target);
@@ -119,9 +120,9 @@ public:
     std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
 
     // for dual tone
-    int32_t EnableDualTone();
+    int32_t EnableDualTone(const std::string &dupSinkName);
     int32_t DisableDualTone();
-    int32_t InitDualToneStream();
+    int32_t InitDualToneStream(const std::string &dupSinkName);
 
     void GetEAC3ControlParam();
     int32_t GetStreamManagerType() const noexcept;
@@ -130,7 +131,7 @@ public:
     int32_t SetLoudnessGain(float loudnessGain);
     int32_t SetMute(bool isMute);
     int32_t SetDuckFactor(float duckFactor);
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice);
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false);
     int32_t SetSourceDuration(int64_t duration);
 
     void OnDataLinkConnectionUpdate(IOperation operation);
@@ -148,7 +149,6 @@ public:
 
     int32_t SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId);
     void InitDupBuffer(int32_t innerCapId);
-
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -183,6 +183,7 @@ private:
     void UpdateLatestForWorkgroup(float systemVolume);
     int32_t DisableInnerCapHandle(int32_t innerCapId);
     int32_t InitDupStreamVolume(uint32_t dupStreamIndex);
+    void ProcessManagerType();
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;

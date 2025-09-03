@@ -55,6 +55,7 @@ static std::string GetEncryptAddr(const std::string &addr)
 
 const int32_t ONE_MINUTE = 60;
 const uint32_t ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS = 10000;
+constexpr int32_t CANCEL_FORCE_CONTROL_VOLUME_TYPE = -1;
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
@@ -96,8 +97,9 @@ bool AudioVolumeManager::Init(std::shared_ptr<AudioPolicyServerHandler> audioPol
         sharedAbsVolumeScene_ = reinterpret_cast<bool *>(policyVolumeMap_->GetBase()) +
             IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume);
     }
-    CHECK_AND_RETURN_RET(forceControlVolumeTypeMonitor_ == nullptr, true);
-    forceControlVolumeTypeMonitor_ = std::make_shared<ForceControlVolumeTypeMonitor>();
+    if (forceControlVolumeTypeMonitor_ == nullptr) {
+        forceControlVolumeTypeMonitor_ = std::make_shared<ForceControlVolumeTypeMonitor>();
+    }
     return true;
 }
 void AudioVolumeManager::DeInit(void)
@@ -120,20 +122,20 @@ void AudioVolumeManager::DeInit(void)
     audioPolicyServerHandler_ = nullptr;
 }
 
-int32_t AudioVolumeManager::GetMaxVolumeLevel(AudioVolumeType volumeType) const
+int32_t AudioVolumeManager::GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType) const
 {
     if (volumeType == STREAM_ALL) {
         volumeType = STREAM_MUSIC;
     }
-    return audioPolicyManager_.GetMaxVolumeLevel(volumeType);
+    return audioPolicyManager_.GetMaxVolumeLevel(volumeType, deviceType);
 }
 
-int32_t AudioVolumeManager::GetMinVolumeLevel(AudioVolumeType volumeType) const
+int32_t AudioVolumeManager::GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType) const
 {
     if (volumeType == STREAM_ALL) {
         volumeType = STREAM_MUSIC;
     }
-    return audioPolicyManager_.GetMinVolumeLevel(volumeType);
+    return audioPolicyManager_.GetMinVolumeLevel(volumeType, deviceType);
 }
 
 bool AudioVolumeManager::SetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume vol)
@@ -297,6 +299,7 @@ bool AudioVolumeManager::DeviceIsSupportSafeVolume()
     switch (curOutputDeviceType) {
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_NEARLINK:
             if (curOutputDeviceCategory != BT_SOUNDBOX &&
                 curOutputDeviceCategory != BT_CAR) {
                 return true;
@@ -311,6 +314,46 @@ bool AudioVolumeManager::DeviceIsSupportSafeVolume()
             AUDIO_INFO_LOG("current device unsupport safe volume:%{public}d", curOutputDeviceType);
             return false;
     }
+}
+
+void AudioVolumeManager::PublishLoudVolumeNotification(int32_t notificationId)
+{
+    void *libHandle = dlopen("libaudio_safe_volume_notification_impl.z.so", RTLD_LAZY);
+    if (libHandle == nullptr) {
+        AUDIO_ERR_LOG("dlopen failed %{public}s", __func__);
+        return;
+    }
+    CreateLoudVolumeNotification *createLoudVolumeNotificationImpl =
+        reinterpret_cast<CreateLoudVolumeNotification*>(dlsym(libHandle, "CreateLoudVolumeNotificationImpl"));
+    if (createLoudVolumeNotificationImpl == nullptr) {
+        AUDIO_ERR_LOG("createLoudVolumeNotificationImpl failed %{public}s", __func__);
+#ifndef TEST_COVERAGE
+        dlclose(libHandle);
+#endif
+        return;
+    }
+    AudioLoudVolumeNotification *audioLoudVolumeNotificationImpl = createLoudVolumeNotificationImpl();
+    if (audioLoudVolumeNotificationImpl == nullptr) {
+        AUDIO_ERR_LOG("audioLoudVolumeNotificationImpl is nullptr %{public}s", __func__);
+#ifndef TEST_COVERAGE
+        dlclose(libHandle);
+#endif
+        return;
+    }
+    audioLoudVolumeNotificationImpl->PublishLoudVolumeNotification(notificationId);
+    delete audioLoudVolumeNotificationImpl;
+#ifndef TEST_COVERAGE
+        dlclose(libHandle);
+#endif
+}
+
+void AudioVolumeManager::SendLoudVolumeMode(FunctionHoldType funcHoldType, bool state, bool repeatTrigNotif)
+{
+    if (state && repeatTrigNotif) {
+        const int INSTANT_NOTIFICATION_ID = 6;
+        PublishLoudVolumeNotification(INSTANT_NOTIFICATION_ID);
+    }
+    audioPolicyManager_.SendLoudVolumeModeToDsp(funcHoldType, state);
 }
 
 int32_t AudioVolumeManager::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel)
@@ -335,6 +378,19 @@ int32_t AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &is
     return result;
 }
 
+int32_t AudioVolumeManager::SetAppRingMuted(int32_t appUid, bool muted)
+{
+    AUDIO_INFO_LOG("enter AudioVolumeManager::SetAppRingMuted");
+    int32_t result = audioPolicyManager_.SetAppRingMuted(appUid, muted);
+    return result;
+}
+
+bool AudioVolumeManager::IsAppRingMuted(int32_t appUid)
+{
+    AUDIO_INFO_LOG("enter AudioVolumeManager::IsAppRingMuted");
+    return audioPolicyManager_.IsAppRingMuted(appUid);
+}
+
 int32_t AudioVolumeManager::GetVolumeAdjustZoneId()
 {
     return audioPolicyManager_.GetVolumeAdjustZoneId();
@@ -342,6 +398,10 @@ int32_t AudioVolumeManager::GetVolumeAdjustZoneId()
 
 int32_t AudioVolumeManager::SetAdjustVolumeForZone(int32_t zoneId)
 {
+    if (zoneId == 0) {
+        AudioDeviceDescriptor currentActiveDevice = audioActiveDevice_.GetCurrentOutputDevice();
+        audioPolicyManager_.SetVolumeForSwitchDevice(currentActiveDevice);
+    }
     return audioPolicyManager_.SetAdjustVolumeForZone(zoneId);
 }
 
@@ -391,11 +451,11 @@ int32_t AudioVolumeManager::HandleNearlinkDeviceAbsVolume(AudioStreamType stream
     if (result == SUCCESS) {
         auto volumeValue = SleAudioDeviceManager::GetInstance().GetVolumeLevelByVolumeType(streamType,
             audioActiveDevice_.GetCurrentOutputDevice());
-        return SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(nearlinkDevice, volumeValue, streamType);
+        return SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(nearlinkDevice, streamType, volumeValue);
     } else if (result == ERR_UNKNOWN) {
         AUDIO_INFO_LOG("UNKNOWN RESULT set abs safe volume");
-        return SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(nearlinkDevice,
-            audioPolicyManager_.GetSafeVolumeLevel(), streamType);
+        return SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(nearlinkDevice, streamType,
+            audioPolicyManager_.GetSafeVolumeLevel());
     }
     return result;
 }
@@ -449,16 +509,8 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int
 int32_t AudioVolumeManager::SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel,
     DeviceType deviceType)
 {
-    int32_t sVolumeLevel = volumeLevel;
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceType == DEVICE_TYPE_BLUETOOTH_SCO ||
-        deviceType == DEVICE_TYPE_USB_HEADSET || deviceType == DEVICE_TYPE_USB_ARM_HEADSET ||
-        deviceType == DEVICE_TYPE_WIRED_HEADSET || deviceType == DEVICE_TYPE_WIRED_HEADPHONES ||
-        deviceType == DEVICE_TYPE_NEARLINK) {
-        sVolumeLevel = SelectDealSafeVolume(streamType, volumeLevel, deviceType);
-    }
-    int32_t result = audioPolicyManager_.SaveSpecifiedDeviceVolume(
-        VolumeUtils::GetVolumeTypeFromStreamType(streamType), sVolumeLevel, deviceType);
-    return result;
+    return audioPolicyManager_.SaveSpecifiedDeviceVolume(
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType), volumeLevel, deviceType);
 }
 
 int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel,
@@ -548,7 +600,7 @@ int32_t AudioVolumeManager::HandleAbsBluetoothVolume(const std::string &macAddre
         if (!isNearlinkDevice) {
             Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, sVolumeLevel);
         } else {
-            SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(macAddress, sVolumeLevel, streamType);
+            SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(macAddress, streamType, sVolumeLevel);
         }
     } else {
         sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
@@ -556,7 +608,7 @@ int32_t AudioVolumeManager::HandleAbsBluetoothVolume(const std::string &macAddre
             if (!isNearlinkDevice) {
                 Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, sVolumeLevel);
             } else {
-                SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(macAddress, sVolumeLevel, streamType);
+                SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(macAddress, streamType, sVolumeLevel);
             }
         }
     }
@@ -566,7 +618,8 @@ int32_t AudioVolumeManager::HandleAbsBluetoothVolume(const std::string &macAddre
 int32_t AudioVolumeManager::SetNearlinkDeviceVolume(const std::string &macAddress, AudioStreamType streamType,
     int32_t volumeLevel, bool internalCall)
 {
-    int ret = SleAudioDeviceManager::GetInstance().SetNearlinkDeviceVolumeLevel(macAddress, streamType, volumeLevel);
+    int32_t ret = SleAudioDeviceManager::GetInstance().SetNearlinkDeviceVolumeLevel(macAddress, streamType,
+        volumeLevel);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetNearlinkDeviceVolumeLevel failed");
     int32_t sVolumeLevel = volumeLevel;
     // Voice call does not support safe volume
@@ -582,8 +635,10 @@ int32_t AudioVolumeManager::SetNearlinkDeviceVolume(const std::string &macAddres
     }
     ret = SleAudioDeviceManager::GetInstance().SetNearlinkDeviceVolumeLevel(macAddress, streamType, sVolumeLevel);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetDeviceAbsVolume failed");
+    ret = SetNearlinkDeviceVolumeEx(streamType, sVolumeLevel);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetSystemVolumeLevel failed");
 
-    bool mute = sVolumeLevel == 0 ? true : false;
+    bool mute = sVolumeLevel == 0 && (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC);
 
     if (internalCall) {
         CheckToCloseNotification(streamType, volumeLevel);
@@ -591,10 +646,21 @@ int32_t AudioVolumeManager::SetNearlinkDeviceVolume(const std::string &macAddres
 
     SleAudioDeviceManager::GetInstance().SetNearlinkDeviceMute(macAddress, streamType, mute);
     audioPolicyManager_.SetAbsVolumeMute(mute);
-    AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
-        GetEncryptAddr(macAddress).c_str(), sVolumeLevel);
+    AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d], streamType [%{public}d]",
+        GetEncryptAddr(macAddress).c_str(), sVolumeLevel, streamType);
     CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERR_UNKNOWN, "safevolume did not deal");
     return SUCCESS;
+}
+
+int32_t AudioVolumeManager::SetNearlinkDeviceVolumeEx(AudioVolumeType streamType, int32_t volumeLevel)
+{
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    if (curOutputDeviceType != DEVICE_TYPE_NEARLINK) {
+        return SaveSpecifiedDeviceVolume(streamType, volumeLevel, DEVICE_TYPE_NEARLINK);
+    } else {
+        return audioPolicyManager_.SetSystemVolumeLevel(VolumeUtils::GetVolumeTypeFromStreamType(streamType),
+            volumeLevel);
+    }
 }
 
 void AudioVolumeManager::PublishSafeVolumeNotification(int32_t notificationId)
@@ -1004,6 +1070,8 @@ void AudioVolumeManager::SetAbsVolumeSceneAsync(const std::string &macAddress, c
     if (btDevice == macAddress) {
         audioPolicyManager_.SetAbsVolumeScene(support);
         SetSharedAbsVolumeScene(support);
+        // GetAllDeviceVolumeInfo used to update a2pd music volume in map.
+        audioPolicyManager_.GetAllDeviceVolumeInfo(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC);
         int32_t volumeLevel = audioPolicyManager_.GetSystemVolumeLevelNoMuteState(STREAM_MUSIC);
         audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel);
     }
@@ -1126,6 +1194,7 @@ void AudioVolumeManager::UpdateGroupInfo(GroupType type, std::string groupName, 
             groupId = AudioGroupHandle::GetInstance().GetNextId(type);
             sptr<VolumeGroupInfo> volumeGroupInfo = new(std::nothrow) VolumeGroupInfo(groupId,
                 mappingId, groupName, networkId, connectType);
+            CHECK_AND_RETURN_LOG(volumeGroupInfo != nullptr, "volumeGroupInfo is nullptr.");
             volumeGroups_.push_back(volumeGroupInfo);
         }
     } else {
@@ -1148,6 +1217,7 @@ void AudioVolumeManager::UpdateGroupInfo(GroupType type, std::string groupName, 
             groupId = AudioGroupHandle::GetInstance().GetNextId(type);
             sptr<InterruptGroupInfo> interruptGroupInfo = new(std::nothrow) InterruptGroupInfo(groupId, mappingId,
                 groupName, networkId, connectType);
+            CHECK_AND_RETURN_LOG(interruptGroupInfo != nullptr, "interruptGroupInfo is nullptr.");
             interruptGroups_.push_back(interruptGroupInfo);
         }
     }
@@ -1159,6 +1229,7 @@ void AudioVolumeManager::GetVolumeGroupInfo(std::vector<sptr<VolumeGroupInfo>>& 
     for (auto& v : volumeGroups_) {
         sptr<VolumeGroupInfo> info = new(std::nothrow) VolumeGroupInfo(v->volumeGroupId_, v->mappingId_, v->groupName_,
             v->networkId_, v->connectType_);
+        CHECK_AND_RETURN_LOG(info != nullptr, "info is nullptr.");
         volumeGroupInfos.push_back(info);
     }
 }
@@ -1346,12 +1417,12 @@ void AudioVolumeManager::GetVolumeKeyRegistrationInfo(std::vector<VolumeKeyEvent
 
 int32_t AudioVolumeManager::ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration)
 {
-    CHECK_AND_RETURN_RET_LOG(duration >= -1, ERR_INVALID_PARAM, "invalid duration");
+    CHECK_AND_RETURN_RET_LOG(duration >= CANCEL_FORCE_CONTROL_VOLUME_TYPE, ERR_INVALID_PARAM, "invalid duration");
     CHECK_AND_RETURN_RET_LOG(forceControlVolumeTypeMonitor_ != nullptr, ERR_UNKNOWN,
         "forceControlVolumeTypeMonitor_ is nullptr");
     std::lock_guard<std::mutex> lock(forceControlVolumeTypeMutex_);
-    needForceControlVolumeType_ = (duration == -1 ? false : true);
-    forceControlVolumeType_ = (duration == -1 ? STREAM_DEFAULT : volumeType);
+    needForceControlVolumeType_ = (duration == CANCEL_FORCE_CONTROL_VOLUME_TYPE ? false : true);
+    forceControlVolumeType_ = (duration == CANCEL_FORCE_CONTROL_VOLUME_TYPE ? STREAM_DEFAULT : volumeType);
     forceControlVolumeTypeMonitor_->SetTimer(duration, forceControlVolumeTypeMonitor_);
     return SUCCESS;
 }
@@ -1377,14 +1448,14 @@ AudioVolumeType AudioVolumeManager::GetForceControlVolumeType()
 
 ForceControlVolumeTypeMonitor::~ForceControlVolumeTypeMonitor()
 {
-    std::lock_guard<std::mutex> lock(mtx_);
+    std::lock_guard<std::mutex> lock(monitorMtx_);
     StopMonitor();
 }
 
 void ForceControlVolumeTypeMonitor::OnTimeOut()
 {
     {
-        std::lock_guard<std::mutex> lock(mtx_);
+        std::lock_guard<std::mutex> lock(monitorMtx_);
         StopMonitor();
     }
     audioVolumeManager_.OnTimerExpired();
@@ -1413,9 +1484,9 @@ void ForceControlVolumeTypeMonitor::StopMonitor()
 void ForceControlVolumeTypeMonitor::SetTimer(int32_t duration,
     std::shared_ptr<ForceControlVolumeTypeMonitor> cb)
 {
-    std::lock_guard<std::mutex> lock(mtx_);
+    std::lock_guard<std::mutex> lock(monitorMtx_);
     StopMonitor();
-    if (duration == -1) {
+    if (duration == CANCEL_FORCE_CONTROL_VOLUME_TYPE) {
         return;
     }
     duration_ = (duration > MAX_DURATION_TIME_S ? MAX_DURATION_TIME_S : duration);

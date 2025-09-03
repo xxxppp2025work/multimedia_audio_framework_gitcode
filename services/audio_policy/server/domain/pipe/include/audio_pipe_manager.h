@@ -49,7 +49,8 @@ public:
     std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedRecordPipe();
     std::shared_ptr<AudioPipeInfo> GetPipeinfoByNameAndFlag(const std::string adapterName, const uint32_t routeFlag);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
-    std::shared_ptr<AudioDeviceDescriptor> GetProcessDeviceInfoBySessionId(uint32_t sessionId);
+    std::shared_ptr<AudioDeviceDescriptor> GetProcessDeviceInfoBySessionId(uint32_t sessionId,
+        AudioStreamInfo &streamInfo);
 
     void StartClient(uint32_t sessionId);
     void PauseClient(uint32_t sessionId);
@@ -81,6 +82,10 @@ public:
     std::vector<uint32_t> GetStreamIdsByUid(uint32_t uid, uint32_t routeFlagMask = UINT32_MAX);
     void UpdateOutputStreamDescsByIoHandle(AudioIOHandle id,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &descs);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllCapturerStreamDescs();
+    std::shared_ptr<AudioPipeInfo> FindPipeBySessionId(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
+        uint32_t sessionId);
+    bool IsStreamUsageActive(const StreamUsage &usage);
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);

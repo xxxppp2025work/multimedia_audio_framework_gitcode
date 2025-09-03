@@ -357,7 +357,8 @@ void HpaeRenderEffectNode::ReconfigOutputBuffer()
             "channelLayout change from %{public}" PRIu64 " to %{public}" PRIu64,
             sceneType_.c_str(), effectNodeInfo.channels, channels, effectNodeInfo.channelLayout, channelLayout);
         PcmBufferInfo pcmBufferInfo = PcmBufferInfo(channels, DEFAULT_EFFECT_FRAMELEN,
-            DEFUALT_EFFECT_RATE, channelLayout, effectOutput_.GetFrames(), effectOutput_.IsMultiFrames());
+            DEFUALT_EFFECT_RATE, channelLayout, effectOutput_.GetFrames());
+        pcmBufferInfo.isMultiFrames = effectOutput_.IsMultiFrames();
         effectOutput_.ReConfig(pcmBufferInfo);
         effectNodeInfo.channels = static_cast<AudioChannel>(channels);
         effectNodeInfo.channelLayout = static_cast<AudioChannelLayout>(channelLayout);
@@ -413,6 +414,21 @@ bool HpaeRenderEffectNode::IsByPassEffectZeroVolume(HpaePcmBuffer *pcmBuffer)
         isByPassEffect_ = false;
     }
     return isByPassEffect_;
+}
+
+void HpaeRenderEffectNode::InitEffectBuffer(const uint32_t sessionId)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
+    audioEffectChainManager->InitEffectBuffer(std::to_string(sessionId));
+}
+
+void HpaeRenderEffectNode::InitEffectBufferFromDisConnect()
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
+    audioEffectChainManager->InitAudioEffectChainDynamic(sceneType_);
+    AUDIO_INFO_LOG("begin InitEffectBuffer from DisConnect, sceneType:%{public}s", sceneType_.c_str());
 }
 } // namespace HPAE
 } // namespace AudioStandard

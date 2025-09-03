@@ -151,9 +151,7 @@ void AudioServerHpaeDump::OnDumpSourceInfoCb(std::string &dumpStr, int32_t resul
 
 void AudioServerHpaeDump::ArgDataDump(std::string &dumpString, std::queue<std::u16string> &argQue)
 {
-    if (!GetDevicesInfo()) {
-        return;
-    }
+    CHECK_AND_RETURN(GetDevicesInfo());
     dumpString += "Hpae AudioServer Data Dump:\n\n";
     if (argQue.empty()) {
         ServerDataDump(dumpString);
@@ -161,11 +159,7 @@ void AudioServerHpaeDump::ArgDataDump(std::string &dumpString, std::queue<std::u
     }
     while (!argQue.empty()) {
         std::u16string para = argQue.front();
-        if (para == u"-h") {
-            dumpString.clear();
-            (this->*dumpFuncMap[para])(dumpString);
-            return;
-        } else if (para == u"-p") {
+        if (para == u"-h" || para == u"-p") {
             dumpString.clear();
             (this->*dumpFuncMap[para])(dumpString);
             return;
@@ -233,10 +227,7 @@ bool AudioServerHpaeDump::GetDevicesInfo()
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishGetHdfModulesInfo_;  // will be true when got notified.
     });
-    if (!stopWaiting) {
-        AUDIO_ERR_LOG("DumpAllAvailableDevice timeout!");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, false, "DumpAllAvailableDevice timeout!");
     return true;
 }
 

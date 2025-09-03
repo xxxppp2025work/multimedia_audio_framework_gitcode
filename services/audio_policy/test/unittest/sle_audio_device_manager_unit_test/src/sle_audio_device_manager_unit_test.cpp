@@ -75,7 +75,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, GetSleAudioDeviceList_001, TestSize.Level1
 
     sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
 
-    std::vector<AudioDeviceDescriptor> devices;
+    std::vector<AudioDeviceDescriptor> devices = {};
     sleAudioDeviceManager_->GetSleAudioDeviceList(devices);
 
     EXPECT_EQ(devices.size(), 0);
@@ -94,8 +94,8 @@ HWTEST(SleAudioDeviceManagerUnitTest, GetSleAudioDeviceList_002, TestSize.Level1
         new(std::nothrow) IStandardSleAudioOperationCallbackTest();
     sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
 
-    AudioDeviceDescriptor desc_1;
-    AudioDeviceDescriptor desc_2;
+    AudioDeviceDescriptor desc_1 = {};
+    AudioDeviceDescriptor desc_2 = {};
 
     std::vector<AudioDeviceDescriptor> devices = {desc_1, desc_2};
     sleAudioDeviceManager_->GetSleAudioDeviceList(devices);
@@ -134,8 +134,8 @@ HWTEST(SleAudioDeviceManagerUnitTest, GetSleVirtualAudioDeviceList_002, TestSize
         new (std::nothrow) IStandardSleAudioOperationCallbackTest();
     sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
 
-    AudioDeviceDescriptor desc_1;
-    AudioDeviceDescriptor desc_2;
+    AudioDeviceDescriptor desc_1 = {};
+    AudioDeviceDescriptor desc_2 = {};
 
     std::vector<AudioDeviceDescriptor> devices = {desc_1, desc_2};
     sleAudioDeviceManager_->GetSleVirtualAudioDeviceList(devices);
@@ -412,10 +412,10 @@ HWTEST(SleAudioDeviceManagerUnitTest, BySleStreamType_001, TestSize.Level1)
     std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
         std::make_shared<SleAudioDeviceManager>();
     
-    uint32_t streamType_1 = SLE_AUDIO_STREAM_MUSIC;
-    std::set<StreamUsage> StreamUsage = {STREAM_USAGE_MEDIA, STREAM_USAGE_MUSIC, STREAM_USAGE_AUDIOBOOK};
-    uint32_t streamType_2 = SLE_AUDIO_STREAM_VOICE_ASSISTANT;
-    std::set<SourceType> SourceType = {SOURCE_TYPE_VOICE_RECOGNITION, SOURCE_TYPE_VOICE_TRANSCRIPTION};
+    uint32_t streamType_1 = SLE_AUDIO_STREAM_NONE;
+    std::set<StreamUsage> StreamUsage = {};
+    uint32_t streamType_2 = SLE_AUDIO_STREAM_NONE;
+    std::set<SourceType> SourceType = {};
 
     auto ret = sleAudioDeviceManager_->GetStreamUsagesBySleStreamType(streamType_1);
     EXPECT_EQ(ret, StreamUsage);
@@ -456,11 +456,13 @@ HWTEST(SleAudioDeviceManagerUnitTest, SetActiveDevice_001, TestSize.Level1)
     sptr<IStandardSleAudioOperationCallbackTest> callback =
         new(std::nothrow) IStandardSleAudioOperationCallbackTest();
     sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
-    
-    std::string device = "LocalDevice";
+
+    AudioDeviceDescriptor deviceDesc = {};
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    deviceDesc.macAddress_ = "LocalDevice";
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
 
-    int32_t ret = sleAudioDeviceManager_->SetActiveDevice(device, streamUsage);
+    int32_t ret = sleAudioDeviceManager_->SetActiveDevice(deviceDesc, streamUsage);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -477,10 +479,12 @@ HWTEST(SleAudioDeviceManagerUnitTest, SetActiveDevice_002, TestSize.Level1)
         new(std::nothrow) IStandardSleAudioOperationCallbackTest();
     sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
     
-    std::string device = "LocalDevice";
+    AudioDeviceDescriptor deviceDesc = {};
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    deviceDesc.macAddress_ = "LocalDevice";
     SourceType sourceType = SOURCE_TYPE_VIRTUAL_CAPTURE;
 
-    int32_t ret = sleAudioDeviceManager_->SetActiveDevice(device, sourceType);
+    int32_t ret = sleAudioDeviceManager_->SetActiveDevice(deviceDesc, sourceType);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -494,7 +498,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, StartPlaying_001, TestSize.Level1)
     std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
         std::make_shared<SleAudioDeviceManager>();
 
-    AudioDeviceDescriptor deviceDesc;
+    AudioDeviceDescriptor deviceDesc = {};
     deviceDesc.deviceType_ = DEVICE_TYPE_FILE_SOURCE;
 
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
@@ -520,7 +524,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, StartPlaying_002, TestSize.Level1)
         new(std::nothrow) IStandardSleAudioOperationCallbackTest();
     sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
     
-    AudioDeviceDescriptor deviceDesc;
+    AudioDeviceDescriptor deviceDesc = {};
 
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
@@ -543,7 +547,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, StopPlaying_001, TestSize.Level1)
     std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
         std::make_shared<SleAudioDeviceManager>();
 
-    AudioDeviceDescriptor deviceDesc;
+    AudioDeviceDescriptor deviceDesc = {};
     deviceDesc.deviceType_ = DEVICE_TYPE_FILE_SOURCE;
 
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
@@ -569,7 +573,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, StopPlaying_002, TestSize.Level1)
         new(std::nothrow) IStandardSleAudioOperationCallbackTest();
     sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
 
-    AudioDeviceDescriptor deviceDesc;
+    AudioDeviceDescriptor deviceDesc = {};
 
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
@@ -631,7 +635,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, SendUserSelection_001, TestSize.Level1)
         new(std::nothrow) IStandardSleAudioOperationCallbackTest();
     sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
 
-    AudioDeviceDescriptor deviceDesc;
+    AudioDeviceDescriptor deviceDesc = {};
     deviceDesc.deviceType_ = DEVICE_TYPE_FILE_SOURCE;
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
 
@@ -652,7 +656,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, SendUserSelection_002, TestSize.Level1)
         new(std::nothrow) IStandardSleAudioOperationCallbackTest();
     sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
 
-    AudioDeviceDescriptor deviceDesc;
+    AudioDeviceDescriptor deviceDesc = {};
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
 
@@ -672,7 +676,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, SendUserSelection_003, TestSize.Level1)
     sptr<IStandardSleAudioOperationCallbackTest> callback = nullptr;
     sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
 
-    AudioDeviceDescriptor deviceDesc;
+    AudioDeviceDescriptor deviceDesc = {};
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
     SourceType sourceType = SOURCE_TYPE_VIRTUAL_CAPTURE;
 
@@ -693,7 +697,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, SendUserSelection_004, TestSize.Level1)
         new(std::nothrow) IStandardSleAudioOperationCallbackTest();
     sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
     
-    AudioDeviceDescriptor deviceDesc;
+    AudioDeviceDescriptor deviceDesc = {};
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
     SourceType sourceType = SOURCE_TYPE_VIRTUAL_CAPTURE;
 
@@ -711,7 +715,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, AddNearlinkDevice_001, TestSize.Level1)
     std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
         std::make_shared<SleAudioDeviceManager>();
 
-    AudioDeviceDescriptor deviceDesc;
+    AudioDeviceDescriptor deviceDesc = {};
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
 
     int32_t result = sleAudioDeviceManager_->AddNearlinkDevice(deviceDesc);
@@ -728,7 +732,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, AddNearlinkDevice_002, TestSize.Level1)
     std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
         std::make_shared<SleAudioDeviceManager>();
 
-    AudioDeviceDescriptor deviceDesc;
+    AudioDeviceDescriptor deviceDesc = {};
     deviceDesc.macAddress_ = "1234567890";
     deviceDesc.mediaVolume_ = 4;
     deviceDesc.callVolume_ = 4;
@@ -748,7 +752,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, RemoveNearlinkDevice_001, TestSize.Level1)
     std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
         std::make_shared<SleAudioDeviceManager>();
 
-    AudioDeviceDescriptor deviceDesc;
+    AudioDeviceDescriptor deviceDesc = {};
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
 
     int32_t result = sleAudioDeviceManager_->RemoveNearlinkDevice(deviceDesc);
@@ -765,7 +769,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, RemoveNearlinkDevice_002, TestSize.Level1)
     std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
         std::make_shared<SleAudioDeviceManager>();
 
-    AudioDeviceDescriptor deviceDesc;
+    AudioDeviceDescriptor deviceDesc = {};
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
 
     int32_t result = sleAudioDeviceManager_->RemoveNearlinkDevice(deviceDesc);
@@ -1073,7 +1077,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, SetNearlinkDeviceMute_002, TestSize.Level1
     AudioStreamType streamType_1 = STREAM_MUSIC;
     bool isMute = true;
 
-    AudioDeviceDescriptor deviceDesc;
+    AudioDeviceDescriptor deviceDesc = {};
     deviceDesc.macAddress_ = "1234567890";
     deviceDesc.mediaVolume_ = 4;
     deviceDesc.callVolume_ = 4;
@@ -1127,7 +1131,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, SetNearlinkDeviceVolumeLevel_002, TestSize
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t volumeLevel = 4;
 
-    AudioDeviceDescriptor deviceDesc;
+    AudioDeviceDescriptor deviceDesc = {};
     deviceDesc.macAddress_ = "1234567890";
     deviceDesc.mediaVolume_ = 4;
     deviceDesc.callVolume_ = 4;
@@ -1154,7 +1158,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, GetVolumeLevelByVolumeType_001, TestSize.L
 
     AudioVolumeType volumeType = STREAM_MUSIC;
 
-    AudioDeviceDescriptor deviceDesc;
+    AudioDeviceDescriptor deviceDesc = {};
     deviceDesc.macAddress_ = "1234567890";
 
     int32_t ret =  sleAudioDeviceManager_->GetVolumeLevelByVolumeType(volumeType, deviceDesc);
@@ -1176,7 +1180,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, GetVolumeLevelByVolumeType_002, TestSize.L
 
     AudioVolumeType volumeType = STREAM_ENFORCED_AUDIBLE;
 
-    AudioDeviceDescriptor deviceDesc;
+    AudioDeviceDescriptor deviceDesc = {};
     deviceDesc.macAddress_ = "1234567890";
     deviceDesc.callVolume_ = 4;
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
@@ -1201,7 +1205,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, GetVolumeLevelByVolumeType_003, TestSize.L
 
     AudioVolumeType volumeType = STREAM_VOICE_CALL;
 
-    AudioDeviceDescriptor deviceDesc;
+    AudioDeviceDescriptor deviceDesc = {};
     deviceDesc.macAddress_ = "LocalDevice";
     deviceDesc.mediaVolume_ = 4;
     deviceDesc.callVolume_ = 4;
@@ -1219,5 +1223,104 @@ HWTEST(SleAudioDeviceManagerUnitTest, GetVolumeLevelByVolumeType_003, TestSize.L
     EXPECT_EQ(ret, -1);
 }
 
+/**
+ * @tc.name  : Test SetDeviceAbsVolume.
+ * @tc.number: SetDeviceAbsVolume_005
+ * @tc.desc  : Test SleAudioDeviceManager::SetDeviceAbsVolume.
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, SetDeviceAbsVolume_005, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+
+    std::string device = "1234567890";
+    AudioStreamType streamType1 = STREAM_MUSIC;
+    AudioStreamType streamType2 = STREAM_RING;
+    int32_t volume = 4;
+
+    AudioDeviceDescriptor deviceDesc = {};
+    deviceDesc.macAddress_ = "1234567890";
+    deviceDesc.mediaVolume_ = 4;
+    deviceDesc.callVolume_ = 4;
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+
+    sleAudioDeviceManager_->AddNearlinkDevice(deviceDesc);
+
+    int32_t ret = sleAudioDeviceManager_->SetDeviceAbsVolume(device, streamType1, volume);
+    EXPECT_EQ(ret, ERROR);
+    ret = sleAudioDeviceManager_->SetDeviceAbsVolume(device, streamType2, volume);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test SetNearlinkDeviceVolumeLevel
+ * @tc.number: SetNearlinkDeviceVolumeLevel_003
+ * @tc.desc  : Test SleAudioDeviceManager::SetNearlinkDeviceVolumeLevel
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, SetNearlinkDeviceVolumeLevel_003, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+
+    std::string device = "1234567890";
+    AudioStreamType streamType = STREAM_RING;
+    int32_t volumeLevel = 4;
+
+    AudioDeviceDescriptor deviceDesc = {};
+    deviceDesc.macAddress_ = "1234567890";
+    deviceDesc.mediaVolume_ = 4;
+    deviceDesc.callVolume_ = 4;
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+
+    sleAudioDeviceManager_->AddNearlinkDevice(deviceDesc);
+
+    int32_t ret =  sleAudioDeviceManager_->SetNearlinkDeviceVolumeLevel(device, streamType, volumeLevel);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetNearlinkDeviceVolumeLevel
+ * @tc.number: SetNearlinkDeviceVolumeLevel_004
+ * @tc.desc  : Test SleAudioDeviceManager::SetNearlinkDeviceVolumeLevel
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, SetNearlinkDeviceVolumeLevel_004, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+
+    std::string device = "1234567890";
+    AudioStreamType streamType = STREAM_VOICE_CALL;
+    int32_t volumeLevel = 4;
+
+    AudioDeviceDescriptor deviceDesc = {};
+    deviceDesc.macAddress_ = "1234567890";
+    deviceDesc.mediaVolume_ = 4;
+    deviceDesc.callVolume_ = 4;
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+
+    sleAudioDeviceManager_->AddNearlinkDevice(deviceDesc);
+
+    int32_t ret =  sleAudioDeviceManager_->SetNearlinkDeviceVolumeLevel(device, streamType, volumeLevel);
+    EXPECT_EQ(ret, SUCCESS);
+
+    streamType = STREAM_VOICE_CALL;
+    volumeLevel = -4;
+    ret =  sleAudioDeviceManager_->SetNearlinkDeviceVolumeLevel(device, streamType, volumeLevel);
+    EXPECT_EQ(ret, SUCCESS);
+
+    streamType = STREAM_RING;
+    volumeLevel = 4;
+    ret =  sleAudioDeviceManager_->SetNearlinkDeviceVolumeLevel(device, streamType, volumeLevel);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

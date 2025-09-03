@@ -21,6 +21,7 @@
 #include "audio_policy_log.h"
 #include "audio_utils.h"
 #include "audio_stream_id_allocator.h"
+#include "audio_stream_collector.h"
 #include "ipc_skeleton.h"
 
 namespace OHOS {
@@ -217,6 +218,17 @@ int32_t AudioSessionService::SetAudioSessionScene(int32_t callerPid, AudioSessio
     return sessionMap_[callerPid]->SetAudioSessionScene(scene);
 }
 
+StreamUsage AudioSessionService::GetAudioSessionStreamUsage(int32_t callerPid)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    if (session != sessionMap_.end() && sessionMap_[callerPid] != nullptr) {
+        return sessionMap_[callerPid]->GetSessionStreamUsage();
+    }
+
+    return STREAM_USAGE_INVALID;
+}
+
 bool AudioSessionService::IsAudioSessionFocusMode(int32_t callerPid)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
@@ -303,11 +315,41 @@ AudioInterrupt AudioSessionService::GenerateFakeAudioInterrupt(int32_t callerPid
     if (session != sessionMap_.end() && sessionMap_[callerPid] != nullptr) {
         fakeAudioInterrupt.streamId = sessionMap_[callerPid]->GetFakeStreamId();
         fakeAudioInterrupt.audioFocusType.streamType = sessionMap_[callerPid]->GetFakeStreamType();
+        fakeAudioInterrupt.streamUsage = sessionMap_[callerPid]->GetSessionStreamUsage();
     } else {
         AUDIO_ERR_LOG("This failure should not have occurred, possibly due to calling the function incorrectly!");
     }
 
     return fakeAudioInterrupt;
+}
+
+bool AudioSessionService::HasStreamForDeviceType(int32_t callerPid, DeviceType deviceType)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    if (session == sessionMap_.end()) {
+        return false;
+    }
+
+    if (session->second == nullptr) {
+        return false;
+    }
+
+    if (session->second->IsAudioSessionEmpty()) {
+        return false;
+    }
+
+    std::set<int32_t> streamIds =
+        AudioStreamCollector::GetAudioStreamCollector().GetSessionIdsOnRemoteDeviceByDeviceType(deviceType);
+
+    std::vector<AudioInterrupt> streamsInSession = session->second->GetStreams();
+    for (const auto &stream : streamsInSession) {
+        if (streamIds.find(stream.streamId) != streamIds.end()) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void AudioSessionService::GenerateFakeStreamId(int32_t callerPid)

@@ -21,6 +21,9 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+
+const static uint64_t TEST_SESSION_ID = 1;
+
 void AudioEcManagerUnitTest::SetUpTestCase(void) {}
 void AudioEcManagerUnitTest::TearDownTestCase(void) {}
 void AudioEcManagerUnitTest::SetUp(void) {}
@@ -457,15 +460,12 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_017, TestSize.Level1)
 /**
 * @tc.name  : Test AudioEcManager.
 * @tc.number: AudioEcManager_018
-* @tc.desc  : Test PrepareAndOpenNormalSource & CloseNormalSource & GetSourceOpened interface.
+* @tc.desc  : Test CloseNormalSource & GetSourceOpened interface.
 */
 HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_018, TestSize.Level1)
 {
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
 
-    SessionInfo sessionInfo;
-    PipeStreamPropInfo propInfo;
-    ecManager.PrepareAndOpenNormalSource(sessionInfo, propInfo, SOURCE_TYPE_MIC);
     EXPECT_EQ(ecManager.GetSourceOpened(), SOURCE_TYPE_MIC);
 
     ecManager.Init(1, 0);
@@ -575,5 +575,299 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_022, TestSize.Level1)
     }
 }
 
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_023
+* @tc.desc  : Test GetUsbModuleInfo interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_023, TestSize.Level4)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.role = "source";
+    string deviceInfo = "source_rate:1;source_format:AUDIO_FORMAT_PCM_16_BIT";
+    GetUsbModuleInfo(deviceInfo, moduleInfo);
+    EXPECT_EQ(moduleInfo.rate, "1");
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_024
+* @tc.desc  : Test UpdateStreamEcInfo interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_024, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    AudioModuleInfo moduleInfo;
+    SourceType sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    EXPECT_NO_THROW(ecManager.UpdateStreamEcInfo(moduleInfo, sourceType));
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_025
+* @tc.desc  : Test PresetArmIdleInput interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_025, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.isEcFeatureEnable_ = false;
+    ecManager.usbSourceModuleInfo_.role = "";
+    const std::string goodAddress{"address=card=2;device=0 role=0"};
+    ecManager.PresetArmIdleInput(goodAddress);
+    EXPECT_TRUE(ecManager.usbSourceModuleInfo_.role.empty());
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_026
+* @tc.desc  : Test CloseUsbArmDevice interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_026, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    AudioDeviceDescriptor device(DEVICE_TYPE_EARPIECE, INPUT_DEVICE);
+    device.macAddress_ = "00:11:22:33:44:55";
+    ecManager.activeArmInputAddr_ = device.macAddress_;
+    EXPECT_NO_THROW(ecManager.CloseUsbArmDevice(device));
+
+    device.deviceRole_ = OUTPUT_DEVICE;
+    ecManager.activeArmOutputAddr_ = device.macAddress_;
+    EXPECT_NO_THROW(ecManager.CloseUsbArmDevice(device));
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_027
+* @tc.desc  : Test GetTargetSourceTypeAndMatchingFlag interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_027, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    SourceType source = SOURCE_TYPE_LIVE;
+    SourceType targetSource = SOURCE_TYPE_INVALID;
+    bool useMatchingPropInfo = false;
+    ecManager.GetTargetSourceTypeAndMatchingFlag(source, targetSource, useMatchingPropInfo);
+    EXPECT_EQ(targetSource, SOURCE_TYPE_LIVE);
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_028
+* @tc.desc  : Test UpdateStreamCommonInfo interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_028, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    bool originIsEcFeatureEnable = ecManager.isEcFeatureEnable_;
+    ecManager.isEcFeatureEnable_ = false;
+    AudioModuleInfo moduleInfo = {};
+    PipeStreamPropInfo targetInfo = PipeStreamPropInfo();
+    SourceType sourceType = SourceType::SOURCE_TYPE_MIC;
+    ecManager.UpdateStreamCommonInfo(moduleInfo, targetInfo, sourceType);
+    EXPECT_EQ(moduleInfo.sourceType, "0");
+
+    ecManager.isEcFeatureEnable_ = true;
+    ecManager.UpdateStreamCommonInfo(moduleInfo, targetInfo, sourceType);
+    EXPECT_EQ(moduleInfo.sourceType, "0");
+
+    ecManager.isEcFeatureEnable_ = originIsEcFeatureEnable;
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_029
+* @tc.desc  : Test UpdateEnhanceEffectState interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_029, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    SourceType sourceType = SourceType::SOURCE_TYPE_MIC;
+    ecManager.UpdateEnhanceEffectState(sourceType);
+    EXPECT_EQ(ecManager.isMicRefRecordOn_, false);
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_030
+* @tc.desc  : Test UpdateStreamMicRefInfo interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_030, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    AudioModuleInfo moduleInfo = {};
+    SourceType sourceType = SourceType::SOURCE_TYPE_MIC;
+    EXPECT_NO_THROW(
+        ecManager.UpdateStreamMicRefInfo(moduleInfo, sourceType);
+    );
+
+    sourceType = SourceType::SOURCE_TYPE_VOICE_COMMUNICATION;
+    EXPECT_NO_THROW(
+        ecManager.UpdateStreamMicRefInfo(moduleInfo, sourceType);
+    );
+
+    sourceType = SOURCE_TYPE_INVALID;
+    EXPECT_NO_THROW(
+        ecManager.UpdateStreamMicRefInfo(moduleInfo, sourceType);
+    );
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_031
+* @tc.desc  : Test ReloadNormalSource interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_031, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    SessionInfo sessionInfo = {};
+    PipeStreamPropInfo targetInfo = PipeStreamPropInfo();
+    SourceType targetSource = SourceType::SOURCE_TYPE_MIC;
+    int32_t ret = ecManager.ReloadNormalSource(sessionInfo, targetInfo, targetSource);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_032
+* @tc.desc  : Test GetOpenedNormalSourceSessionId interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_032, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    uint64_t ret = ecManager.GetOpenedNormalSourceSessionId();
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_033
+* @tc.desc  : Test SetOpenedNormalSourceSessionId interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_033, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    uint64_t originSessionId = ecManager.sessionIdUsedToOpenSource_;
+    uint64_t sessionId = TEST_SESSION_ID;
+    ecManager.SetOpenedNormalSourceSessionId(sessionId);
+    EXPECT_EQ(ecManager.sessionIdUsedToOpenSource_, sessionId);
+
+    ecManager.sessionIdUsedToOpenSource_ = originSessionId;
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_034
+* @tc.desc  : Test PrepareNormalSource interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_034, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    EXPECT_NO_THROW(
+        ecManager.PrepareNormalSource(pipeInfo, streamDesc);
+    );
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_035
+* @tc.desc  : Test SetOpenedNormalSource interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_035, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    SourceType origin = ecManager.normalSourceOpened_;
+    SourceType sourceType = SourceType::SOURCE_TYPE_MIC;
+    ecManager.SetOpenedNormalSource(sourceType);
+    EXPECT_EQ(sourceType, ecManager.normalSourceOpened_);
+
+    ecManager.normalSourceOpened_ = origin;
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_036
+* @tc.desc  : Test SetPrimaryMicModuleInfo interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_036, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    AudioModuleInfo moduleInfo = {};
+    moduleInfo.name = "test";
+    ecManager.SetPrimaryMicModuleInfo(moduleInfo);
+    EXPECT_EQ(ecManager.primaryMicModuleInfo_.name, moduleInfo.name);
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_037
+* @tc.desc  : Test SetDpSinkModuleInfo interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_037, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    AudioModuleInfo moduleInfo = {};
+    moduleInfo.className = "AudioEcManagerUnitTest";
+    ecManager.SetDpSinkModuleInfo(moduleInfo);
+    EXPECT_EQ(ecManager.dpSinkModuleInfo_.className, moduleInfo.className);
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_038
+* @tc.desc  : Test FetchTargetInfoForSessionAdd interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_038, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    SessionInfo sessionInfo = {};
+    PipeStreamPropInfo targetInfo = PipeStreamPropInfo();
+    SourceType targetSourceType = SourceType::SOURCE_TYPE_MIC;
+    int32_t ret = ecManager.FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSourceType);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_039
+* @tc.desc  : Test FetchTargetInfoForSessionAdd interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_039, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    SessionInfo sessionInfo = {};
+    PipeStreamPropInfo targetInfo = PipeStreamPropInfo();
+    SourceType targetSourceType = SourceType::SOURCE_TYPE_MIC;
+    bool originEcFeatureEnable_ = ecManager.isEcFeatureEnable_;
+    std::string originMicSpeaker = ecManager.primaryMicModuleInfo_.OpenMicSpeaker;
+
+    ecManager.isEcFeatureEnable_ = false;
+    ecManager.primaryMicModuleInfo_.OpenMicSpeaker = "0";
+    int32_t ret = ecManager.FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSourceType);
+    EXPECT_EQ(ret, ERROR);
+
+    ecManager.isEcFeatureEnable_ = true;
+    ecManager.primaryMicModuleInfo_.OpenMicSpeaker = "1";
+    ret = ecManager.FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSourceType);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_040
+* @tc.desc  : Test UpdatePrimaryMicModuleInfo interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_040, TestSize.Level4)
+{
+    SourceType sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    auto ecManager = std::make_shared<AudioEcManager>();
+    ASSERT_TRUE(ecManager != nullptr);
+ 
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    ecManager->isEcFeatureEnable_ = true;
+    ecManager->UpdatePrimaryMicModuleInfo(pipeInfo, sourceType);
+    EXPECT_EQ(ecManager->primaryMicModuleInfo_.rate, "48000");
+}
 } // namespace AudioStandard
 } // namespace OHOS

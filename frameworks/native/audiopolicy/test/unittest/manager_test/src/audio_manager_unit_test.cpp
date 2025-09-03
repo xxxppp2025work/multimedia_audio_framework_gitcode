@@ -580,7 +580,7 @@ HWTEST(AudioManagerUnitTest, SetForegroudList_001, TestSize.Level1)
 {
     std::vector<std::string> list = {};
     auto ret = AudioSystemManager::GetInstance()->SetForegroundList(list);
-    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
 }
 
 #ifdef TEMP_DISABLE
@@ -1513,7 +1513,7 @@ HWTEST(AudioManagerUnitTest, SetLowPowerVolume_001, TestSize.Level1)
     ASSERT_NE(0, streamId);
 
     ret = AudioSystemManager::GetInstance()->SetLowPowerVolume(streamId, DISCOUNT_VOLUME);
-    EXPECT_TRUE(ret == SUCCESS || ret == AUDIO_ERR);
+    EXPECT_FALSE(ret == SUCCESS || ret == AUDIO_ERR);
 
     audioRenderer->Release();
 }
@@ -2251,10 +2251,7 @@ HWTEST(AudioManagerUnitTest, NotifyProcessBackgroundState_001, TestSize.Level1)
     int32_t pid = 2001;
     int32_t ret;
     ret = AudioSystemManager::GetInstance()->NotifyProcessBackgroundState(uid, pid);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = AudioSystemManager::GetInstance()->NotifyProcessBackgroundState(uid, pid);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

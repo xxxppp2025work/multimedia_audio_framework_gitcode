@@ -37,6 +37,8 @@ ohos_fuzztest("HpaeRendererManagerFuzzTest") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
     "-fno-access-control",
+    "-DENABLE_HIDUMP_DFX",
+    "-DENABLE_HOOK_PCM",
   ]
 
   configs = [
@@ -88,7 +90,6 @@ ohos_fuzztest("HpaeRendererManagerFuzzTest") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "relational_store:native_appdatafwk",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",

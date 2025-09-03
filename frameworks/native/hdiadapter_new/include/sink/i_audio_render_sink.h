@@ -112,15 +112,27 @@ public:
     virtual int32_t UnLockOffloadRunningLock(void) NOT_SUPPORT_RET
 
     // remote extend function
-    virtual int32_t SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen, const char *streamType) \
-        NOT_SUPPORT_RET
+    virtual int32_t SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen, const char *streamType,
+        const char *audioStreamType = nullptr) NOT_SUPPORT_RET
         
     // primary extend function
     virtual int32_t SetDeviceConnectedFlag(bool flag) NOT_SUPPORT_RET
     // for a2dp_offload connection state
     virtual int32_t UpdatePrimaryConnectionState(uint32_t operation) NOT_SUPPORT_RET;
 
+    virtual int32_t GetHdiPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
+        NOT_SUPPORT_RET;
+    virtual int32_t GetHdiLatency(uint32_t &latency) NOT_SUPPORT_RET;
+    virtual int32_t ForceRefreshPresentationPosition(uint64_t &frames, uint64_t &hdiFrames, int64_t &timeSec,
+        int64_t &timeNanoSec)
+    {
+        hdiFrames = 0;
+        return GetPresentationPosition(frames, timeSec, timeNanoSec);
+    }
+
     virtual void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) {}
+
+    virtual void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback) {}
 };
 
 } // namespace AudioStandard

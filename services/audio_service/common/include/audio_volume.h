@@ -62,6 +62,7 @@ public:
     void SetSystemVolume(SystemVolume &systemVolume);
     void SetAppVolume(AppVolume &appVolume);
     void SetAppVolumeMute(int32_t appUid, bool muted);
+    bool SetAppRingMuted(int32_t appUid, bool isMuted);
     void SetSystemVolume(int32_t volumeType, const std::string &deviceClass, float volume, int32_t volumeLevel);
     void SetSystemVolumeMute(int32_t volumeType, const std::string &deviceClass, bool isMuted);
 
@@ -91,6 +92,8 @@ public:
     void SetDoNotDisturbStatus(bool isDoNotDisturb);
     void SetOffloadType(uint32_t streamIndex, int32_t offloadType);
     int32_t GetOffloadType(uint32_t streamIndex);
+    void SetOffloadEnable(uint32_t streamIndex, int32_t offloadEnable);
+    int32_t GetOffloadEnable(uint32_t streamIndex);
 private:
     AudioVolume();
     float GetAppVolumeInternal(int32_t appUid, AudioVolumeMode mode);
@@ -105,6 +108,7 @@ private:
     std::unordered_map<uint32_t, uint32_t> fadeoutState_{};
     std::unordered_map<uint32_t, uint32_t> stopFadeoutState_{};
     std::unordered_map<uint32_t, int32_t> offloadType_{};
+    std::unordered_map<uint32_t, int32_t> offloadEnable_{};
     int32_t defaultAppVolume_ = 0;
 
     std::shared_ptr<FixedSizeList<AdjustStreamVolumeInfo>> setStreamVolumeInfo_ =

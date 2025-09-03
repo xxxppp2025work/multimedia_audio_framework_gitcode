@@ -57,7 +57,7 @@ typedef struct IAudioSinkAttr : public Parcelable {
 
     static IAudioSinkAttr *Unmarshalling(Parcel &parcel)
     {
-        auto attr = new IAudioSinkAttr();
+        auto attr = new(std::nothrow) IAudioSinkAttr();
         if (attr == nullptr) {
             return nullptr;
         }
@@ -98,6 +98,7 @@ typedef struct IAudioSourceAttr : public Parcelable {
     AudioSampleFormat formatEc = AudioSampleFormat::INVALID_WIDTH;
     uint32_t sampleRateEc = 0;
     uint32_t channelEc = 0;
+    std::string hdiSourceType = "AUDIO_INPUT_DEFAULT_TYPE";
 
     bool Marshalling(Parcel &parcel) const override
     {
@@ -118,12 +119,13 @@ typedef struct IAudioSourceAttr : public Parcelable {
             parcel.WriteBool(hasEcConfig) &&
             parcel.WriteUint8(static_cast<uint8_t>(formatEc)) &&
             parcel.WriteUint32(sampleRateEc) &&
-            parcel.WriteUint32(channelEc);
+            parcel.WriteUint32(channelEc) &&
+            parcel.WriteString(hdiSourceType);
     }
 
     static IAudioSourceAttr *Unmarshalling(Parcel &parcel)
     {
-        auto attr = new IAudioSourceAttr();
+        auto attr = new(std::nothrow) IAudioSourceAttr();
         if (attr == nullptr) {
             return nullptr;
         }
@@ -146,6 +148,7 @@ typedef struct IAudioSourceAttr : public Parcelable {
         attr->formatEc = static_cast<AudioSampleFormat>(parcel.ReadUint8());
         attr->sampleRateEc = parcel.ReadUint32();
         attr->channelEc = parcel.ReadUint32();
+        attr->hdiSourceType = parcel.ReadString();
         return attr;
     }
 } IAudioSourceAttr;

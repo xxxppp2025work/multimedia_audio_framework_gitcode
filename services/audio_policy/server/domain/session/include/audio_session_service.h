@@ -57,6 +57,7 @@ public:
     bool IsSessionNeedToFetchOutputDevice(const int32_t callerPid);
 
     int32_t SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene);
+    StreamUsage GetAudioSessionStreamUsage(int32_t callerPid);
     bool IsAudioSessionFocusMode(int32_t callerPid);
     bool ShouldBypassFocusForStream(const AudioInterrupt &audioInterrupt);
     bool ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt);
@@ -68,6 +69,7 @@ public:
     bool ShouldAudioStreamProcessHintType(InterruptHint hintType);
     static bool IsSameTypeForAudioSession(const AudioStreamType incomingType, const AudioStreamType existedType);
     void NotifyAppStateChange(const int32_t pid, bool isBackState);
+    bool HasStreamForDeviceType(int32_t callerPid, DeviceType deviceType);
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);

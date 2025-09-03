@@ -106,7 +106,7 @@ RendererInClientInner::~RendererInClientInner()
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
     Trace trace(traceTag_ + " OnOperationHandled:" + std::to_string(static_cast<int>(operation)));
-    AUDIO_INFO_LOG("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_,
+    HILOG_COMM_INFO("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_,
         static_cast<int>(operation), result);
     if (operation == SET_OFFLOAD_ENABLE) {
         AUDIO_INFO_LOG("SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
@@ -228,13 +228,17 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     const AudioPlaybackCaptureConfig &config)
 {
     // In plan: If paramsIsSet_ is true, and new info is same as old info, return
-    AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
-        " stream type: %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format,
-        eStreamType_, info.encoding);
+    AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}u, channels: %{public}d, "
+        "format: %{public}d, stream type: %{public}d, encoding type: %{public}d",
+        info.customSampleRate == 0 ? info.samplingRate : info.customSampleRate,
+        info.channels, info.format, eStreamType_, info.encoding);
 
     AudioXCollie guard("RendererInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
-    if (!IsFormatValid(info.format) || !IsSamplingRateValid(info.samplingRate) || !IsEncodingTypeValid(info.encoding)) {
+
+    if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) ||
+        !((info.customSampleRate == 0 && IsSamplingRateValid(info.samplingRate)) ||
+        (info.customSampleRate != 0 && IsCustomSampleRateValid(info.customSampleRate)))) {
         AUDIO_ERR_LOG("Unsupported audio parameter");
         return ERR_NOT_SUPPORTED;
     }
@@ -268,7 +272,9 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     state_ = PREPARED;
 
     // eg: 100005_44100_2_1_client_out.pcm
-    dumpOutFile_ = std::to_string(sessionId_) + "_" + std::to_string(curStreamParams_.samplingRate) + "_" +
+    dumpOutFile_ = std::to_string(sessionId_) + "_" +
+        std::to_string(curStreamParams_.customSampleRate == 0 ?
+        curStreamParams_.samplingRate : curStreamParams_.customSampleRate) + "_" +
         std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out.pcm";
 
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
@@ -361,11 +367,39 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 }
 
 void RendererInClientInner::SetSwitchInfoTimestamp(
-    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair)
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair,
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed)
 {
+    std::vector<uint64_t> timestampCurrent = {0};
+    ClockTime::GetAllTimeStamp(timestampCurrent);
+
     lastFramePosAndTimePair_ = lastFramePosAndTimePair;
+    lastFramePosAndTimePairWithSpeed_ = lastFramePosAndTimePairWithSpeed;
     for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
-        lastSwitchPosition_[base] = lastFramePosAndTimePair[base].first;
+        uint64_t timestampNS = timestampCurrent[base];
+
+        // Calculate the number of samples at the switching point based on the current time
+        // before scaling to one times speed, for RendererInClientInner::GetAudioPosition
+        uint64_t lastTimeNS = lastFramePosAndTimePair[base].second;
+        uint64_t durationNS = timestampNS > lastTimeNS && lastTimeNS > 0 ? timestampNS - lastTimeNS : 0;
+        uint64_t durationUS = durationNS / AUDIO_US_PER_MS;
+        uint64_t newPositionUS =
+            lastFramePosAndTimePair[base].first + durationUS * curStreamParams_.samplingRate / AUDIO_US_PER_S;
+        lastSwitchPosition_[base] = newPositionUS;
+        lastFramePosAndTimePair_[base].first = newPositionUS;
+        lastFramePosAndTimePair_[base].second = timestampNS;
+
+        // after scaling to one times speed, for RendererInClientInner::GetAudioTimestampInfo
+        uint64_t lastTimeWithSpeedNS = lastFramePosAndTimePairWithSpeed[base].second;
+        uint64_t durationWithSpeedNS =
+            timestampNS > lastTimeWithSpeedNS && lastTimeWithSpeedNS > 0 ? timestampNS - lastTimeWithSpeedNS : 0;
+        uint64_t durationWithSpeedUS = durationWithSpeedNS / AUDIO_US_PER_MS;
+        float speed = GetSpeed();
+        uint64_t newPositionWithSpeedUS = lastFramePosAndTimePairWithSpeed[base].first +
+            durationWithSpeedUS * curStreamParams_.samplingRate * speed / AUDIO_US_PER_S;
+        lastSwitchPositionWithSpeed_[base] = newPositionWithSpeedUS;
+        lastFramePosAndTimePairWithSpeed_[base].first = newPositionWithSpeedUS;
+        lastFramePosAndTimePairWithSpeed_[base].second = timestampNS;
     }
 }
 
@@ -378,11 +412,12 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
     uint64_t readIdx = 0;
     uint64_t timestampVal = 0;
     uint64_t latency = 0;
-    int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency, base);
+    int32_t ret = ipcStream_->GetSpeedPosition(readIdx, timestampVal, latency, base);
 
-    uint64_t framePosition = lastSwitchPosition_[base] +
-        (readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0);
+    uint64_t framePosition = readIdx > lastSpeedFlushReadIndex_ ? readIdx - lastSpeedFlushReadIndex_ : 0;
     framePosition = framePosition > latency ? framePosition - latency : 0;
+    framePosition += dropHdiPosition_.load();
+    framePosition += lastSwitchPosition_[base];
 
     // reset the timestamp
     if (lastFramePosAndTimePair_[base].first < framePosition || lastFramePosAndTimePair_[base].second == 0) {
@@ -392,9 +427,10 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         framePosition = lastFramePosAndTimePair_[base].first;
         timestampVal = lastFramePosAndTimePair_[base].second;
     }
-    AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
+    AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64
+        ", lastSpeedFlushReadIndex_ %{public}" PRIu64
         ", timestamp %{public}" PRIu64 ", Sinklatency %{public}" PRIu64 ", lastSwitchPosition_ %{public}" PRIu64,
-        framePosition, lastFlushReadIndex_, timestampVal, latency, lastSwitchPosition_[base]);
+        framePosition, lastSpeedFlushReadIndex_, timestampVal, latency, lastSwitchPosition_[base]);
 
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
@@ -627,49 +663,48 @@ void RendererInClientInner::OnFirstFrameWriting()
     cb->OnFirstFrameWriting(latency);
 }
 
-bool RendererInClientInner::DoHdiSetSpeed(float speed)
+bool RendererInClientInner::DoHdiSetSpeed(float speed, bool force)
 {
-    CHECK_AND_RETURN_RET(isHdiSpeed_.load(), false);
     AUDIO_INFO_LOG("set speed to hdi, sessionId: %{public}d, speed: %{public}f", sessionId_, speed);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, true, "ipcStream is not inited!");
-    CHECK_AND_RETURN_RET(!isEqual(speed, speed_), true);
+    CHECK_AND_RETURN_RET_LOG(force || !isEqual(speed, hdiSpeed_), true, "forbid duplicate set speed");
     ipcStream_->SetSpeed(speed);
-    speed_ = speed;
+    hdiSpeed_ = speed;
     return true;
 }
 
 void RendererInClientInner::NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId)
 {
+    std::lock_guard lock(speedMutex_);
     bool isOffload = routeFlag & (AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD | AUDIO_OUTPUT_FLAG_LOWPOWER);
-    bool curIsHdiSpeed = isOffload && networkId != LOCAL_NETWORK_ID;
+    bool curIsHdiSpeed = isOffload && (networkId != LOCAL_NETWORK_ID || (eStreamType_ == STREAM_MOVIE &&
+        rendererInfo_.originalFlag == AUDIO_FLAG_PCM_OFFLOAD));
     CHECK_AND_RETURN(curIsHdiSpeed != isHdiSpeed_.load());
     AUDIO_INFO_LOG("need set speed to hdi: %{public}s", curIsHdiSpeed ? "true" : "false");
     isHdiSpeed_.store(curIsHdiSpeed);
-    SetSpeed(speed_);
+    if (curIsHdiSpeed) {
+        if (realSpeed_.has_value()) {
+            DoHdiSetSpeed(realSpeed_.value(), true);
+            SetSpeedInner(1.0);
+        }
+    } else {
+        if (realSpeed_.has_value()) {
+            SetSpeedInner(realSpeed_.value());
+            DoHdiSetSpeed(1.0, false);
+        }
+    }
 }
 
 int32_t RendererInClientInner::SetSpeed(float speed)
 {
     std::lock_guard lock(speedMutex_);
-    CHECK_AND_RETURN_RET(!DoHdiSetSpeed(speed), SUCCESS);
-    // set the speed to 1.0 and the speed has never been turned on, no actual sonic stream is created.
-    if (isEqual(speed, SPEED_NORMAL) && !speedEnable_) {
-        speed_ = speed;
-        return SUCCESS;
+    realSpeed_ = speed;
+    if (isHdiSpeed_.load()) {
+        DoHdiSetSpeed(speed, false);
+        SetSpeedInner(1.0);
+    } else {
+        SetSpeedInner(speed);
     }
-
-    if (audioSpeed_ == nullptr) {
-        audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
-            curStreamParams_.channels);
-        GetBufferSize(bufferSize_);
-        speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
-    }
-    audioSpeed_->SetSpeed(speed);
-    writtenAtSpeedChange_.store(
-        WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load() / sizePerFrameInByte_, speed_});
-    speed_ = speed;
-    speedEnable_ = true;
-    AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
     return SUCCESS;
 }
 
@@ -690,7 +725,7 @@ int32_t RendererInClientInner::SetPitch(float pitch)
 float RendererInClientInner::GetSpeed()
 {
     std::lock_guard lock(speedMutex_);
-    return speed_;
+    return realSpeed_.has_value() ? realSpeed_.value() : 1.0f;
 }
 
 void RendererInClientInner::InitCallbackLoop()
@@ -1013,7 +1048,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
 
     waitLock.unlock();
 
-    AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("RUNNING");
 
     FlushBeforeStart();
@@ -1090,7 +1125,7 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     StateCmdTypeToParams(param, state_, cmdType);
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
 
-    AUDIO_INFO_LOG("Pause SUCCESS, sessionId %{public}d, uid %{public}d, mode %{public}s", sessionId_,
+    HILOG_COMM_INFO("Pause SUCCESS, sessionId %{public}d, uid %{public}d, mode %{public}s", sessionId_,
         clientUid_, renderMode_ == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" : "RENDER_MODE_CALLBACK");
     UpdateTracker("PAUSED");
     return true;
@@ -1147,7 +1182,7 @@ bool RendererInClientInner::StopAudioStream()
     // in plan: call HiSysEventWrite
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
 
-    AUDIO_INFO_LOG("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("STOPPED");
     return true;
 }
@@ -1208,7 +1243,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     lock.unlock();
 
     UpdateTracker("RELEASED");
-    AUDIO_INFO_LOG("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
 
     std::lock_guard lockSpeed(speedMutex_);
     audioSpeed_.reset();
@@ -1483,6 +1518,7 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.streamTrackerRegistered = streamTrackerRegistered_;
     info.defaultOutputDevice = defaultOutputDevice_;
     info.lastFramePosAndTimePair = lastFramePosAndTimePair_;
+    info.lastFramePosAndTimePairWithSpeed = lastFramePosAndTimePairWithSpeed_;
     GetStreamSwitchInfo(info);
 
     {
@@ -1504,6 +1540,7 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.clientPid = clientPid_;
     info.clientUid = clientUid_;
     info.volume = clientVolume_;
+    info.duckVolume = duckVolume_;
     info.silentModeAndMixWithOthers = silentModeAndMixWithOthers_;
 
     info.frameMarkPosition = static_cast<uint64_t>(rendererMarkPosition_);
@@ -1513,6 +1550,7 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.renderPeriodPositionCb = rendererPeriodPositionCallback_;
 
     info.rendererWriteCallback = writeCb_;
+    info.unprocessSamples = unprocessedFramesBytes_.load();
 }
 
 IAudioStream::StreamClass RendererInClientInner::GetStreamClass()
@@ -1802,10 +1840,10 @@ error:
     return false;
 }
 
-int32_t RendererInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+int32_t RendererInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce)
 {
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->SetDefaultOutputDevice(defaultOutputDevice);
+    int32_t ret = ipcStream_->SetDefaultOutputDevice(defaultOutputDevice, skipForce);
     if (ret == SUCCESS) {
         defaultOutputDevice_ = defaultOutputDevice;
     }
@@ -1856,6 +1894,8 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     frameLatency += SONIC_LATENCY_IN_MS * curStreamParams_.samplingRate / AUDIO_MS_PER_SECOND;
     // real frameposition
     uint64_t framePosition = unprocessSamples > frameLatency ? unprocessSamples - frameLatency : 0;
+    framePosition += dropPosition_.load();
+    framePosition += lastSwitchPositionWithSpeed_[base];
 
     // reset the timestamp
     if (lastFramePosAndTimePairWithSpeed_[base].first < framePosition ||
@@ -1937,6 +1977,7 @@ void RendererInClientInner::SetCallStartByUserTid(pid_t tid)
 
 void RendererInClientInner::SetCallbackLoopTid(int32_t tid)
 {
+    std::unique_lock<std::mutex> waitLock(callbackLoopTidMutex_);
     AUDIO_INFO_LOG("Callback loop tid: %{public}d", tid);
     callbackLoopTid_ = tid;
     callbackLoopTidCv_.notify_all();

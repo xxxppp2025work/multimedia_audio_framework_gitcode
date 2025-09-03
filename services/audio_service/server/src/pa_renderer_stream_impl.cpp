@@ -181,7 +181,6 @@ int32_t PaRendererStreamImpl::Start()
         std::string sessionIDTemp = std::to_string(streamIndex_);
         audioEffectVolume->SetStreamVolume(sessionIDTemp, clientVolume_);
     }
-    initEffectFlag_ = false;
 
     return SUCCESS;
 }
@@ -202,8 +201,8 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
         return ERR_OPERATION_FAILED;
     }
 
-    AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
-    if (!offloadEnable_) {
+    if (!offloadEnable_ && !isStandby) {
+        AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
         palock.Unlock();
         {
             std::unique_lock<std::mutex> lock(fadingMutex_);
@@ -222,14 +221,14 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
     CHECK_AND_RETURN_RET_LOG(operation != nullptr, ERR_OPERATION_FAILED, "pa_stream_cork operation is null");
     palock.Unlock();
 
-    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
+    if (effectMode_ == EFFECT_DEFAULT) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_INFO_LOG("audioEffectChainManager is null");
         } else {
+            AUDIO_INFO_LOG("Pause make init effect buffer");
             std::string sessionIDTemp = std::to_string(streamIndex_);
             audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
-            initEffectFlag_ = true;
         }
     }
 
@@ -264,14 +263,14 @@ int32_t PaRendererStreamImpl::Flush()
     }
     Trace trace("PaRendererStreamImpl::InitAudioEffectChainDynamic");
 
-    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
+    if (effectMode_ == EFFECT_DEFAULT) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_INFO_LOG("audioEffectChainManager is null");
         } else {
+            AUDIO_INFO_LOG("Flush make init effect buffer");
             std::string sessionIDTemp = std::to_string(streamIndex_);
             audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
-            initEffectFlag_ = true;
         }
     }
 
@@ -336,14 +335,14 @@ int32_t PaRendererStreamImpl::Stop()
     CHECK_AND_RETURN_RET_LOG(operation != nullptr, ERR_OPERATION_FAILED, "pa_stream_cork operation is null");
     pa_operation_unref(operation);
 
-    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
+    if (effectMode_ == EFFECT_DEFAULT) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_INFO_LOG("audioEffectChainManager is null");
         } else {
+            AUDIO_INFO_LOG("Stop make init effect buffer");
             std::string sessionIDTemp = std::to_string(streamIndex_);
             audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
-            initEffectFlag_ = true;
         }
     }
 
@@ -376,14 +375,14 @@ int32_t PaRendererStreamImpl::Release()
     }
     state_ = RELEASED;
 
-    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
+    if (effectMode_ == EFFECT_DEFAULT) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_INFO_LOG("audioEffectChainManager is null");
         } else {
+            AUDIO_INFO_LOG("Release make init effect buffer");
             std::string sessionIDTemp = std::to_string(streamIndex_);
             audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
-            initEffectFlag_ = true;
         }
     }
 
@@ -1177,11 +1176,7 @@ int32_t PaRendererStreamImpl::OffloadUpdatePolicy(AudioOffloadType statePolicy, 
         }
         pa_proplist *propList = pa_proplist_new();
         CHECK_AND_RETURN_RET_LOG(propList != nullptr, ERR_OPERATION_FAILED, "pa_proplist_new failed");
-        if (offloadEnable_) {
-            pa_proplist_sets(propList, "stream.offload.enable", "1");
-        } else {
-            pa_proplist_sets(propList, "stream.offload.enable", "0");
-        }
+        AudioVolume::GetInstance()->SetOffloadType(sinkInputIndex_, offloadEnable_);
         AudioVolume::GetInstance()->SetOffloadType(sinkInputIndex_, statePolicy);
 
         pa_operation *updatePropOperation =
@@ -1342,8 +1337,8 @@ int32_t PaRendererStreamImpl::SetClientVolume(float clientVolume)
 
 int32_t PaRendererStreamImpl::SetLoudnessGain(float loudnessGain)
 {
-    AUDIO_WARNING_LOG("SetLoudnessGain only for hpae renderer stream");
-    return ERROR;
+    AUDIO_INFO_LOG("PA set loudnessGain: %{public}f", loudnessGain);
+    return SUCCESS;
 }
 
 void PaRendererStreamImpl::UpdatePaTimingInfo()

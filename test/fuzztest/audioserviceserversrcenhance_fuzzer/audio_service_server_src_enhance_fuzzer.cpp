@@ -107,7 +107,7 @@ void AudioServiceMoreFuzzTest()
     AudioPlaybackCaptureConfig newConfig;
     audioServicePtr->UpdateMuteControlSet(sessionId, true);
     audioServicePtr->UpdateMuteControlSet(sessionId, false);
-    audioServicePtr->EnableDualToneList(sessionId);
+    audioServicePtr->EnableDualStream(sessionId, "Speaker");
     audioServicePtr->OnCapturerFilterChange(sessionId, newConfig, 1);
     audioServicePtr->OnCapturerFilterRemove(sessionId, 1);
 
@@ -184,7 +184,7 @@ void AudioNoneMixEngineMoreFuzzTest()
     noneMixEngine->GetDirectVoipSampleRate(samplingRate);
 }
 
-typedef void (*TestFuncs[5])();
+typedef void (*TestFuncs[3])();
 
 TestFuncs g_testFuncs = {
     AudioServiceMoreFuzzTest,

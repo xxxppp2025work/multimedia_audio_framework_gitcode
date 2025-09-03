@@ -235,6 +235,11 @@ inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_
     }
 }
 
+enum AudioDeviceSelectMode {
+    SELECT_STRATEGY_DEFAULT = 0,
+    SELECT_STRATEGY_INDEPENDENT = 1,
+};
+
 enum DmDeviceType {
     DM_DEVICE_TYPE_DEFAULT = 0,
     DM_DEVICE_TYPE_PENCIL = 0xA07,
@@ -389,7 +394,7 @@ struct VolumeBehavior : public Parcelable {
 
     static VolumeBehavior *Unmarshalling(Parcel &parcel)
     {
-        auto info = new VolumeBehavior();
+        auto info = new(std::nothrow) VolumeBehavior();
         if (info == nullptr) {
             return nullptr;
         }
@@ -448,7 +453,7 @@ public:
         OLD_DEVICE_UNAVALIABLE_EXT = 1000,
         SET_AUDIO_SCENE = 1001,
         SET_DEFAULT_OUTPUT_DEVICE = 1002,
-        DISTRIBUTED_DEVICE = 1003,
+        DISTRIBUTED_DEVICE_UNAVAILABLE = 1003,
         SET_INPUT_DEVICE = 1004
     };
 
@@ -493,7 +498,7 @@ public:
         return reason_ == ExtEnum::OVERRODE;
     }
 
-    bool isSetAudioScene() const
+    bool IsSetAudioScene() const
     {
         return reason_ == ExtEnum::SET_AUDIO_SCENE;
     }
@@ -503,6 +508,16 @@ public:
         return reason_ == ExtEnum::SET_DEFAULT_OUTPUT_DEVICE;
     }
 
+    bool IsUnknown() const
+    {
+        return reason_ == ExtEnum::UNKNOWN;
+    }
+
+    bool IsDistributedDeviceUnavailable() const
+    {
+        return reason_ == ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE;
+    }
+
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(static_cast<int32_t>(reason_));
@@ -510,7 +525,7 @@ public:
 
     static AudioStreamDeviceChangeReasonExt *Unmarshalling(Parcel &parcel)
     {
-        auto info = new AudioStreamDeviceChangeReasonExt();
+        auto info = new(std::nothrow) AudioStreamDeviceChangeReasonExt();
         if (info == nullptr) {
             return nullptr;
         }

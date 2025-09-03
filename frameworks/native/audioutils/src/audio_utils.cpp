@@ -16,7 +16,6 @@
 #define LOG_TAG "AudioUtils"
 #endif
 
-#include "v5_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include <cinttypes>
 #include <ctime>
@@ -185,53 +184,6 @@ uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
             break;
     }
     return audioPerSampleLength;
-}
-
-uint32_t Util::ConvertToHDIAudioInputType(const SourceType sourceType)
-{
-    enum AudioInputType hdiAudioInputType;
-    switch (sourceType) {
-        case SOURCE_TYPE_INVALID:
-            hdiAudioInputType = AUDIO_INPUT_DEFAULT_TYPE;
-            break;
-        case SOURCE_TYPE_MIC:
-        case SOURCE_TYPE_PLAYBACK_CAPTURE:
-        case SOURCE_TYPE_ULTRASONIC:
-            hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
-            break;
-        case SOURCE_TYPE_WAKEUP:
-            hdiAudioInputType = AUDIO_INPUT_SPEECH_WAKEUP_TYPE;
-            break;
-        case SOURCE_TYPE_VOICE_TRANSCRIPTION:
-        case SOURCE_TYPE_VOICE_COMMUNICATION:
-            hdiAudioInputType = AUDIO_INPUT_VOICE_COMMUNICATION_TYPE;
-            break;
-        case SOURCE_TYPE_VOICE_RECOGNITION:
-            hdiAudioInputType = AUDIO_INPUT_VOICE_RECOGNITION_TYPE;
-            break;
-        case SOURCE_TYPE_VOICE_CALL:
-            hdiAudioInputType = AUDIO_INPUT_VOICE_CALL_TYPE;
-            break;
-        case SOURCE_TYPE_CAMCORDER:
-            hdiAudioInputType = AUDIO_INPUT_CAMCORDER_TYPE;
-            break;
-        case SOURCE_TYPE_EC:
-            hdiAudioInputType = AUDIO_INPUT_EC_TYPE;
-            break;
-        case SOURCE_TYPE_MIC_REF:
-            hdiAudioInputType = AUDIO_INPUT_NOISE_REDUCTION_TYPE;
-            break;
-        case SOURCE_TYPE_UNPROCESSED:
-            hdiAudioInputType = AUDIO_INPUT_RAW_TYPE;
-            break;
-        case SOURCE_TYPE_LIVE:
-            hdiAudioInputType = AUDIO_INPUT_LIVE_TYPE;
-            break;
-        default:
-            hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
-            break;
-    }
-    return static_cast<uint32_t>(hdiAudioInputType);
 }
 
 bool Util::IsScoSupportSource(const SourceType sourceType)
@@ -607,7 +559,7 @@ bool PermissionUtil::CheckCallingUidPermission(const std::vector<uid_t> &allowed
         return true;
     }
     for (const auto &uid : allowedUids) {
-        if (uid == callingUid) {
+        if (uid == static_cast<uid_t>(callingUid)) {
             return true;
         }
     }
@@ -1139,8 +1091,13 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
     for (uint32_t i = nSamples; i > 0; --i) {
         int32_t value = *frame++;
         if (value < 0) {
-            value = -value;
+            if (value == INT32_MIN) {
+                value = INT32_MAX;
+            } else {
+                value = -value;
+            }
         }
+
         if (curMaxAmplitude < value) {
             curMaxAmplitude = value;
         }
@@ -1207,6 +1164,7 @@ template bool GetSysPara(const char *key, std::string &value);
 
 int32_t GetEngineFlag()
 {
+#ifdef SUPPORT_OLD_ENGINE
     std::string para = "const.multimedia.audio.proaudioEnable";
     static int32_t engineFlag = -1;
     if (engineFlag == -1) {
@@ -1215,6 +1173,9 @@ int32_t GetEngineFlag()
         CHECK_AND_RETURN_RET_LOG(res, engineFlag, "get %{public}s fail", para.c_str());
     }
     return engineFlag;
+#else
+    return 1;
+#endif
 }
 
 std::map<std::string, std::string> DumpFileUtil::g_lastPara = {};

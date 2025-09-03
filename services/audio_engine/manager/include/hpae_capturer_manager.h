@@ -76,7 +76,7 @@ public:
     int32_t DumpSourceInfo() override;
     std::string GetDeviceHDFDumpInfo() override;
 private:
-    void SendRequest(Request &&request, bool isInit = false);
+    void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t CreateOutputSession(const HpaeStreamInfo &streamInfo);
     int32_t DeleteOutputSession(uint32_t sessionId);
     void ConnectProcessClusterWithEc(HpaeProcessorType &sceneType);
@@ -90,13 +90,14 @@ private:
     int32_t InitCapturer();
     void AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveInfo, bool isConnect = true);
     void MoveAllStreamToNewSource(const std::string &sourceName,
-        const std::vector<uint32_t>& moveIds, MoveSessionType moveType);
+        const std::vector<uint32_t>& moveIds, MoveSessionType moveType = MOVE_ALL);
     int32_t CaptureEffectCreate(const HpaeProcessorType &sceneType, const AudioEnhanceScene &enhanceScene);
     int32_t CaptureEffectRelease(const HpaeProcessorType &sceneType);
     int32_t InitCapturerManager();
     void CreateSourceAttr(IAudioSourceAttr &attr);
     int32_t CapturerSourceStart();
     int32_t CapturerSourceStop();
+    void CapturerSourceStopForRemote();
     void CheckIfAnyStreamRunning();
     void UpdateAppsUidAndSessionId();
     bool CheckEcCondition(const HpaeProcessorType &sceneType, HpaeNodeInfo &ecNodeInfo,

@@ -85,9 +85,12 @@ private:
     void OffloadCallback(const RenderCallbackType type);
     // check when stop hdi, if need suspend
     bool CheckIfSuspend();
+    // check renderFrame ret to decide whether need sleep
+    void OffloadNeedSleep(int32_t retType);
 
     InputPort<HpaePcmBuffer*> inputStream_;
     std::vector<char> renderFrameData_;
+    std::vector<char> renderFrameDataTemp_;
     std::shared_ptr<IAudioRenderSink> audioRendererSink_ = nullptr;
     uint32_t renderId_ = HDI_INVALID_ID;
     IAudioSinkAttr sinkOutAttr_;
@@ -115,6 +118,10 @@ private:
     // first stand for pos(in us), second stand for time
     std::pair<uint64_t, TimePoint> hdiPos_;
     uint32_t suspendCount_ = 0;
+    float speed_ = 1.0f;
+    uint64_t hdiRealPos_ = 0;
+    // renderframe failed count
+    uint32_t retryCount_ = 0;
 };
 
 }  // namespace HPAE

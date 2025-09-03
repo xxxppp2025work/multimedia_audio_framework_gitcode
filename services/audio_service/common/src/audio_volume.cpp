@@ -24,6 +24,7 @@
 #include "audio_utils_c.h"
 #include "audio_stream_info.h"
 #include "media_monitor_manager.h"
+#include "audio_stream_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -113,8 +114,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
             volumes->volumeSystem = 1.0f;
         }
     } else {
-        AUDIO_ERR_LOG("system volume not exist, volumeType:%{public}d, deviceClass%{public}s",
-            volumeType, deviceClass.c_str());
+        AUDIO_ERR_LOG("no system volume, volumeType:%{public}d deviceClass%{public}s", volumeType, deviceClass.c_str());
     }
     float sysVolume = volumes->volumeSystem;
     if (it != streamVolume_.end() && it->second.IsVirtualKeyboard() && itSV != systemVolume_.end()) {
@@ -131,6 +131,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
             volumes->volumeSystem, volumes->volumeStream, volumes->volumeApp, it->second.IsVirtualKeyboard(),
             itSV != systemVolume_.end() ? (itSV->second.isMuted_ ? "T" : "F") : "null", doNotDisturbStatusVolume);
     }
+    AudioStreamMonitor::GetInstance().UpdateMonitorVolume(sessionId, volumes->volume);
     return volumes->volume;
 }
 
@@ -386,6 +387,37 @@ void AudioVolume::SetAppVolumeMute(int32_t appUid, bool isMuted)
                 stream.volume_ * stream.duckFactor_ * stream.lowPowerFactor_ * stream.appVolume_;
         }
     }
+}
+
+bool AudioVolume::SetAppRingMuted(int32_t appUid, bool isMuted)
+{
+    std::unique_lock<std::shared_mutex> lock(volumeMutex_);
+    float totalAppVolume = 1.0f;
+    auto it = appVolume_.find(appUid);
+    if (it != appVolume_.end()) {
+        it->second.totalVolume_ = it->second.isMuted_ ? 0.0f : it->second.volume_;
+        totalAppVolume = it->second.totalVolume_;
+    } else {
+        AppVolume appVolume(appUid, DEFAULT_APP_VOLUME, defaultAppVolume_, false);
+        appVolume.totalVolume_ = appVolume.volume_;
+        totalAppVolume = appVolume.totalVolume_;
+        appVolume_.emplace(appUid, appVolume);
+    }
+
+    AUDIO_INFO_LOG("appUid:%{public}d, isMuted:%{public}d", appUid, isMuted);
+    for (auto &streamVolume : streamVolume_) {
+        auto &stream = streamVolume.second;
+        AUDIO_INFO_LOG("appUid: %{public}d, streamType: %{public}d", stream.GetAppUid(), stream.GetStreamType());
+        if (stream.GetAppUid() == appUid && stream.GetStreamType() == static_cast<int32_t>(STREAM_RING)) {
+            bool isRingMuted = stream.isMuted_ || isMuted;
+            stream.appVolume_ = totalAppVolume;
+            stream.totalVolume_ = isRingMuted ? 0.0f :
+                stream.volume_ * stream.duckFactor_ * stream.lowPowerFactor_ * stream.appVolume_;
+            AUDIO_INFO_LOG("stream total volume: %{public}f", stream.totalVolume_);
+            return true;
+        }
+    }
+    return false;
 }
 
 void AudioVolume::SetAppVolume(AppVolume &appVolume)
@@ -644,6 +676,21 @@ int32_t AudioVolume::GetOffloadType(uint32_t streamIndex)
     AUDIO_WARNING_LOG("No such streamIndex in map!");
     return OFFLOAD_DEFAULT;
 }
+
+void AudioVolume::SetOffloadEnable(uint32_t streamIndex, int32_t offloadEnable)
+{
+    std::unique_lock<std::shared_mutex> lock(fadeoutMutex_);
+    offloadEnable_.insert_or_assign(streamIndex, offloadEnable);
+}
+
+int32_t AudioVolume::GetOffloadEnable(uint32_t streamIndex)
+{
+    std::shared_lock<std::shared_mutex> lock(fadeoutMutex_);
+    auto it = offloadEnable_.find(streamIndex);
+    if (it != offloadEnable_.end()) { return it->second; }
+    AUDIO_WARNING_LOG("No such streamIndex in map!");
+    return 0;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -743,6 +790,16 @@ void SetOffloadType(uint32_t streamIndex, int32_t offloadType)
 int32_t GetOffloadType(uint32_t streamIndex)
 {
     return AudioVolume::GetInstance()->GetOffloadType(streamIndex);
+}
+
+void SetOffloadEnable(uint32_t streamIndex, int32_t offloadEnable)
+{
+    AudioVolume::GetInstance()->SetOffloadEnable(streamIndex, offloadEnable);
+}
+
+int32_t GetOffloadEnable(uint32_t streamIndex)
+{
+    return AudioVolume::GetInstance()->GetOffloadEnable(streamIndex);
 }
 #ifdef __cplusplus
 }

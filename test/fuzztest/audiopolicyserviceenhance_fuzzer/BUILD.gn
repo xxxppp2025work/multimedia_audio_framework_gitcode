@@ -15,7 +15,6 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../appgallery.gni")
-import("../../../av_session.gni")
 import("../../../bluetooth_part.gni")
 import("../../../config.gni")
 
@@ -87,7 +86,6 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "relational_store:native_appdatafwk",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
@@ -104,15 +102,6 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
     external_deps += [
       "accessibility:accessibility_common",
       "accessibility:accessibilityconfig",
-    ]
-  }
-
-  if (avsession_part_enable == true) {
-    external_deps += [
-      "ability_base:want",
-      "ability_runtime:wantagent_innerkits",
-      "av_session:avsession_client",
-      "input:libmmi-client",
     ]
   }
 
@@ -181,9 +170,6 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
     cflags += [ "-DBLUETOOTH_ENABLE" ]
   }
 
-  if (avsession_part_enable == true) {
-    cflags += [ "-DAVSESSION_ENABLE" ]
-  }
 }
 
 group("fuzztest") {

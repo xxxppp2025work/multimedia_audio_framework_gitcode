@@ -865,7 +865,7 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_038, Tes
     ptrAudioSpatializationService->headTrackingEnabledReal_ = true;
 
     auto result = ptrAudioSpatializationService->UpdateSpatializationStateReal(outputDeviceChange, preDeviceAddress);
-    EXPECT_NE(result, SUCCESS);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -886,7 +886,7 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_039, Tes
     ptrAudioSpatializationService->headTrackingEnabledReal_ = true;
 
     auto result = ptrAudioSpatializationService->UpdateSpatializationStateReal(outputDeviceChange, preDeviceAddress);
-    EXPECT_NE(result, SUCCESS);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -928,7 +928,7 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_041, Tes
     ptrAudioSpatializationService->headTrackingEnabledReal_ = false;
 
     auto result = ptrAudioSpatializationService->UpdateSpatializationStateReal(outputDeviceChange, preDeviceAddress);
-    EXPECT_NE(result, SUCCESS);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -1067,6 +1067,28 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_049, Tes
     EXPECT_NE(ptrAudioSpatializationService->audioPolicyServerHandler_, nullptr);
 
     ptrAudioSpatializationService->HandleHeadTrackingDeviceChange(changeInfo);
+}
+
+/**
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService::Init_001
+* @tc.desc  : Test AudioSpatializationService::Init
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, Init_001, TestSize.Level1)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+
+    EXPECT_NE(ptrAudioSpatializationService, nullptr);
+
+    const std::vector<EffectChain> effectChains = {
+        {"Effect3", {}, "HEADTRACKING"},
+        {"BLUETOOTH_EFFECT_CHAIN_NAME", {"apply1_1", "apply1_2"}, "SPATIALIZATION_AND_HEAD_TRACKING_SUPPORTED_LABEL"},
+        {"BLUETOOTH_EFFECT_CHAIN_NAME", {"apply1_1", "apply1_2"}, "SPATIALIZATION_SUPPORTED_LABEL"},
+        {"BLUETOOTH_EFFECT_CHAIN_NAME", {"apply2_1"}, "HEAD_TRACKING_SUPPORTED_LABEL"}
+    };
+    EXPECT_NO_THROW(
+        ptrAudioSpatializationService->Init(effectChains);
+    );
 }
 } // namespace AudioStandard
 } // namespace OHOS

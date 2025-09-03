@@ -511,9 +511,10 @@ HWTEST_F(AudioPipeManagerUnitTest, GetProcessDeviceInfoBySessionId_001, TestSize
     desc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
     pipeInfo->streamDescriptors_.push_back(desc);
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
-
+    
+    AudioStreamInfo info;
     uint32_t targetSessionId = 123;
-    auto result = audioPipeManager->GetProcessDeviceInfoBySessionId(targetSessionId);
+    auto result = audioPipeManager->GetProcessDeviceInfoBySessionId(targetSessionId, info);
     EXPECT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_SPEAKER);
 }
@@ -538,7 +539,8 @@ HWTEST_F(AudioPipeManagerUnitTest, GetProcessDeviceInfoBySessionId_002, TestSize
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
 
     uint32_t targetSessionId = 456;
-    auto result = audioPipeManager->GetProcessDeviceInfoBySessionId(targetSessionId);
+    AudioStreamInfo info;
+    auto result = audioPipeManager->GetProcessDeviceInfoBySessionId(targetSessionId, info);
     EXPECT_EQ(result, nullptr);
 }
 
@@ -1209,6 +1211,56 @@ HWTEST_F(AudioPipeManagerUnitTest, AudioStreamDescriptor_GetNewDevicesTypeString
 
     std::string out = desc->GetNewDevicesTypeString();
     EXPECT_NE(out, "");
+}
+
+/**
+ * @tc.name: GetAllCapturerStreamDescs_001
+ * @tc.desc: Test GetAllCapturerStreamDescs when finding capture stream descriptors.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetAllCapturerStreamDescs_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+ 
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+    std::shared_ptr<AudioStreamDescriptor> desc1 = std::make_shared<AudioStreamDescriptor>();
+    desc1->audioMode_ = AUDIO_MODE_RECORD;
+    std::shared_ptr<AudioStreamDescriptor> desc2 = std::make_shared<AudioStreamDescriptor>();
+    desc2->audioMode_ = AUDIO_MODE_RECORD;
+    pipeInfo->streamDescriptors_.push_back(desc1);
+    pipeInfo->streamDescriptors_.push_back(desc2);
+ 
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+    auto result = audioPipeManager->GetAllCapturerStreamDescs();
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0], desc1);
+    EXPECT_EQ(result[1], desc2);
+}
+ 
+/**
+ * @tc.name: GetAllCapturerStreamDescs_002
+ * @tc.desc: Test GetAllCapturerStreamDescs when no capture stream descriptors are found.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetAllCapturerStreamDescs_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+ 
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+    std::shared_ptr<AudioStreamDescriptor> desc1 = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioStreamDescriptor> desc2 = std::make_shared<AudioStreamDescriptor>();
+    pipeInfo->streamDescriptors_.push_back(desc1);
+    pipeInfo->streamDescriptors_.push_back(desc2);
+ 
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+    auto result = audioPipeManager->GetAllCapturerStreamDescs();
+    EXPECT_EQ(result.size(), 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -47,6 +47,18 @@ void AudioVolumeManagerUnitTest::TearDown(void)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
+* @tc.number: GetAllDeviceVolumeInfo_001
+* @tc.desc  : Test GetAllDeviceVolumeInfo interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, GetAllDeviceVolumeInfo_001, TestSize.Level1)
+{
+    AudioVolumeManager audioVolumeManager;
+    std::vector<std::shared_ptr<AllDeviceVolumeInfo>> allDeviceVolumeInfo = audioVolumeManager.GetAllDeviceVolumeInfo();
+    EXPECT_EQ(allDeviceVolumeInfo.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_002
 * @tc.desc  : Test InitSharedVolume interface.
 */
@@ -1173,6 +1185,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_053, TestSize.Level1)
     want.SetAction(action);
     eventData.SetWant(want);
     AudioVolumeManager::GetInstance().OnReceiveEvent(eventData);
+    EXPECT_EQ(AudioVolumeManager::GetInstance().safeStatusBt_, SAFE_INACTIVE);
 }
 
 /**
@@ -1188,6 +1201,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_054, TestSize.Level1)
     want.SetAction(action);
     eventData.SetWant(want);
     AudioVolumeManager::GetInstance().OnReceiveEvent(eventData);
+    EXPECT_EQ(AudioVolumeManager::GetInstance().safeStatusBt_, SAFE_INACTIVE);
 }
 
 /**
@@ -1203,6 +1217,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_055, TestSize.Level1)
     want.SetAction(action);
     eventData.SetWant(want);
     AudioVolumeManager::GetInstance().OnReceiveEvent(eventData);
+    EXPECT_EQ(AudioVolumeManager::GetInstance().safeStatusBt_, SAFE_INACTIVE);
 }
 
 /**
@@ -1305,7 +1320,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_061, TestSize.Level1)
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t zoneId = 10;
     auto ret = audioVolumeManager.GetStreamMute(streamType, zoneId);
-    EXPECT_EQ(ret, true);
+    EXPECT_EQ(ret, false);
 }
 
 /**
@@ -1317,6 +1332,66 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_062, TestSize.Level1)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     auto ret = audioVolumeManager.ResetRingerModeMute();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_063
+* @tc.desc  : Test Init interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_063, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+    audioVolumeManager->DeInit();
+    EXPECT_EQ(audioVolumeManager->forceControlVolumeTypeMonitor_, nullptr);
+
+    bool ret;
+    ret = audioVolumeManager->Init(nullptr);
+    EXPECT_EQ(ret, true);
+    EXPECT_NE(audioVolumeManager->forceControlVolumeTypeMonitor_, nullptr);
+    ret = audioVolumeManager->Init(nullptr);
+    EXPECT_EQ(ret, true);
+    EXPECT_NE(audioVolumeManager->forceControlVolumeTypeMonitor_, nullptr);
+    audioVolumeManager->DeInit();
+    EXPECT_EQ(audioVolumeManager->forceControlVolumeTypeMonitor_, nullptr);
+}
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_064
+* @tc.desc  : Test SetAdjustVolumeForZone
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_064, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    int32_t zoneId = 0;
+    auto ret = audioVolumeManager.SetAdjustVolumeForZone(zoneId);
+    EXPECT_EQ(ret, SUCCESS);
+    zoneId = 1;
+    ret = audioVolumeManager.SetAdjustVolumeForZone(zoneId);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_067
+* @tc.desc  : Test SetNearlinkDeviceVolume interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_067, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+
+    AudioStreamType streamType = STREAM_MUSIC;
+    int32_t volumeLevel = 8;
+    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    audioVolumeManager->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    auto ret = audioVolumeManager->SetNearlinkDeviceVolumeEx(streamType, volumeLevel);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    AudioDeviceDescriptor curDesc2(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    audioVolumeManager->audioActiveDevice_.SetCurrentOutputDevice(curDesc2);
+    ret = audioVolumeManager->SetNearlinkDeviceVolumeEx(streamType, volumeLevel);
     EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard

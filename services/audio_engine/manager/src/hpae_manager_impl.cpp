@@ -18,6 +18,7 @@
 
 #include "audio_errors.h"
 #include "hpae_manager_impl.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -105,18 +106,18 @@ int32_t HpaeManagerImpl::CloseAudioPort(int32_t audioHandleIndex)
     return manager_->CloseAudioPort(audioHandleIndex);
 }
 
-int32_t HpaeManagerImpl::GetSinkInfoByIdx(const int32_t &renderIdx, HpaeSinkInfo &sinkInfo, int32_t &result,
-    std::function<void()> callback)
+int32_t HpaeManagerImpl::GetSinkInfoByIdx(const int32_t &sinkIdx,
+    std::function<void(const HpaeSinkInfo &sinkInfo, int32_t result)> callback)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
-    return manager_->GetSinkInfoByIdx(renderIdx, sinkInfo, result, callback);
+    return manager_->GetSinkInfoByIdx(sinkIdx, callback);
 }
 
-int32_t HpaeManagerImpl::GetSourceInfoByIdx(const int32_t &captureIdx, HpaeSourceInfo &sourceInfo, int32_t &result,
-    std::function<void()> callback)
+int32_t HpaeManagerImpl::GetSourceInfoByIdx(const int32_t &sourceIdx,
+    std::function<void(const HpaeSourceInfo &sourceInfo, int32_t result)> callback)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
-    return manager_->GetSourceInfoByIdx(captureIdx, sourceInfo, result, callback);
+    return manager_->GetSourceInfoByIdx(sourceIdx, callback);
 }
 
 int32_t HpaeManagerImpl::GetAllSinkInputs()
@@ -574,6 +575,46 @@ int32_t HpaeManagerImpl::UpdateCollaborativeState(bool isCollaborationEnabled)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
     return manager_->UpdateCollaborativeState(isCollaborationEnabled);
+}
+
+void HpaeManagerImpl::AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->AddStreamVolumeToEffect(stringSessionID, streamVolume);
+}
+
+void HpaeManagerImpl::DeleteStreamVolumeToEffect(const std::string stringSessionID)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->DeleteStreamVolumeToEffect(stringSessionID);
+}
+
+// interfaces for injector
+void HpaeManagerImpl::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->UpdateAudioPortInfo(sinkPortIndex, audioPortInfo);
+}
+
+void HpaeManagerImpl::AddCaptureInjector(
+    const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->AddCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
+}
+
+void HpaeManagerImpl::RemoveCaptureInjector(
+    const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
+}
+
+int32_t HpaeManagerImpl::PeekAudioData(
+    const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
+    return manager_->PeekAudioData(sinkPortIndex, buffer, bufferSize, streamInfo);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

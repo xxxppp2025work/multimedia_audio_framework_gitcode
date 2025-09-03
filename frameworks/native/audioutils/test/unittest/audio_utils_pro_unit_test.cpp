@@ -586,7 +586,7 @@ HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_026, TestSize.Level1)
     SwitchState targetState2 = SwitchState::SWITCH_STATE_WAITING;
 
     auto ret = SwitchStreamUtil::UpdateSwitchStreamRecord(info2, targetState2);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 
     ret = SwitchStreamUtil::RemoveAllRecordBySessionId(0);
     EXPECT_EQ(ret, true);
@@ -664,11 +664,11 @@ HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_029, TestSize.Level1)
 #endif
 
 /**
-* @tc.name  : Test HandleSwitchInfoInRecord API
-* @tc.type  : FUNC
-* @tc.number: HandleSwitchInfoInRecord_030
-* @tc.desc  : Test SwitchStreamUtil::HandleSwitchInfoInRecord().
-*/
+ * @tc.name  : Test HandleSwitchInfoInRecord API
+ * @tc.type  : FUNC
+ * @tc.number: HandleSwitchInfoInRecord_030
+ * @tc.desc  : Test SwitchStreamUtil::HandleSwitchInfoInRecord().
+ */
 HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_030, TestSize.Level1)
 {
     SwitchStreamInfo info = {0, 1, 0, 0, 0, CAPTURER_STOPPED};
@@ -678,12 +678,39 @@ HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_030, TestSize.Level1)
     EXPECT_EQ(ret, true);
 
     SwitchStreamInfo info2 = {0, 1, 0, 0, 0, CAPTURER_STOPPED};
+    SwitchStreamInfo info3 = {0, 1, 0, 0, 0, CAPTURER_PAUSED};
+    SwitchStreamInfo info4 = {0, 1, 0, 0, 0, CAPTURER_RELEASED};
+    SwitchStreamInfo info5 = {0, 1, 0, 0, 0, CAPTURER_INVALID};
     SwitchState targetState2 = SwitchState::SWITCH_STATE_WAITING;
 
     ret = SwitchStreamUtil::HandleSwitchInfoInRecord(info2, targetState2);
     EXPECT_EQ(ret, true);
 
+    ret = SwitchStreamUtil::HandleSwitchInfoInRecord(info3, targetState2);
+    EXPECT_EQ(ret, true);
+
+    ret = SwitchStreamUtil::HandleSwitchInfoInRecord(info4, targetState2);
+    EXPECT_EQ(ret, true);
+
+    ret = SwitchStreamUtil::HandleSwitchInfoInRecord(info5, targetState2);
+    EXPECT_EQ(ret, true);
+
     ret = SwitchStreamUtil::RemoveAllRecordBySessionId(0);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test HandleSwitchInfoInRecord API
+ * @tc.type  : FUNC
+ * @tc.number: HandleSwitchInfoInRecord_031
+ * @tc.desc  : Test InsertSwitchStreamRecord branch when in List.
+ */
+HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_031, TestSize.Level1)
+{
+    SwitchStreamInfo info = {0, 1041, 0, 0, 0, CAPTURER_PREPARED};
+    SwitchState targetState = SwitchState::SWITCH_STATE_WAITING;
+
+    auto ret = SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState);
     EXPECT_EQ(ret, true);
 }
 } // namespace AudioStandard

@@ -78,7 +78,7 @@ public:
     DeviceUsage GetDeviceUsage(const AudioDeviceDescriptor &desc);
     std::string GetConnDevicesStr();
     bool IsArmUsbDevice(const AudioDeviceDescriptor &desc);
-    void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
+    void OnReceiveUpdateDeviceNameEvent(const std::string macAddress, const std::string deviceName);
     bool IsDeviceConnected(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptors);
     bool IsConnectedDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
     bool IsVirtualConnectedDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedDesc);
@@ -104,6 +104,7 @@ public:
     bool ExistsByType(DeviceType devType) const;
     bool ExistsByTypeAndAddress(DeviceType devType, const string &address) const;
     bool ExistSameRemoteDeviceByMacAddress(std::shared_ptr<AudioDeviceDescriptor> desc);
+    shared_ptr<AudioDeviceDescriptor> GetActiveScoDevice(std::string scoMac, DeviceRole role);
 
 private:
     AudioDeviceManager();

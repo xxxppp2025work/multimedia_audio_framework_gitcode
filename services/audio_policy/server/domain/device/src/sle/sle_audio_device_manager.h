@@ -71,8 +71,8 @@ public:
     int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) override;
 
     // Parameter Conversion Interface
-    int32_t SetActiveDevice(const std::string &device, StreamUsage streamUsage);
-    int32_t SetActiveDevice(const std::string &device, SourceType sourceType);
+    int32_t SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage);
+    int32_t SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType);
     int32_t StartPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage);
     int32_t StopPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage);
     int32_t StartPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType);
@@ -85,6 +85,9 @@ public:
     int32_t AddNearlinkDevice(const AudioDeviceDescriptor &deviceDesc);
     int32_t RemoveNearlinkDevice(const AudioDeviceDescriptor &deviceDesc);
     void UpdateSleStreamTypeCount(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isRemoved = false);
+    void ResetSleStreamTypeCount(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+    std::unordered_map<uint32_t, std::unordered_set<uint32_t>> GetNearlinkStreamTypeMapByDevice(
+        const std::string &deviceAddr);
 
     // Devcice Volume Manager
     int32_t SetNearlinkDeviceMute(const std::string &device, AudioStreamType streamType, bool isMute);

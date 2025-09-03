@@ -232,7 +232,6 @@ void AudioPolicyServiceThirdTest()
     std::thread t1(ThreadFunctionTest);
     t1.join();
     GetServerPtr()->audioPolicyService_.audioConfigManager_.Init(true);
-    GetServerPtr()->audioPolicyService_.SetWakeUpAudioCapturerFromAudioServer(config);
 
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
@@ -322,10 +321,9 @@ void AudioPolicyServiceTestII()
         capturerChangeInfo->capturerInfo.sourceType = SOURCE_TYPE_VIRTUAL_CAPTURE;
         capturerChangeInfo->capturerState = CAPTURER_PREPARED;
     }
-    GetServerPtr()->audioPolicyService_.OnReceiveBluetoothEvent(
+    GetServerPtr()->audioPolicyService_.OnReceiveUpdateDeviceNameEvent(
         GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_, "deviceName");
     GetServerPtr()->audioPolicyService_.GetAudioEffectOffloadFlag();
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.CheckSpatializationAndEffectState();
     int32_t sessionId = GetData<int32_t>();
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->IsA2dpOffloadConnecting(sessionId);
     std::vector<int32_t> playingStateVec = {

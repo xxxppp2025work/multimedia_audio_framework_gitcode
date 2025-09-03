@@ -59,6 +59,7 @@ constexpr int32_t AUDIO_FLAG_VKB_FAST = 1025;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
 constexpr int32_t AUDIO_USAGE_VOIP = 1;
 constexpr uint32_t STREAM_FLAG_FAST = 1;
+constexpr uint32_t DEFAULT_SUSPEND_TIME_IN_MS = 3000;
 constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
 constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
 constexpr float NORMAL_STREAM_SPEED_LEVEL = 1.0f;
@@ -132,7 +133,7 @@ public:
 
     static ToneSegment *Unmarshalling(Parcel &parcel)
     {
-        auto info = new ToneSegment();
+        auto info = new(std::nothrow) ToneSegment();
         if (info == nullptr) {
             return nullptr;
         }
@@ -164,7 +165,7 @@ public:
     }
     static ToneInfo *Unmarshalling(Parcel &parcel)
     {
-        auto info = new ToneInfo();
+        auto info = new(std::nothrow) ToneInfo();
         if (info == nullptr) {
             return nullptr;
         }
@@ -447,7 +448,7 @@ struct VolumeEvent : public Parcelable {
 
     static VolumeEvent *Unmarshalling(Parcel &parcel)
     {
-        auto event = new VolumeEvent();
+        auto event = new(std::nothrow) VolumeEvent();
         if (event == nullptr) {
             return nullptr;
         }
@@ -484,7 +485,7 @@ struct StreamVolumeEvent : public Parcelable {
 
     static StreamVolumeEvent *Unmarshalling(Parcel &parcel)
     {
-        auto event = new StreamVolumeEvent();
+        auto event = new(std::nothrow) StreamVolumeEvent();
         if (event == nullptr) {
             return nullptr;
         }
@@ -564,6 +565,40 @@ enum AudioLoopbackState {
     LOOPBACK_STATE_DESTROYED,
 };
 
+enum AudioLoopbackReverbPreset {
+    /**
+     * A preset that keep the original reverberation without any enhancement.
+     */
+    REVERB_PRESET_ORIGINAL = 1,
+    /**
+     * A preset representing a reverberation effect with karaoke-like acoustic characteristics.
+     */
+    REVERB_PRESET_KTV = 2,
+    /**
+     * A preset representing a reverberation effect with theater-like acoustic characteristics.
+     */
+    REVERB_PRESET_THEATER = 3,
+    /**
+     * A preset representing a reverberation effect with concert-like acoustic characteristics.
+     */
+    REVERB_PRESET_CONCERT = 4,
+};
+
+enum AudioLoopbackEqualizerPreset {
+    /**
+     * A preset that keep the original frequency response without any enhancement.
+     */
+    EQUALIZER_PRESET_FLAT = 1,
+    /**
+     * A preset representing a equalizer that can enhance the fullness of the vocie
+     */
+    EQUALIZER_PRESET_FULL = 2,
+    /**
+     * A preset representing a equalizer that can enhance the brightness of the vocie
+     */
+    EQUALIZER_PRESET_BRIGHT = 3,
+};
+
 struct AudioRendererInfo : public Parcelable {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
@@ -591,6 +626,7 @@ struct AudioRendererInfo : public Parcelable {
     bool isVirtualKeyboard = false;
     // store the finally select routeflag after concurrency
     uint32_t audioFlag = 0x0;
+    bool forceToNormal = false;
 
     AudioRendererInfo() {}
     AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
@@ -599,6 +635,8 @@ struct AudioRendererInfo : public Parcelable {
         int32_t rendererFlagsIn, AudioVolumeMode volumeModeIn)
         : contentType(contentTypeIn), streamUsage(streamUsageIn),
         rendererFlags(rendererFlagsIn), volumeMode(volumeModeIn) {}
+    AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn)
+        : contentType(contentTypeIn), streamUsage(streamUsageIn) {}
 
     bool Marshalling(Parcel &parcel) const override
     {
@@ -622,7 +660,8 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteBool(isLoopback)
             && parcel.WriteInt32(static_cast<int32_t>(loopbackMode))
             && parcel.WriteBool(isVirtualKeyboard)
-            && parcel.WriteUint32(audioFlag);
+            && parcel.WriteUint32(audioFlag)
+            && parcel.WriteBool(forceToNormal);
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
@@ -647,11 +686,12 @@ struct AudioRendererInfo : public Parcelable {
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         isVirtualKeyboard = parcel.ReadBool();
         audioFlag = parcel.ReadUint32();
+        forceToNormal = parcel.ReadBool();
     }
 
     static AudioRendererInfo *Unmarshalling(Parcel &parcel)
     {
-        auto info = new AudioRendererInfo();
+        auto info = new(std::nothrow) AudioRendererInfo();
         if (info == nullptr) {
             return nullptr;
         }
@@ -714,7 +754,7 @@ public:
 
     static AudioCapturerInfo *Unmarshalling(Parcel &parcel)
     {
-        auto audioCapturerInfo = new AudioCapturerInfo();
+        auto audioCapturerInfo = new(std::nothrow) AudioCapturerInfo();
         if (audioCapturerInfo == nullptr) {
             return nullptr;
         }
@@ -745,7 +785,7 @@ struct MicStateChangeEvent : public Parcelable {
 
     static MicStateChangeEvent *Unmarshalling(Parcel &parcel)
     {
-        auto event = new MicStateChangeEvent();
+        auto event = new(std::nothrow) MicStateChangeEvent();
         if (event == nullptr) {
             return nullptr;
         }
@@ -935,7 +975,7 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
 
     static AudioPlaybackCaptureConfig *Unmarshalling(Parcel &parcel)
     {
-        auto config = new AudioPlaybackCaptureConfig();
+        auto config = new(std::nothrow) AudioPlaybackCaptureConfig();
         if (config == nullptr) return nullptr;
         // filterOptions.usages
         uint32_t usageSize = parcel.ReadUint32();
@@ -1053,7 +1093,7 @@ struct SinkInput : public Parcelable {
 
     static SinkInput *Unmarshalling(Parcel &parcel)
     {
-        auto sinkInput = new SinkInput();
+        auto sinkInput = new(std::nothrow) SinkInput();
         if (sinkInput == nullptr) {
             return nullptr;
         }
@@ -1249,6 +1289,7 @@ struct AudioProcessConfig : public Parcelable {
 
         // AudioStreamInfo
         parcel.WriteInt32(streamInfo.samplingRate);
+        parcel.WriteUint32(streamInfo.customSampleRate);
         parcel.WriteInt32(streamInfo.encoding);
         parcel.WriteInt32(streamInfo.format);
         parcel.WriteInt32(streamInfo.channels);
@@ -1306,7 +1347,7 @@ struct AudioProcessConfig : public Parcelable {
 
     static AudioProcessConfig *Unmarshalling(Parcel &parcel)
     {
-        auto config = new AudioProcessConfig();
+        auto config = new(std::nothrow) AudioProcessConfig();
         if (config == nullptr) {
             return nullptr;
         }
@@ -1318,6 +1359,7 @@ struct AudioProcessConfig : public Parcelable {
 
         // AudioStreamInfo
         config->streamInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+        config->streamInfo.customSampleRate = parcel.ReadUint32();
         config->streamInfo.encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
         config->streamInfo.format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
         config->streamInfo.channels = static_cast<AudioChannel>(parcel.ReadInt32());
@@ -1461,7 +1503,7 @@ struct StreamSetStateEventInternal : public Parcelable {
     }
     static StreamSetStateEventInternal *Unmarshalling(Parcel &parcel)
     {
-        auto event = new StreamSetStateEventInternal();
+        auto event = new(std::nothrow) StreamSetStateEventInternal();
         if (event == nullptr) {
             return nullptr;
         }
@@ -1575,6 +1617,17 @@ public:
     virtual void OnAudioPolicyServiceDied() = 0;
 };
 
+class AudioSessionManagerPolicyServiceDiedCallback {
+public:
+    virtual ~AudioSessionManagerPolicyServiceDiedCallback() = default;
+
+    /**
+     * Called when audio policy service died.
+     * @since 20
+     */
+    virtual void OnAudioPolicyServiceDied() = 0;
+};
+
 /**
  * Describes three-dimensional value.
  * @since 11
@@ -1639,18 +1692,22 @@ enum DeviceGroup {
     DEVICE_GROUP_REMOTE_CAST,
     /* earpiece device*/
     DEVICE_GROUP_EARPIECE,
+    /** Dp device */
+    DEVICE_GROUP_DP,
+};
+
+static const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
+    {DEVICE_TYPE_EARPIECE, DEVICE_GROUP_EARPIECE}, {DEVICE_TYPE_SPEAKER, DEVICE_GROUP_BUILT_IN},
+    {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED},
+    {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
+    {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
+    {DEVICE_TYPE_ACCESSORY, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_NEARLINK, DEVICE_GROUP_WIRELESS},
+    {DEVICE_TYPE_DP, DEVICE_GROUP_DP}, {DEVICE_TYPE_HDMI, DEVICE_GROUP_DP},
+    {DEVICE_TYPE_WIRED_HEADPHONES, DEVICE_GROUP_WIRED},
 };
 
 static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
 {
-    static const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
-        {DEVICE_TYPE_EARPIECE, DEVICE_GROUP_EARPIECE}, {DEVICE_TYPE_SPEAKER, DEVICE_GROUP_BUILT_IN},
-        {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED},
-        {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
-        {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
-        {DEVICE_TYPE_HDMI, DEVICE_GROUP_BUILT_IN}, {DEVICE_TYPE_ACCESSORY, DEVICE_GROUP_WIRELESS},
-        {DEVICE_TYPE_NEARLINK, DEVICE_GROUP_WIRELESS},
-    };
     auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
     return it == DEVICE_GROUP_FOR_VOLUME.end() ? DEVICE_GROUP_INVALID : it->second;
 }
@@ -1875,7 +1932,7 @@ struct RestoreInfoIpc : public Parcelable {
 
     static RestoreInfoIpc *Unmarshalling(Parcel &parcel)
     {
-        auto info = new RestoreInfoIpc();
+        auto info = new(std::nothrow) RestoreInfoIpc();
         if (info == nullptr) {
             return nullptr;
         }
@@ -1896,6 +1953,14 @@ enum BoostTriggerMethod : uint32_t {
     METHOD_START = 0,
     METHOD_WRITE_OR_READ,
     METHOD_MAX
+};
+
+enum XperfEventId : int32_t {
+    XPERF_EVENT_START = 0,
+    XPERF_EVENT_STOP = 1,
+    XPERF_EVENT_RELEASE = 2,
+    XPERF_EVENT_FAULT = 3,
+    XPERF_EVENT_MAX = 4,
 };
 } // namespace AudioStandard
 } // namespace OHOS

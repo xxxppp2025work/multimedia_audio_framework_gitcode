@@ -26,22 +26,54 @@
 #include "audio_policy_utils.h"
 #include "audio_core_service.h"
 #include "audio_zone_service.h"
+namespace {
+    #include "v5_0/iaudio_manager.h"
+}
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
 const uint32_t PCM_8_BIT = 8;
 const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
-static const std::string PIPE_PRIMARY_INPUT = "primary_input";
-static const std::string PIPE_WAKEUP_INPUT = "wakeup_input";
+const std::string PIPE_PRIMARY_INPUT = "primary_input";
+const std::string PIPE_WAKEUP_INPUT = "wakeup_input";
+const std::string PIPE_PRIMARY_INPUT_AI = "primary_input_AI";
 
-static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
+inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_PLAYBACK_CAPTURE,
     SOURCE_TYPE_WAKEUP,
     SOURCE_TYPE_VIRTUAL_CAPTURE,
     SOURCE_TYPE_REMOTE_CAST
 };
 
-static std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
+const std::map<SourceType, AudioInputType> FWKTYPE_TO_HDITYPE_MAP = {
+    { SOURCE_TYPE_INVALID, AUDIO_INPUT_DEFAULT_TYPE},
+    { SOURCE_TYPE_MIC, AUDIO_INPUT_MIC_TYPE},
+    { SOURCE_TYPE_PLAYBACK_CAPTURE, AUDIO_INPUT_MIC_TYPE},
+    { SOURCE_TYPE_ULTRASONIC, AUDIO_INPUT_MIC_TYPE},
+    { SOURCE_TYPE_WAKEUP, AUDIO_INPUT_SPEECH_WAKEUP_TYPE},
+    { SOURCE_TYPE_VOICE_TRANSCRIPTION, AUDIO_INPUT_VOICE_COMMUNICATION_TYPE},
+    { SOURCE_TYPE_VOICE_COMMUNICATION, AUDIO_INPUT_VOICE_COMMUNICATION_TYPE},
+    { SOURCE_TYPE_VOICE_RECOGNITION, AUDIO_INPUT_VOICE_RECOGNITION_TYPE},
+    { SOURCE_TYPE_VOICE_CALL, AUDIO_INPUT_VOICE_CALL_TYPE},
+    { SOURCE_TYPE_CAMCORDER, AUDIO_INPUT_CAMCORDER_TYPE},
+    { SOURCE_TYPE_EC, AUDIO_INPUT_EC_TYPE},
+    { SOURCE_TYPE_MIC_REF, AUDIO_INPUT_NOISE_REDUCTION_TYPE},
+    { SOURCE_TYPE_UNPROCESSED, AUDIO_INPUT_RAW_TYPE},
+    { SOURCE_TYPE_LIVE, AUDIO_INPUT_LIVE_TYPE},
+};
+
+uint32_t ConvertToHDIAudioInputType(SourceType sourceType)
+{
+    if (FWKTYPE_TO_HDITYPE_MAP.find(sourceType) != FWKTYPE_TO_HDITYPE_MAP.end()) {
+        auto iter = FWKTYPE_TO_HDITYPE_MAP.find(sourceType);
+        return static_cast<uint32_t>(iter->second);
+    }
+
+    return static_cast<uint32_t>(AUDIO_INPUT_MIC_TYPE);
+}
+
+const std::map<SourceType, int> NORMAL_SOURCETYPE_PRIORITY = {
     // from high to low
     {SOURCE_TYPE_VOICE_CALL, 8},
     {SOURCE_TYPE_VOICE_COMMUNICATION, 7},
@@ -56,27 +88,24 @@ static std::map<SourceType, int> NORMAL_SOURCE_PRIORITY = {
     {SOURCE_TYPE_INVALID, 0},
 };
 
-static bool IsHigherPrioritySource(SourceType newSource, SourceType currentSource)
-{
-    AUDIO_INFO_LOG("newSource sourceType:%{public}d, currentSource sourceType:%{public}d", newSource, currentSource);
-    if (NORMAL_SOURCE_PRIORITY.count(newSource) == 0 ||
-        NORMAL_SOURCE_PRIORITY.count(currentSource) == 0 ||
-        (newSource == currentSource)) {
-        return false;
-    }
-    return NORMAL_SOURCE_PRIORITY[newSource] >= NORMAL_SOURCE_PRIORITY[currentSource];
-}
-
-static bool IsLowerPrioritySource(SourceType newSource, SourceType currentSource)
+bool IsHigherPrioritySourceType(SourceType newSource, SourceType currentSource)
 {
     AUDIO_INFO_LOG("newSource sourceType:%{public}d currentSource sourceType:%{public}d", newSource, currentSource);
-    if (NORMAL_SOURCE_PRIORITY.count(newSource) == 0 ||
-        NORMAL_SOURCE_PRIORITY.count(currentSource) == 0 ||
+
+    if (!AudioEcManager::GetInstance().GetEcFeatureEnable() &&
+        (ConvertToHDIAudioInputType(newSource) == ConvertToHDIAudioInputType(currentSource))) {
+            return false;
+        }
+
+    auto newIter = NORMAL_SOURCETYPE_PRIORITY.find(newSource);
+    auto currIter = NORMAL_SOURCETYPE_PRIORITY.find(currentSource);
+    if (newIter == NORMAL_SOURCETYPE_PRIORITY.end() || currIter == NORMAL_SOURCETYPE_PRIORITY.end() ||
         (newSource == currentSource)) {
         return false;
     }
-    return NORMAL_SOURCE_PRIORITY[newSource] < NORMAL_SOURCE_PRIORITY[currentSource];
+    return newIter->second >= currIter->second;
 }
+}  // namespace
 
 void AudioCapturerSession::Init(std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager)
 {
@@ -158,93 +187,196 @@ void AudioCapturerSession::HandleRemoteCastDevice(bool isConnected, AudioStreamI
 #endif
 }
 
-CapturerState AudioCapturerSession::GetCapturerState()
+bool AudioCapturerSession::IsInvalidPipeRole(const std::shared_ptr<AudioPipeInfo> &pipe)
 {
-    AudioStreamCollector &streamCollector = AudioStreamCollector::GetAudioStreamCollector();
-    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
-    streamCollector.GetCurrentCapturerChangeInfos(capturerChangeInfos);
-    for (auto it = capturerChangeInfos.begin(); it != capturerChangeInfos.end(); it++) {
-        if (audioEcManager_.GetOpenedNormalSourceSessionId() == static_cast<uint64_t>((*it)->sessionId)) {
-            AUDIO_INFO_LOG("exiting session %{public}d, captureSate %{public}d",
-                (*it)->sessionId, (*it)->capturerState);
-            return (*it)->capturerState;
-        }
-    }
-    return CAPTURER_INVALID;
+    return pipe->pipeRole_ != PIPE_ROLE_INPUT;
 }
 
-bool AudioCapturerSession::FindRunningNormalSession(uint32_t sessionId, AudioCapturerChangeInfo &runingSessionInfo)
+bool AudioCapturerSession::CompareIndependentxmlPriority(const std::shared_ptr<AudioPipeInfo> &pipe,
+    uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession)
 {
-    AudioStreamCollector &streamCollector = AudioStreamCollector::GetAudioStreamCollector();
-    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
-    streamCollector.GetCurrentCapturerChangeInfos(captureChangeInfos);
-    AUDIO_INFO_LOG("new sessionId %{public}d", sessionId);
-    for (auto it = captureChangeInfos.begin(); it != captureChangeInfos.end(); it++) {
-        AUDIO_INFO_LOG("sessionId %{public}d, captureState %{public}d", (*it)->sessionId, (*it)->capturerState);
-        if ((*it)->capturerState == CAPTURER_RUNNING &&
-            (specialSourceTypeSet_.count(sessionWithNormalSourceType_[(*it)->sessionId].sourceType) == 0 &&
-            (specialSourceTypeSet_.count(sessionWithNormalSourceType_[sessionId].sourceType) == 0))) {
-            AUDIO_INFO_LOG("existing running normal session %{public}d, sourceType %{public}d",
-                (*it)->sessionId, (*it)->capturerInfo.sourceType);
-            runingSessionInfo = *(*it);
-            return true;
+    auto sourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    if (sourceStrategyMap == nullptr) {
+        return false;
+    }
+
+    uint32_t maxPriority = 0;
+    for (const auto &stream : pipe->streamDescriptors_) {
+        if (stream == nullptr || stream->sessionId_ == sessionId || stream->streamStatus_ != STREAM_STATUS_STARTED) {
+            continue;
+        }
+
+        auto strategyIt = sourceStrategyMap->find(stream->capturerInfo_.sourceType);
+        if (strategyIt == sourceStrategyMap->end()) {
+            continue;
+        }
+
+        if (strategyIt->second.priority > maxPriority) {
+            maxPriority = strategyIt->second.priority;
+            stream->CopyToStruct(runningSessionInfo);
+            hasSession = true;
         }
     }
-    return false;
+    AUDIO_INFO_LOG("Independent find ret: %{public}d, session: %{public}d, sourceType: %{public}d",
+        static_cast<int32_t>(hasSession), runningSessionInfo.sessionId_, runningSessionInfo.capturerInfo_.sourceType);
+    return hasSession;
+}
+
+bool AudioCapturerSession::HandleIndependentInputpipe(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
+    uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession)
+{
+    for (const auto &pipe : pipeList) {
+        if (pipe && pipe->pipeRole_ == PIPE_ROLE_INPUT && pipe->routeFlag_ == AUDIO_INPUT_FLAG_AI) {
+            AUDIO_INFO_LOG("In Independent pipe");
+            return CompareIndependentxmlPriority(pipe, sessionId, runningSessionInfo, hasSession);
+        }
+    }
+    return hasSession;
+}
+// sessionId 0 is a valid input parameter
+bool AudioCapturerSession::HandleNormalInputPipes(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
+    uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession)
+{
+    AUDIO_INFO_LOG("normal input");
+    for (const auto &pipe : pipeList) {
+        if (pipe == nullptr || pipe->pipeRole_ != PIPE_ROLE_INPUT) {
+            continue;
+        }
+
+        uint32_t flagMask = AUDIO_INPUT_FLAG_AI | AUDIO_INPUT_FLAG_FAST;
+        if ((pipe->routeFlag_ & flagMask) != 0) {
+            continue;
+        }
+
+        for (const auto &stream : pipe->streamDescriptors_) {
+            if (stream == nullptr || stream->sessionId_ == sessionId || IsStreamValid(stream) == false) {
+                continue;
+            }
+
+            SourceType tmpSource = sessionWithNormalSourceType_[stream->sessionId_].sourceType;
+            if (IsHigherPrioritySourceType(tmpSource, runningSessionInfo.capturerInfo_.sourceType)) {
+                hasSession = true;
+                stream->CopyToStruct(runningSessionInfo);
+            }
+        }
+    }
+    AUDIO_INFO_LOG("find ret: %{public}d, session: %{public}d, sourceType: %{public}d",
+        static_cast<int32_t>(hasSession), runningSessionInfo.sessionId_, runningSessionInfo.capturerInfo_.sourceType);
+    return hasSession;
+}
+
+bool AudioCapturerSession::IsStreamValid(const std::shared_ptr<AudioStreamDescriptor> &stream)
+{
+    return sessionWithNormalSourceType_.find(stream->sessionId_) != sessionWithNormalSourceType_.end() &&
+           stream->streamStatus_ == STREAM_STATUS_STARTED &&
+           specialSourceTypeSet_.count(sessionWithNormalSourceType_[stream->sessionId_].sourceType) == 0;
+}
+
+bool AudioCapturerSession::FindRunningNormalSession(uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo)
+{
+    bool hasSession = false;
+    SourceType tmpSource = SOURCE_TYPE_INVALID;
+
+    const std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = AudioPipeManager::GetPipeManager()->GetPipeList();
+    std::shared_ptr<AudioPipeInfo> incommingPipe =
+        AudioPipeManager::GetPipeManager()->FindPipeBySessionId(pipeList, sessionId);
+    if (incommingPipe == nullptr) {
+        return false;
+    }
+
+    AUDIO_INFO_LOG("incommingPipe: %{public}s", incommingPipe->name_.c_str());
+    if (IsInvalidPipeRole(incommingPipe)) {
+        return false;
+    }
+
+    if (incommingPipe->routeFlag_ == AUDIO_INPUT_FLAG_AI) {
+        return HandleIndependentInputpipe(pipeList, sessionId, runningSessionInfo, hasSession);
+    }
+
+    return HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
+}
+
+int32_t AudioCapturerSession::SetHearingAidReloadFlag(const bool hearingAidReloadFlag)
+{
+    std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
+    hearingAidReloadFlag_ = hearingAidReloadFlag;
+    return SUCCESS;
+}
+
+int32_t AudioCapturerSession::ReloadCaptureSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo,
+    const AudioModuleInfo &moduleInfo)
+{
+    std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
+    int32_t ret = audioEcManager_.ReloadSourceSoftLink(pipeInfo, moduleInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "reload softLink failed");
+    hearingAidReloadFlag_ = true;
+    return SUCCESS;
+}
+
+int32_t AudioCapturerSession::ReloadCaptureSessionSoftLink()
+{
+    std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
+    hearingAidReloadFlag_ = false;
+    const std::vector<std::shared_ptr<AudioPipeInfo>> pipes = AudioPipeManager::GetPipeManager()->GetPipeList();
+    CHECK_AND_RETURN_RET_LOG(!pipes.empty(), ERR_INVALID_OPERATION, "pipes invalid");
+    AudioStreamDescriptor targetStream;
+    const uint32_t softLinkSessionId = 0;
+    bool hasSession = false;
+    hasSession = HandleNormalInputPipes(pipes, softLinkSessionId, targetStream, hasSession);
+
+    CHECK_AND_RETURN_RET_LOG(hasSession, SUCCESS, "no need to reload session");
+    AUDIO_INFO_LOG("start reload session: %{public}u", targetStream.sessionId_);
+
+    audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[targetStream.sessionId_]);
+    audioEcManager_.SetOpenedNormalSourceSessionId(targetStream.sessionId_);
+    return SUCCESS;
 }
 
 int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
 {
+    AUDIO_INFO_LOG("prepare reload session: %{public}u with operation: %{public}d", sessionId, operation);
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
-    AudioCapturerChangeInfo runingSessionInfo;
-    PipeStreamPropInfo targetInfo;
-    if (FindRunningNormalSession(sessionId, runingSessionInfo) == true) {
-        AUDIO_INFO_LOG("operation %{public}d", operation);
-        switch (operation) {
-            case SESSION_OPERATION_START:
-                if (IsHigherPrioritySource(sessionWithNormalSourceType_[sessionId].sourceType,
-                    runingSessionInfo.capturerInfo.sourceType) &&
-                    (Util::ConvertToHDIAudioInputType(runingSessionInfo.capturerInfo.sourceType) !=
-                    Util::ConvertToHDIAudioInputType(sessionWithNormalSourceType_[sessionId].sourceType))) {
-                    int32_t res = audioEcManager_.FetchTargetInfoForSessionAdd(
-                        sessionWithNormalSourceType_[sessionId],
-                        targetInfo, sessionWithNormalSourceType_[sessionId].sourceType);
-                    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "fetch target source info error");
-                    audioEcManager_.ReloadNormalSource(sessionWithNormalSourceType_[sessionId],
-                        targetInfo, sessionWithNormalSourceType_[sessionId].sourceType);
-                    audioEcManager_.SetOpenedNormalSourceSessionId(sessionId);
-                    AUDIO_INFO_LOG("reload session %{public}d, sourceType %{public}d",
-                        sessionId, sessionWithNormalSourceType_[sessionId].sourceType);
-                    return SUCCESS;
-                }
-                AUDIO_INFO_LOG("no need reload session");
-                return ERROR;
-            case SESSION_OPERATION_PAUSE:
-            case SESSION_OPERATION_STOP:
-            case SESSION_OPERATION_RELEASE:
-                if (IsLowerPrioritySource(runingSessionInfo.capturerInfo.sourceType,
-                    sessionWithNormalSourceType_[sessionId].sourceType) &&
-                    (Util::ConvertToHDIAudioInputType(runingSessionInfo.capturerInfo.sourceType) !=
-                    Util::ConvertToHDIAudioInputType(sessionWithNormalSourceType_[sessionId].sourceType))) {
-                    int32_t lowPrioritySessionId = runingSessionInfo.sessionId;
-                    int32_t res = audioEcManager_.FetchTargetInfoForSessionAdd(
-                        sessionWithNormalSourceType_[lowPrioritySessionId],
-                        targetInfo, sessionWithNormalSourceType_[lowPrioritySessionId].sourceType);
-                    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "fetch target source info error");
-                    audioEcManager_.ReloadNormalSource(sessionWithNormalSourceType_[lowPrioritySessionId],
-                        targetInfo, sessionWithNormalSourceType_[lowPrioritySessionId].sourceType);
-                    audioEcManager_.SetOpenedNormalSourceSessionId(lowPrioritySessionId);
-                    AUDIO_INFO_LOG("reload session %{public}d, sourceType %{public}d",
-                        lowPrioritySessionId, sessionWithNormalSourceType_[lowPrioritySessionId].sourceType);
-                    return SUCCESS;
-                }
-                AUDIO_INFO_LOG("no need reload session");
-                return ERROR;
-            default:
-                return ERROR;
-        }
+    CHECK_AND_RETURN_RET_LOG(!hearingAidReloadFlag_, SUCCESS, "no need to reload session for hearingAid");
+    uint32_t targetSessionId = sessionId;
+    AudioStreamDescriptor runningSessionInfo = {};
+    bool needReload = false;
+
+    if (sessionWithNormalSourceType_.count(sessionId) == 0 ||
+        (specialSourceTypeSet_.count(sessionWithNormalSourceType_[sessionId].sourceType) != 0)) {
+        AUDIO_ERR_LOG("sessionId error!");
+        return ERROR;
     }
-    return ERROR;
+
+    SessionInfo targetSession = sessionWithNormalSourceType_[sessionId];
+    bool findRunningSessionRet = FindRunningNormalSession(targetSessionId, runningSessionInfo);
+    switch (operation) {
+        case SESSION_OPERATION_START:
+            if (findRunningSessionRet &&
+                IsHigherPrioritySourceType(targetSession.sourceType, runningSessionInfo.capturerInfo_.sourceType)) {
+                needReload = true;
+            } else if (!findRunningSessionRet && (audioEcManager_.GetSourceOpened() != targetSession.sourceType)) {
+                needReload = true;
+            }
+            break;
+        case SESSION_OPERATION_PAUSE:
+        case SESSION_OPERATION_STOP:
+            if (findRunningSessionRet && (targetSession.sourceType == audioEcManager_.GetSourceOpened())) {
+                needReload = true;
+                targetSessionId = runningSessionInfo.sessionId_;
+                targetSession = sessionWithNormalSourceType_[targetSessionId];
+            }
+            break;
+        default:
+            AUDIO_ERR_LOG("operation parameter error!");
+            break;
+    }
+
+    CHECK_AND_RETURN_RET_LOG(needReload, ERROR, "no need to reload session");
+    AUDIO_INFO_LOG("start reload session: %{public}u", targetSessionId);
+    audioEcManager_.ReloadSourceForSession(targetSession);
+    audioEcManager_.SetOpenedNormalSourceSessionId(targetSessionId);
+
+    return SUCCESS;
 }
 
 int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo,
@@ -261,22 +393,10 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
         return SUCCESS;
     }
     if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {
-        // normal source types, dynamic open
-        PipeStreamPropInfo targetInfo;
-        SourceType targetSource;
-        int32_t res = audioEcManager_.FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSource);
-        CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "fetch target source info error");
-
-        AUDIO_INFO_LOG("Current source: %{public}d, target: %{public}d",
-            audioEcManager_.GetSourceOpened(), targetSource);
         if (audioEcManager_.GetSourceOpened() == SOURCE_TYPE_INVALID) {
             // normal source is not opened before -- it should not be happen!!
             AUDIO_WARNING_LOG("Record route should not be opened here!");
             return SUCCESS;
-        } else if (GetCapturerState() == CAPTURER_RUNNING &&
-            IsHigherPrioritySource(targetSource, audioEcManager_.GetSourceOpened())) {
-            // exit running stream, High-priority targetSource stream be created CapturerInServer::Start!
-            AUDIO_WARNING_LOG("High-priority targetSource no need to created!");
         }
         sessionWithNormalSourceType_[sessionID] = sessionInfo;
     } else if (sessionInfo.sourceType == SOURCE_TYPE_REMOTE_CAST) {
@@ -286,6 +406,21 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
         sessionWithSpecialSourceType_[sessionID] = sessionInfo;
     }
     return SUCCESS;
+}
+
+bool AudioCapturerSession::IsRemainingSourceIndependent()
+{
+    auto sourceStrategyMapget = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    CHECK_AND_RETURN_RET(sourceStrategyMapget != nullptr, false);
+    for (auto it = sessionWithNormalSourceType_.begin(); it !=sessionWithNormalSourceType_.end(); it++) {
+        SourceType sourceType = it->second.sourceType;
+        auto smapIt = sourceStrategyMapget->find(sourceType);
+        CHECK_AND_RETURN_RET_LOG(smapIt != sourceStrategyMapget->end(), false,
+            "not find sourceType:%{public}d", sourceType);
+        CHECK_AND_RETURN_RET_LOG(smapIt->second.pipeName == PIPE_PRIMARY_INPUT_AI, false,
+            "invalid pipeName:%{public}s", smapIt->second.pipeName.c_str());
+    }
+    return true;
 }
 
 void AudioCapturerSession::OnCapturerSessionRemoved(uint64_t sessionID)
@@ -305,8 +440,7 @@ void AudioCapturerSession::OnCapturerSessionRemoved(uint64_t sessionID)
             audioEcManager_.ResetAudioEcInfo();
         }
         sessionWithNormalSourceType_.erase(sessionID);
-        if (!sessionWithNormalSourceType_.empty()) {
-            HandleRemainingSource();
+        if (!sessionWithNormalSourceType_.empty() && !IsRemainingSourceIndependent()) {
             return;
         }
         // close source when all capturer sessions removed
@@ -316,35 +450,6 @@ void AudioCapturerSession::OnCapturerSessionRemoved(uint64_t sessionID)
 
     AUDIO_INFO_LOG("Sessionid:%{public}" PRIu64 " not added, directly placed into sessionIdisRemovedSet_", sessionID);
     sessionIdisRemovedSet_.insert(sessionID);
-}
-
-// HandleRemainingSource must be called with onCapturerSessionChangedMutex_ held
-void AudioCapturerSession::HandleRemainingSource()
-{
-    SourceType highestSource = SOURCE_TYPE_INVALID;
-    SourceType normalSourceInHdi = SOURCE_TYPE_INVALID;
-    SourceType openSource = audioEcManager_.GetSourceOpened();
-    bool useMatchingPropInfo = false;
-    uint32_t highestSession = 0;
-    // find highest source in remaining session
-    for (const auto &iter : sessionWithNormalSourceType_) {
-        // Convert sessionWithNormalSourceType to normalSourceInHdi
-        audioEcManager_.GetTargetSourceTypeAndMatchingFlag(iter.second.sourceType,
-            normalSourceInHdi, useMatchingPropInfo);
-        AUDIO_INFO_LOG("Get session:%{public}d from map，convert original sourceType:%{public}d into "
-            "HdiSource:%{public}d", iter.first, iter.second.sourceType, normalSourceInHdi);
-        if (IsHigherPrioritySource(normalSourceInHdi, highestSource)) {
-            highestSession = iter.first;
-            highestSource = normalSourceInHdi;
-        }
-    }
-
-    // if remaining sources are all lower than current removeed one, reload with the highest source in remaining
-    AUDIO_INFO_LOG("the highestSource:%{public}d, normalSourceOpened_:%{public}d", highestSource, openSource);
-    if (highestSource != SOURCE_TYPE_INVALID && IsHigherPrioritySource(openSource, highestSource)) {
-        audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[highestSession]);
-        audioEcManager_.SetOpenedNormalSourceSessionId(highestSession);
-    }
 }
 
 bool AudioCapturerSession::ConstructWakeupAudioModuleInfo(const AudioStreamInfo &streamInfo,
@@ -473,7 +578,6 @@ bool AudioCapturerSession::IsVoipDeviceChanged(const AudioDeviceDescriptor &inpu
         !lastEcInfo.outputDevice.IsSameDeviceDesc(realOutputDevice)) {
         return true;
     }
-    AUDIO_INFO_LOG("voice source reload ignore for device not change");
     return false;
 }
 

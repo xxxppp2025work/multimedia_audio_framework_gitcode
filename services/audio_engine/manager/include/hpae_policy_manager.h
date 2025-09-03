@@ -25,6 +25,12 @@ namespace HPAE {
 
 class HpaePolicyManager {
 public:
+    HpaePolicyManager(const HpaePolicyManager&) = delete;
+    HpaePolicyManager &operator=(const HpaePolicyManager&) = delete;
+
+    HpaePolicyManager(HpaePolicyManager&&) = delete;
+    HpaePolicyManager &operator=(HpaePolicyManager&&) = delete;
+
     static HpaePolicyManager &GetInstance();
     ~HpaePolicyManager();
     // interfaces for render effect
@@ -72,6 +78,8 @@ public:
     void SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
         const std::string &condition, const std::string &value);
     void SendInitCommandToAlgo();
+    void AddStreamVolumeToEffect(const std::string stringSessionId, const float streamVolume);
+    void DeleteStreamVolumeToEffect(const std::string stringSessionID);
 private:
     HpaePolicyManager();
 };

@@ -59,6 +59,7 @@ public:
     void UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
         const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices);
     void ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName);
+    void UpdateDynamicCapturerConfig(ClassType type, const AudioModuleInfo moduleInfo);
 
     // query
     bool GetModuleListByType(ClassType type, std::list<AudioModuleInfo>& moduleList);
@@ -97,7 +98,8 @@ public:
     DirectPlaybackMode GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
         const AudioStreamInfo &streamInfo);
     bool IsStreamPropMatch(const AudioStreamInfo &streamInfo, std::list<std::shared_ptr<PipeStreamPropInfo>> &infos);
-
+    bool PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc);
+    
     AudioPolicyConfigManager() : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioPolicyConfig_(AudioPolicyConfigData::GetInstance())
     {
@@ -112,12 +114,18 @@ private:
         std::shared_ptr<AdapterPipeInfo> adapterPipeInfo, std::shared_ptr<PipeStreamPropInfo> &info,
         const AudioChannel &tempChannel);
     std::shared_ptr<AdapterPipeInfo> GetNormalRecordAdapterInfo(std::shared_ptr<AudioStreamDescriptor> desc);
+    std::shared_ptr<PipeStreamPropInfo> GetSuitableStreamPropInfo(
+        std::list<std::shared_ptr<PipeStreamPropInfo>> &dynamicStreamPropInfos, uint32_t sampleRate);
     std::shared_ptr<PipeStreamPropInfo> GetDynamicStreamPropInfoFromPipe(std::shared_ptr<AdapterPipeInfo> &info,
         AudioSampleFormat format, uint32_t sampleRate, AudioChannel channels);
+    AudioSampleFormat ParseFormat(std::string format);
+    void CheckDynamicCapturerConfig(std::shared_ptr<AudioStreamDescriptor> desc,
+        std::shared_ptr<PipeStreamPropInfo> &info);
 
     bool xmlHasLoaded_ = false;
 
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
+    std::unordered_map<ClassType, AudioModuleInfo> dynamicCapturerConfig_ = {};
     bool hasEarpiece_ = false;
     bool isUpdateRouteSupported_ = true;
     bool isDefaultAdapterEnable_ = false;

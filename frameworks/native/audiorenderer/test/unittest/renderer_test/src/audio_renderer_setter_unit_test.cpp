@@ -2315,57 +2315,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SwitchToTargetStream_001, TestSize.
 }
 
 /**
-* @tc.name  : Test RestoreTheadLoop.
-* @tc.number: Audio_Renderer_RestoreTheadLoop_001
-* @tc.desc  : Test RestoreTheadLoop interface.
-*/
-HWTEST(AudioRendererUnitTest, Audio_Renderer_RestoreTheadLoop_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    shared_ptr<AudioRendererPrivate> audioRenderer =
-        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
-    EXPECT_NE(nullptr, audioRenderer);
-
-    auto serviceDiedCallback = std::make_shared<RendererPolicyServiceDiedCallback>();
-    EXPECT_NE(nullptr, serviceDiedCallback);
-
-    audioRenderer->abortRestore_ = true;
-    audioRenderer->audioStream_ = nullptr;
-    serviceDiedCallback->renderer_ = audioRenderer;
-    serviceDiedCallback->RestoreTheadLoop();
-
-    audioRenderer->abortRestore_ = false;
-    serviceDiedCallback->renderer_ = audioRenderer;
-    serviceDiedCallback->RestoreTheadLoop();
-}
-
-/**
-* @tc.name  : Test RestoreTheadLoop.
-* @tc.number: Audio_Renderer_RestoreTheadLoop_002.
-* @tc.desc  : Test RestoreTheadLoop interface.
-*/
-HWTEST(AudioRendererUnitTest, Audio_Renderer_RestoreTheadLoop_002, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    shared_ptr<AudioRendererPrivate> audioRenderer =
-        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
-    EXPECT_NE(nullptr, audioRenderer);
-
-    auto serviceDiedCallback = std::make_shared<RendererPolicyServiceDiedCallback>();
-    EXPECT_NE(nullptr, serviceDiedCallback);
-
-    std::shared_ptr<IAudioStream> testAudioStreamStub = std::make_shared<TestAudioStremStub>();
-    audioRenderer->abortRestore_ = true;
-    audioRenderer->audioStream_ = testAudioStreamStub;
-    serviceDiedCallback->renderer_ = audioRenderer;
-    serviceDiedCallback->RestoreTheadLoop();
-
-    audioRenderer->abortRestore_ = false;
-    serviceDiedCallback->renderer_ = audioRenderer;
-    serviceDiedCallback->RestoreTheadLoop();
-}
-
-/**
 * @tc.name  : Test RestoreAudioInLoop.
 * @tc.number: Audio_Renderer_RestoreAudioInLoop_002.
 * @tc.desc  : Test RestoreAudioInLoop interface.
@@ -2484,6 +2433,27 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SwitchToTargetStream_002, TestSize.
     restoreInfo.restoreReason = SERVER_DIED;
     auto ret = audioRenderer->SwitchToTargetStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo);
     EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioRendererPrivate
+ * @tc.number: SetClientInfo_002
+ * @tc.desc  : Test SetClientInfo API
+ */
+HWTEST(AudioRendererUnitTest, SetClientInfo_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    uint32_t flag = AUDIO_OUTPUT_FLAG_DIRECT;
+    IAudioStream::StreamClass streamClass;
+
+    audioRendererPrivate->SetClientInfo(flag, streamClass);
+    EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
+
+    flag = AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_VOIP;
+    audioRendererPrivate->SetClientInfo(flag, streamClass);
+    EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
 }
 } // namespace AudioStandard
 } // namespace OHOS

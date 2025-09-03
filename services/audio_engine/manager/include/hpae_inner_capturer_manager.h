@@ -73,8 +73,10 @@ public:
     int32_t UpdateSpatializationState(
         uint32_t sessionId, bool spatializationEnabled, bool headTrackingEnabled) override;
     int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) override;
+    void SetSpeed(uint32_t sessionId, float speed) override;
     std::vector<SinkInput> GetAllSinkInputsInfo() override;
     int32_t GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo) override;
+    int32_t RefreshProcessClusterByDevice() override;
     HpaeSinkInfo GetSinkInfo() override;
 
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
@@ -90,6 +92,7 @@ public:
     std::string GetThreadName() override;
     int32_t DumpSinkInfo() override;
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload = false) override;
+    int32_t SetOffloadPolicy(uint32_t sessionId, int32_t state) override;
     std::string GetDeviceHDFDumpInfo() override;
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     void OnDisConnectProcessCluster(HpaeProcessorType sceneType) override;
@@ -107,12 +110,12 @@ private:
     int32_t DisConnectCapturerInputSessionInner(uint32_t sessionId);
     void SetSessionStateForRenderer(uint32_t sessionId, HpaeSessionState renderState);
     void SetSessionStateForCapturer(uint32_t sessionId, HpaeSessionState capturerState);
-    void SendRequestInner(Request &&request, bool isInit = false);
+    void SendRequestInner(Request &&request, const std::string &funcName, bool isInit = false);
     uint32_t GetSinkInputNodeIdInner();
     void AddSingleNodeToSinkInner(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSinkInner(const std::string &sinkName, const std::vector<uint32_t> &moveIds,
         MoveSessionType moveType);
-    void InitSinkInner(bool isReload = false);
+    int32_t InitSinkInner(bool isReload = false);
     uint32_t sinkInputNodeCounter_ = 0;
     int32_t sceneTypeToProcessClusterCount_ = 0;
     std::atomic<bool> isInit_ = false;

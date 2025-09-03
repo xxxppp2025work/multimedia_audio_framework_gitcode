@@ -18,6 +18,7 @@
 
 #include "audio_performance_monitor.h"
 #include "audio_performance_monitor_c.h"
+#include "xperf_adapter.h"
 #include <memory>
 #include <string>
 #include "audio_errors.h"
@@ -42,7 +43,7 @@ AudioPerformanceMonitor &AudioPerformanceMonitor::GetInstance()
 void AudioPerformanceMonitor::RecordSilenceState(uint32_t sessionId, bool isSilence, AudioPipeType pipeType,
     uint32_t uid)
 {
-    std::lock_guard<std::mutex> lock(silenceMapMutex_);
+    std::lock_guard<std::mutex> lock(monitorMutex_);
     if (silenceDetectMap_.find(sessionId) == silenceDetectMap_.end()) {
         CHECK_AND_RETURN_LOG(silenceDetectMap_.size() < MAX_MAP_SIZE, "silenceDetectMap_ overSize!");
         AUDIO_INFO_LOG("start record silence state of sessionId : %{public}d", sessionId);
@@ -59,7 +60,7 @@ void AudioPerformanceMonitor::RecordSilenceState(uint32_t sessionId, bool isSile
 
 void AudioPerformanceMonitor::StartSilenceMonitor(uint32_t sessionId, uint32_t tokenId)
 {
-    std::lock_guard<std::mutex> lock(silenceMapMutex_);
+    std::lock_guard<std::mutex> lock(monitorMutex_);
     if (silenceDetectMap_.find(sessionId) == silenceDetectMap_.end()) {
         CHECK_AND_RETURN_LOG(silenceDetectMap_.size() < MAX_MAP_SIZE, "silenceDetectMap_ overSize!");
         AUDIO_INFO_LOG("start record silence state of sessionId : %{public}d", sessionId);
@@ -72,7 +73,7 @@ void AudioPerformanceMonitor::StartSilenceMonitor(uint32_t sessionId, uint32_t t
 
 void AudioPerformanceMonitor::PauseSilenceMonitor(uint32_t sessionId)
 {
-    std::lock_guard<std::mutex> lock(silenceMapMutex_);
+    std::lock_guard<std::mutex> lock(monitorMutex_);
     if (silenceDetectMap_.find(sessionId) == silenceDetectMap_.end()) {
         return;
     }
@@ -81,17 +82,16 @@ void AudioPerformanceMonitor::PauseSilenceMonitor(uint32_t sessionId)
 
 void AudioPerformanceMonitor::DeleteSilenceMonitor(uint32_t sessionId)
 {
-    std::lock_guard<std::mutex> lock(silenceMapMutex_);
-    CHECK_AND_RETURN_LOG(silenceDetectMap_.find(sessionId) != silenceDetectMap_.end(),
-        "invalid sessionId: %{public}d", sessionId);
+    std::lock_guard<std::mutex> lock(monitorMutex_);
+    CHECK_AND_RETURN(silenceDetectMap_.find(sessionId) != silenceDetectMap_.end());
     AUDIO_INFO_LOG("delete sessionId %{public}d silence Monitor!", sessionId);
     silenceDetectMap_.erase(sessionId);
 }
 
 void AudioPerformanceMonitor::ReportWriteSlow(AdapterType adapterType, int32_t overtimeMs)
 {
-    std::lock_guard<std::mutex> lock(silenceMapMutex_);
-    AUDIO_WARNING_LOG("AdapterType %{public}d, PipeType %{public}d, write time interval %{public}d ms! overTime!",
+    std::lock_guard<std::mutex> lock(monitorMutex_);
+    HILOG_COMM_WARN("AdapterType %{public}d, PipeType %{public}d, write time interval %{public}d ms! overTime!",
         adapterType, PIPE_TYPE_MAP[adapterType], overtimeMs);
     AUTO_CTRACE("Fast pipe OVERTIME_EVENT, overtimeMs: %d, pipeType %d, adapterType: %d", overtimeMs,
         PIPE_TYPE_MAP[adapterType], adapterType);
@@ -100,7 +100,7 @@ void AudioPerformanceMonitor::ReportWriteSlow(AdapterType adapterType, int32_t o
 
 void AudioPerformanceMonitor::RecordTimeStamp(AdapterType adapterType, int64_t curTimeStamp)
 {
-    std::lock_guard<std::mutex> lock(overTimeMapMutex_);
+    std::lock_guard<std::mutex> lock(monitorMutex_);
     CHECK_AND_RETURN_LOG(adapterType > AdapterType::ADAPTER_TYPE_UNKNOWN &&
         adapterType < AdapterType::ADAPTER_TYPE_MAX, "invalid adapterType: %{public}d", adapterType);
     if (overTimeDetectMap_.find(adapterType) == overTimeDetectMap_.end()) {
@@ -131,17 +131,15 @@ void AudioPerformanceMonitor::RecordTimeStamp(AdapterType adapterType, int64_t c
 
 void AudioPerformanceMonitor::DeleteOvertimeMonitor(AdapterType adapterType)
 {
-    std::lock_guard<std::mutex> lock(overTimeMapMutex_);
-    CHECK_AND_RETURN_LOG(overTimeDetectMap_.find(adapterType) != overTimeDetectMap_.end(),
-        "invalid adapterType: %{public}d", adapterType);
+    std::lock_guard<std::mutex> lock(monitorMutex_);
+    CHECK_AND_RETURN(overTimeDetectMap_.find(adapterType) != overTimeDetectMap_.end());
     AUDIO_INFO_LOG("delete adapterType %{public}d overTime Monitor!", adapterType);
     overTimeDetectMap_.erase(adapterType);
 }
 
 void AudioPerformanceMonitor::DumpMonitorInfo(std::string &dumpString)
 {
-    std::lock_guard<std::mutex> lock1(silenceMapMutex_);
-    std::lock_guard<std::mutex> lock2(overTimeMapMutex_);
+    std::lock_guard<std::mutex> lock(monitorMutex_);
     dumpString += "\n----------silenceMonitor----------\n";
     dumpString += "streamId\tcountNum\tcurState\n";
     for (auto it = silenceDetectMap_.begin(); it != silenceDetectMap_.end(); ++it) {
@@ -181,7 +179,7 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence, uin
                 printStr += silenceDetectMap_[sessionId].historyStateDeque.front() ? "_" : "-";
                 silenceDetectMap_[sessionId].historyStateDeque.pop_front();
             }
-            AUDIO_WARNING_LOG("record %{public}d state, pipeType %{public}d for last %{public}zu times: %{public}s",
+            HILOG_COMM_WARN("record %{public}d state, pipeType %{public}d for last %{public}zu times: %{public}s",
                 sessionId, silenceDetectMap_[sessionId].pipeType, MAX_RECORD_QUEUE_SIZE, printStr.c_str());
             AUTO_CTRACE("Audio FWK detect SILENCE_EVENT, pipeType %d, PreState: %s",
                 silenceDetectMap_[sessionId].pipeType, printStr.c_str());
@@ -212,11 +210,17 @@ std::string AudioPerformanceMonitor::GetRunningHapNames(AdapterType adapterType)
     return hapNames.str();
 }
 
+void AudioPerformanceMonitor::NotifyXperf(int32_t faultcode, uint32_t uid, uint32_t sessionId)
+{
+    XperfAdapter::GetInstance().ReportFaultEvent(faultcode, uid, sessionId);
+}
+
 void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t periodMs, AudioPipeType pipeType,
-    AdapterType adapterType, uint32_t uid)
+    AdapterType adapterType, uint32_t uid, uint32_t sessionId)
 {
     int64_t curRealTime = ClockTime::GetRealNano();
     std::string hapNames = "";
+    NotifyXperf(reasonCode, uid, sessionId);
     switch (reasonCode) {
         case SILENCE_EVENT:
             CHECK_AND_RETURN_LOG(curRealTime - silenceLastReportTime_ >= MIN_REPORT_INTERVAL_MS * AUDIO_NS_PER_MS,
@@ -247,6 +251,8 @@ void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t period
     if (reasonCode == OVERTIME_EVENT) {
         bean->Add("APP_NAMES", hapNames);
     }
+    int64_t jankStartTime = curRealTime / AUDIO_NS_PER_MILLISECOND - static_cast<int64_t>(periodMs);
+    bean->Add("JANK_START_TIME", static_cast<uint64_t>(jankStartTime));
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 #endif
 }

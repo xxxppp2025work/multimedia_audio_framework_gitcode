@@ -252,7 +252,7 @@ AudioSharedMemory *AudioSharedMemory::Unmarshalling(Parcel &parcel)
 
     std::string name = msgParcel.ReadString();
 
-    auto memory = new AudioSharedMemoryImpl(fd, size, name);
+    auto memory = new(std::nothrow) AudioSharedMemoryImpl(fd, size, name);
     if (memory == nullptr) {
         AUDIO_ERR_LOG("not enough memory");
         return nullptr;
@@ -277,6 +277,7 @@ OHAudioBufferBase::OHAudioBufferBase(AudioBufferHolder bufferHolder, uint32_t to
 
 int32_t OHAudioBufferBase::SizeCheck()
 {
+    CHECK_AND_RETURN_RET_LOG(byteSizePerFrame_ != 0, ERR_INVALID_PARAM, "failed: invalid byteSizePerFrame_.");
     if (totalSizeInFrame_ > UINT_MAX / byteSizePerFrame_) {
         AUDIO_ERR_LOG("failed: totalSizeInFrame: %{public}u byteSizePerFrame: %{public}u",
             totalSizeInFrame_, byteSizePerFrame_);
@@ -473,7 +474,7 @@ OHAudioBufferBase *OHAudioBufferBase::Unmarshalling(Parcel &parcel)
     if (infoFd != INVALID_FD) {
         CHECK_AND_RETURN_RET_LOG(infoFd > minfd, nullptr, "invalid infoFd: %{public}d", infoFd);
     }
-    auto buffer = new OHAudioBufferBase(bufferHolder, totalSizeInFrame, byteSizePerFrame);
+    auto buffer = new(std::nothrow) OHAudioBufferBase(bufferHolder, totalSizeInFrame, byteSizePerFrame);
     if (buffer == nullptr || buffer->Init(dataFd, infoFd, 0) != SUCCESS || buffer->basicBufferInfo_ == nullptr) {
         AUDIO_ERR_LOG("failed to init.");
         if (buffer != nullptr) delete buffer;
@@ -682,7 +683,7 @@ int32_t OHAudioBufferBase::GetReadableDataFrames()
     return result;
 }
 
-int32_t OHAudioBufferBase::ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFrame)
+int32_t OHAudioBufferBase::ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFrame, bool wakeFutex)
 {
     CHECK_AND_RETURN_RET_LOG(readFrame <= writeFrame && writeFrame - readFrame < totalSizeInFrame_,
         ERR_INVALID_PARAM, "Invalid read or write position:read%{public}" PRIu64" write%{public}" PRIu64".",
@@ -692,9 +693,12 @@ int32_t OHAudioBufferBase::ResetCurReadWritePos(uint64_t readFrame, uint64_t wri
     basicBufferInfo_->curWriteFrame.store(writeFrame);
     basicBufferInfo_->curReadFrame.store(readFrame);
 
+    AUDIO_DEBUG_LOG("Reset position:read%{public}" PRIu64" write%{public}" PRIu64".", readFrame, writeFrame);
+
+    CHECK_AND_RETURN_RET(wakeFutex, SUCCESS);
+
     WakeFutexIfNeed();
 
-    AUDIO_DEBUG_LOG("Reset position:read%{public}" PRIu64" write%{public}" PRIu64".", readFrame, writeFrame);
     return SUCCESS;
 }
 
@@ -716,7 +720,7 @@ uint64_t OHAudioBufferBase::GetBasePosInFrame()
     return basicBufferInfo_->basePosInFrame.load();
 }
 
-int32_t OHAudioBufferBase::SetCurWriteFrame(uint64_t writeFrame)
+int32_t OHAudioBufferBase::SetCurWriteFrame(uint64_t writeFrame, bool wakeFutex)
 {
     uint64_t basePos = basicBufferInfo_->basePosInFrame.load();
     uint64_t oldWritePos = basicBufferInfo_->curWriteFrame.load();
@@ -740,12 +744,14 @@ int32_t OHAudioBufferBase::SetCurWriteFrame(uint64_t writeFrame)
 
     basicBufferInfo_->curWriteFrame.store(writeFrame);
 
+    CHECK_AND_RETURN_RET(wakeFutex, SUCCESS);
+
     WakeFutexIfNeed();
 
     return SUCCESS;
 }
 
-int32_t OHAudioBufferBase::SetCurReadFrame(uint64_t readFrame)
+int32_t OHAudioBufferBase::SetCurReadFrame(uint64_t readFrame, bool wakeFutex)
 {
     CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, ERR_INVALID_PARAM, "basicBufferInfo_ is nullptr");
     uint64_t oldBasePos = basicBufferInfo_->basePosInFrame.load();
@@ -765,6 +771,8 @@ int32_t OHAudioBufferBase::SetCurReadFrame(uint64_t readFrame)
     }
 
     basicBufferInfo_->curReadFrame.store(readFrame);
+
+    CHECK_AND_RETURN_RET(wakeFutex, SUCCESS);
 
     WakeFutexIfNeed();
 
@@ -1008,6 +1016,12 @@ void OHAudioBufferBase::SetTimeStampInfo(uint64_t position, uint64_t timeStamp)
     basicBufferInfo_->timeStamp.store(timeStamp);
 }
 
+RestoreStatus OHAudioBufferBase::GetRestoreStatus()
+{
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, RESTORE_ERROR, "basicBufferInfo_ is nullptr");
+    return basicBufferInfo_->restoreStatus.load();
+}
+
 // Compare and swap restore status. If current restore status is NEED_RESTORE, turn it into RESTORING
 // to avoid multiple restore.
 RestoreStatus OHAudioBufferBase::CheckRestoreStatus()
@@ -1071,11 +1085,16 @@ void OHAudioBufferBase::InitBasicBufferInfo()
     basicBufferInfo_->muteFactor.store(MAX_FLOAT_VOLUME);
 }
 
-void OHAudioBufferBase::WakeFutexIfNeed()
+void OHAudioBufferBase::WakeFutexIfNeed(uint32_t wakeVal)
 {
     if (basicBufferInfo_) {
-        FutexTool::FutexWake(&(basicBufferInfo_->futexObj));
+        FutexTool::FutexWake(&(basicBufferInfo_->futexObj), wakeVal);
     }
+}
+
+void OHAudioBufferBase::WakeFutex(uint32_t wakeVal)
+{
+    WakeFutexIfNeed(wakeVal);
 }
 } // namespace AudioStandard
 } // namespace OHOS

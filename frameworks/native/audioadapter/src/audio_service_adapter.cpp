@@ -18,9 +18,6 @@
 #endif
 
 #include "pro_audio_service_adapter_impl.h"
-#if defined(_WIN32) || defined(_WIN64)
-#include <windows.h>
-#endif
 #include <sstream>
 #include <thread>
 
@@ -30,9 +27,9 @@
 #include "audio_utils.h"
 #include <set>
 #include <unordered_map>
-
+#ifdef SUPPORT_OLD_ENGINE
 #include "pulse_audio_service_adapter_impl.h"
-
+#endif // SUPPORT_OLD_ENGINE
 using namespace std;
 
 namespace OHOS {
@@ -46,12 +43,16 @@ std::shared_ptr<AudioServiceAdapter> AudioServiceAdapter::CreateAudioAdapter(
 {
     CHECK_AND_RETURN_RET_LOG(cb != nullptr, nullptr, "CreateAudioAdapter cb is nullptr!");
     AUDIO_INFO_LOG("CreateAudioAdapter");
+#ifdef SUPPORT_OLD_ENGINE
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1 || isAudioEngine) {
         return make_shared<ProAudioServiceAdapterImpl>(cb);
     } else {
         return make_shared<PulseAudioServiceAdapterImpl>(cb);
     }
+#else
+    return make_shared<ProAudioServiceAdapterImpl>(cb);
+#endif
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

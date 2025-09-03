@@ -151,7 +151,7 @@ HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsFastPlaybackSupport
 {
     OH_AudioStreamManager *audioStreamManager = nullptr;
     OH_AudioStreamInfo *streamInfo = nullptr;
-    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_UNKNOWN;
+    OH_AudioStream_Usage usage = static_cast<OH_AudioStream_Usage>(100);
     auto result = OH_AudioStreamManager_IsFastPlaybackSupported(audioStreamManager, streamInfo, usage);
     EXPECT_EQ(result, false);
 }
@@ -204,6 +204,24 @@ HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsFastRecordingSuppor
     OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_VOICE_CALL;
     auto result = OH_AudioStreamManager_IsFastRecordingSupported(audioStreamManager, streamInfo, sourceType);
     EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamManager_IsIntelligentNoiseReductionEnabledForCurrentDevice.
+ * @tc.number: OH_AudioStreamManager_IsIntelligentNoiseReductionEnabledForCurrentDevice_001
+ * @tc.desc  : Test OH_AudioStreamManager_IsIntelligentNoiseReductionEnabledForCurrentDevice.
+ */
+HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsIntelligentNoiseReductionEnabledForCurrentDevice_001,
+    TestSize.Level0)
+{
+    OH_AudioStreamManager *audioStreamManager = nullptr;
+    auto ret = OH_AudioManager_GetAudioStreamManager(&audioStreamManager);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_SUCCESS);
+
+    OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_MIC;
+    auto result = OH_AudioStreamManager_IsIntelligentNoiseReductionEnabledForCurrentDevice(audioStreamManager,
+        sourceType);
+    EXPECT_EQ(result, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

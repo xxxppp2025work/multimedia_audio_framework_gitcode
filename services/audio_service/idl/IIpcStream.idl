@@ -35,6 +35,8 @@ interface IIpcStream {
     void GetAudioTime([out] unsigned long framePos, [out] unsigned long timestamp);
     void GetAudioPosition([out] unsigned long framePos, [out] unsigned long timestamp, [out] unsigned long latency,
         [in] int base);
+    void GetSpeedPosition([out] unsigned long framePos, [out] unsigned long timestamp, [out] unsigned long latency,
+        [in] int base);
     void GetLatency([out] unsigned long latency);
     void SetRate([in] int rate); // SetRenderRate
     void GetRate([out] int rate); // SetRenderRate
@@ -56,7 +58,7 @@ interface IIpcStream {
     void SetMute([in] boolean isMute);
     void SetDuckFactor([in] float duckFactor);
     void RegisterThreadPriority([in] int tid, [in] String bundleName, [in] unsigned int method); // BoostTriggerMethod method
-    void SetDefaultOutputDevice([in] int defaultOutputDevice); // DeviceType defaultOutputDevice
+    void SetDefaultOutputDevice([in] int defaultOutputDevice, [in] boolean skipForce); // DeviceType defaultOutputDevice
     void SetSourceDuration([in] long duration);
     void SetOffloadDataCallbackState([in] int state);
     void SetSpeed([in] float speed);

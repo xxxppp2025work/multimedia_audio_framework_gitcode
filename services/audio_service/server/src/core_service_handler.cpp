@@ -69,10 +69,11 @@ int32_t CoreServiceHandler::ReloadCaptureSession(uint32_t sessionId, SessionOper
 }
 
 int32_t CoreServiceHandler::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
-    const StreamUsage streamUsage, bool isRunning)
+    const StreamUsage streamUsage, bool isRunning, bool skipForce)
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
-    return iCoreServiceProvider_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);
+    return iCoreServiceProvider_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning,
+        skipForce);
 }
 
 std::string CoreServiceHandler::GetAdapterNameBySessionId(uint32_t sessionId)
@@ -84,10 +85,10 @@ std::string CoreServiceHandler::GetAdapterNameBySessionId(uint32_t sessionId)
 }
 
 int32_t CoreServiceHandler::GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
-    bool isReloadProcess)
+    AudioStreamInfo &streamInfo, bool isReloadProcess)
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
-    return iCoreServiceProvider_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, isReloadProcess);
+    return iCoreServiceProvider_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, isReloadProcess);
 }
 
 uint32_t CoreServiceHandler::GenerateSessionId()
@@ -95,6 +96,14 @@ uint32_t CoreServiceHandler::GenerateSessionId()
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
     uint32_t ret{};
     iCoreServiceProvider_->GenerateSessionId(ret);
+    return ret;
+}
+
+int32_t CoreServiceHandler::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
+    int32_t ret = ERROR;
+    iCoreServiceProvider_->SetWakeUpAudioCapturerFromAudioServer(config, ret);
     return ret;
 }
 } // namespace AudioStandard

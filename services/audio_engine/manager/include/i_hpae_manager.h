@@ -44,10 +44,10 @@ public:
     virtual uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) = 0;
     virtual int32_t CloseAudioPort(int32_t audioHandleIndex) = 0;
     virtual uint32_t ReloadAudioPort(const AudioModuleInfo &audioModuleInfo) = 0;
-    virtual int32_t GetSinkInfoByIdx(const int32_t &renderIdx, HpaeSinkInfo &sinkInfo, int32_t &result,
-        std::function<void()> callback) = 0;
-    virtual int32_t GetSourceInfoByIdx(const int32_t &captureIdx, HpaeSourceInfo &sourceInfo, int32_t &result,
-        std::function<void()> callback) = 0;
+    virtual int32_t GetSinkInfoByIdx(const int32_t &sinkIdx,
+        std::function<void(const HpaeSinkInfo &sinkInfo, int32_t result)> callback) = 0;
+    virtual int32_t GetSourceInfoByIdx(const int32_t &sourceIdx,
+        std::function<void(const HpaeSourceInfo &sourceInfo, int32_t result)> callback) = 0;
 
     virtual int32_t SetDefaultSink(std::string name) = 0;
     virtual int32_t SetDefaultSource(std::string name) = 0;
@@ -141,6 +141,17 @@ public:
     virtual bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) = 0;
     virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) = 0;
+    virtual void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) = 0;
+    virtual void DeleteStreamVolumeToEffect(const std::string stringSessionID) = 0;
+
+    // interfaces for injector
+    virtual void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) = 0;
+    virtual void AddCaptureInjector(
+        const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) = 0;
+    virtual void RemoveCaptureInjector(
+        const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) = 0;
+    virtual int32_t PeekAudioData(
+        const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

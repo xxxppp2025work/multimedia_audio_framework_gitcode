@@ -23,6 +23,7 @@
 #include "i_process_status_listener.h"
 #include "linear_pos_time_model.h"
 #include "audio_device_descriptor.h"
+#include "audio_performance_monitor.h"
 #include "i_stream_manager.h"
 #include "i_renderer_stream.h"
 #include "audio_utils.h"
@@ -56,7 +57,7 @@ public:
     AudioEndpointInner(EndpointType type, uint64_t id, const AudioProcessConfig &clientConfig);
     ~AudioEndpointInner();
 
-    bool Config(const AudioDeviceDescriptor &deviceInfo) override;
+    bool Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo) override;
     bool StartDevice(EndpointStatus preferredState = INVALID);
     void HandleStartDeviceFailed();
     bool StopDevice();
@@ -112,17 +113,6 @@ public:
     EndpointStatus GetStatus() override;
 
     void Release() override;
-
-    AudioDeviceDescriptor &GetDeviceInfo() override
-    {
-        return deviceInfo_;
-    }
-
-    DeviceRole GetDeviceRole() override
-    {
-        return deviceInfo_.deviceRole_;
-    }
-
     float GetMaxAmplitude() override;
     uint32_t GetLinkedProcessCount() override;
 
@@ -272,10 +262,9 @@ private:
         ACTIVE,
         IN_TIMING
     };
-    // SamplingRate EncodingType SampleFormat Channel
-    AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
-    AudioStreamInfo dstStreamInfo_;
+    
     EndpointType endpointType_;
+    AdapterType adapterType_ = ADAPTER_TYPE_FAST;
     int32_t id_ = 0;
     std::mutex listLock_;
     std::vector<IAudioProcessStream *> processList_;

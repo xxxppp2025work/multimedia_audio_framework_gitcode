@@ -19,7 +19,6 @@
 #include "i_stream.h"
 #include "hpae_info.h"
 #include "hpae_pcm_buffer.h"
-#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -27,7 +26,6 @@ namespace HPAE {
 enum HpaeMsgCode {
     UPDATE_STATUS,
     INIT_DEVICE_RESULT,
-    DEINIT_DEVICE_RESULT,
     MOVE_SINK_INPUT,
     MOVE_ALL_SINK_INPUT,
     MOVE_SOURCE_OUTPUT,
@@ -35,9 +33,9 @@ enum HpaeMsgCode {
     DUMP_SINK_INFO,
     DUMP_SOURCE_INFO,
     MOVE_SESSION_FAILED,
+    RELOAD_AUDIO_SINK_RESULT,
     CONNECT_CO_BUFFER_NODE,
     DISCONNECT_CO_BUFFER_NODE,
-    RELOAD_AUDIO_SINK_RESULT,
     INIT_SOURCE_RESULT,
 };
 
@@ -46,6 +44,7 @@ enum NodeOperation { UNDERFLOW, FADED, DRAINED };
 class ISendMsgCallback {
 public:
     virtual void Invoke(HpaeMsgCode cmdID, const std::any &args) = 0;
+    virtual void InvokeSync(HpaeMsgCode cmdID, const std::any &args) = 0;
 };
 
 class CallbackSender {
@@ -65,8 +64,16 @@ public:
             // pack the arguments into a tuple
             auto packed = std::make_tuple(std::forward<Args>(args)...);
             callback->Invoke(cmdID, packed);
-        } else {
-            AUDIO_ERR_LOG("Hpae TriggerCallback callback is null");
+        }
+    }
+
+    template <typename... Args>
+    void TriggerSyncCallback(HpaeMsgCode cmdID, Args &&...args)
+    {
+        if (auto callback = weakCallback_.lock()) {
+            // pack the arguments into a tuple
+            auto packed = std::make_tuple(std::forward<Args>(args)...);
+            callback->InvokeSync(cmdID, packed);
         }
     }
 };
@@ -97,6 +104,7 @@ enum HpaeProcessorType {
 
     // scene for collaboration
     HPAE_SCENE_COLLABORATIVE = 25,
+    HPAE_SCENE_RECOGNITION = 26,
 };
 
 // mark sourceInputNode(cluster)
@@ -114,6 +122,7 @@ struct HpaeDfxNodeInfo {
     uint32_t frameLen;
     size_t historyFrameCount;
     AudioSamplingRate samplingRate;
+    uint32_t customSampleRate = 0;
     AudioSampleFormat format = AudioSampleFormat::SAMPLE_F32LE;
     AudioChannel channels;
     AudioChannelLayout channelLayout = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
@@ -131,7 +140,7 @@ public:
     virtual void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation){};
     virtual void OnFadeDone(uint32_t sessionId, IOperation operation){};
     virtual void OnRequestLatency(uint32_t sessionId, uint64_t &latency){};
-    virtual void OnRewindAndFlush(uint64_t rewindTime){};
+    virtual void OnRewindAndFlush(uint64_t rewindTime, uint64_t hdiFramePosition = 0){};
     virtual void OnNotifyQueue(){};
     virtual void OnDisConnectProcessCluster(HpaeProcessorType sceneType){};
     virtual void OnNotifyDfxNodeInfo(bool isConnect, uint32_t preNodeId, HpaeDfxNodeInfo &nodeInfo){};

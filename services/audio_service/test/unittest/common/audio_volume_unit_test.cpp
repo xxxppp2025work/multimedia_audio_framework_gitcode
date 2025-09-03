@@ -1506,8 +1506,8 @@ HWTEST_F(AudioVolumeUnitTest, SetOffloadType_001, TestSize.Level1)
     uint32_t streamIndex = 1;
     int32_t offloadType = OFFLOAD_ACTIVE_BACKGROUND;
     AudioVolume::GetInstance()->SetOffloadType(streamIndex, offloadType);
-    int32_t getFadeoutState = AudioVolume::GetInstance()->GetFadeoutState(streamIndex);
-    EXPECT_EQ(getFadeoutState, offloadType);
+    int32_t getOffloadType = AudioVolume::GetInstance()->GetOffloadType(streamIndex);
+    EXPECT_EQ(getOffloadType, offloadType);
 }
 
 /**
@@ -1520,8 +1520,254 @@ HWTEST_F(AudioVolumeUnitTest, SetOffloadType_002, TestSize.Level1)
 {
     uint32_t streamIndex = 1;
     AudioVolume::GetInstance()->offloadType_.clear();
-    uint32_t ret = AudioVolume::GetInstance()->GetFadeoutState(streamIndex);
+    uint32_t ret = AudioVolume::GetInstance()->GetOffloadType(streamIndex);
     EXPECT_EQ(ret, OFFLOAD_DEFAULT);
+}
+
+/**
+ * @tc.name  : Test AudioVolume
+ * @tc.number: SetAppRingMuted_001
+ * @tc.desc  : Test SetAppRingMuted interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetAppRingMuted_001, TestSize.Level1)
+{
+    bool isMuted = true;
+    int32_t appUid = 123;
+    int32_t sessionId = 10001;
+    int32_t pid = 1;
+    AudioStreamType streamType = STREAM_RING;
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+
+    AppVolume appVolume(appUid, 1.0f, 0, true);
+    audioVolumeTest->appVolume_.emplace(appUid, appVolume);
+
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
+    audioVolumeTest->streamVolume_.emplace(sessionId, streamVolume);
+
+    bool result = audioVolumeTest->SetAppRingMuted(appUid, isMuted);
+
+    EXPECT_EQ(result, true);
+
+    audioVolumeTest->appVolume_.clear();
+    audioVolumeTest->streamVolume_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioVolume
+ * @tc.number: SetAppRingMuted_002
+ * @tc.desc  : Test SetAppRingMuted interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetAppRingMuted_002, TestSize.Level1)
+{
+    bool isMuted = false;
+    int32_t appUid = 123;
+    int32_t sessionId = 10001;
+    int32_t pid = 1;
+    AudioStreamType streamType = STREAM_RING;
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
+    audioVolumeTest->streamVolume_.emplace(sessionId, streamVolume);
+
+    bool result = audioVolumeTest->SetAppRingMuted(appUid, isMuted);
+
+    EXPECT_EQ(result, true);
+
+    audioVolumeTest->appVolume_.clear();
+    audioVolumeTest->streamVolume_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioVolume
+ * @tc.number: SetAppRingMuted_003
+ * @tc.desc  : Test SetAppRingMuted interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetAppRingMuted_003, TestSize.Level1)
+{
+    bool isMuted = false;
+    int32_t appUid = 123;
+    int32_t sessionId = 10001;
+    int32_t pid = 1;
+    AudioStreamType streamType = STREAM_VOICE_COMMUNICATION;
+    StreamUsage streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+
+    AppVolume appVolume(appUid, 1.0f, 0, true);
+    audioVolumeTest->appVolume_.emplace(appUid, appVolume);
+
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
+    audioVolumeTest->streamVolume_.emplace(sessionId, streamVolume);
+
+    bool result = audioVolumeTest->SetAppRingMuted(appUid, isMuted);
+
+    EXPECT_EQ(result, false);
+
+    audioVolumeTest->appVolume_.clear();
+    audioVolumeTest->streamVolume_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioVolume
+ * @tc.number: SetAppRingMuted_004
+ * @tc.desc  : Test SetAppRingMuted interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetAppRingMuted_004, TestSize.Level1)
+{
+    bool isMuted = false;
+    int32_t appUid = 123;
+    int32_t anotherAppUid = 456;
+    int32_t sessionId = 10001;
+    int32_t pid = 1;
+    AudioStreamType streamType = STREAM_RING;
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+
+    AppVolume appVolume(appUid, 1.0f, 0, true);
+    audioVolumeTest->appVolume_.emplace(appUid, appVolume);
+
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
+    audioVolumeTest->streamVolume_.emplace(sessionId, streamVolume);
+
+    bool result = audioVolumeTest->SetAppRingMuted(anotherAppUid, isMuted);
+
+    EXPECT_EQ(result, false);
+
+    audioVolumeTest->appVolume_.clear();
+    audioVolumeTest->streamVolume_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolume_006
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolume_006, TestSize.Level1)
+{
+    uint32_t sessionId = 2;
+    int32_t volumeType = STREAM_VOICE_ASSISTANT;
+    std::string deviceClass = "speaker";
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MUSIC;
+    int32_t uid = 1000;
+    int32_t pid = 1000;
+    int32_t mode = 1;
+    bool isVKB = true;
+    ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
+
+    StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
+
+    SystemVolume systemVolume(STREAM_MUSIC, "speaker", 0.5f, 5, true);
+    AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
+
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    EXPECT_EQ(volume, 0.0f);
+
+    streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, true, mode, isVKB };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
+    volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    EXPECT_EQ(volumes.volumeStream, 1.0f);
+
+    volumeType = STREAM_SYSTEM;
+    volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    EXPECT_EQ(volumes.volumeStream, 1.0f);
+
+    volumeType = STREAM_VOICE_CALL;
+    volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    EXPECT_EQ(volumes.volumeStream, 1.0f);
+
+    volumeType = STREAM_VOICE_COMMUNICATION;
+    volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    EXPECT_EQ(volumes.volumeStream, 1.0f);
+
+    volumes = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    EXPECT_EQ(volumes.volumeStream, 1.0f);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetStreamVolume_002
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetStreamVolume_002, TestSize.Level1)
+{
+    uint32_t sessionId = 531;
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MUSIC;
+    int32_t uid = 1000;
+    int32_t pid = 1000;
+    int32_t mode = 1;
+    bool isVKB = true;
+    ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
+
+    StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
+    bool isMuted = true;
+    AudioVolume::GetInstance()->SetStreamVolumeMute(sessionId, isMuted);
+
+    float volumeStream = AudioVolume::GetInstance()->GetStreamVolume(sessionId);
+    EXPECT_EQ(volumeStream, 0.0f);
+
+    volumeStream = AudioVolume::GetInstance()->GetStreamVolume(sessionId + 1);
+    EXPECT_EQ(volumeStream, 1.0f);
+}
+
+/**
+ * @tc.name  : Test GetCurVolume_002 API
+ * @tc.type  : FUNC
+ * @tc.number: GetCurVolume_004
+ * @tc.desc  : Test GetCurVolume_002 interface
+ */
+HWTEST_F(AudioVolumeUnitTest, GetStopFadeoutState_004, TestSize.Level1)
+{
+    uint32_t streamIndex = 1;
+    AudioVolume::GetInstance()->SetStopFadeoutState(streamIndex, 1);
+    uint32_t result = AudioVolume::GetInstance()->GetStopFadeoutState(streamIndex);
+    EXPECT_EQ(result, 1);
+}
+
+/**
+ * @tc.name  : Test IsSameVolume API
+ * @tc.type  : FUNC
+ * @tc.number: IsSameVolume_001
+ * @tc.desc  : Test IsSameVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, IsSameVolume_001, TestSize.Level4)
+{
+    float x = 0.0f;
+    float y = 0.0f;
+    EXPECT_TRUE(AudioVolume::GetInstance()->IsSameVolume(x, y));;
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadEnable_001
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetOffloadEnable_001, TestSize.Level1)
+{
+    uint32_t streamIndex = 1;
+    int32_t offloadEnable = 1;
+    AudioVolume::GetInstance()->SetOffloadEnable(streamIndex, offloadEnable);
+    int32_t getOffloadType = AudioVolume::GetInstance()->GetOffloadEnable(streamIndex);
+    EXPECT_EQ(getOffloadType, offloadEnable);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadEnable_002
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetOffloadEnable_002, TestSize.Level1)
+{
+    uint32_t streamIndex = 1;
+    AudioVolume::GetInstance()->offloadEnable_.clear();
+    uint32_t ret = AudioVolume::GetInstance()->GetOffloadEnable(streamIndex);
+    EXPECT_EQ(ret, 0);
 }
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS

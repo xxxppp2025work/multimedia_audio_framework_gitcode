@@ -20,7 +20,6 @@
 #include "i_capturer_stream.h"
 #include "hpae_sink_input_node.h"
 #include "hpae_stream_manager.h"
-#include "audio_engine_log.h"
 #include "hpae_dfx_tree.h"
 #include "hpae_co_buffer_node.h"
 namespace OHOS {
@@ -76,6 +75,7 @@ public:
     virtual void SetSpeed(uint32_t sessionId, float speed) {}
     virtual std::vector<SinkInput> GetAllSinkInputsInfo() = 0;
     virtual int32_t GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo) = 0;
+    virtual int32_t RefreshProcessClusterByDevice() = 0;
     virtual HpaeSinkInfo GetSinkInfo() = 0;
     virtual int32_t AddNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node) = 0;
     virtual int32_t AddAllNodesToSink(

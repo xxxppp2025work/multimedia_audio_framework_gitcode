@@ -77,6 +77,7 @@ public:
     void SetSpeed(uint32_t sessionId, float speed) override;
     std::vector<SinkInput> GetAllSinkInputsInfo() override;
     int32_t GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo) override;
+    int32_t RefreshProcessClusterByDevice() override;
     HpaeSinkInfo GetSinkInfo() override;
 
     int32_t AddNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node) override;
@@ -85,7 +86,7 @@ public:
 
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
     void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;
-    void OnRewindAndFlush(uint64_t rewindTime) override;
+    void OnRewindAndFlush(uint64_t rewindTime, uint64_t hdiFramePosition = 0) override;
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
     int32_t DumpSinkInfo() override;
@@ -94,7 +95,7 @@ public:
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
 private:
-    void SendRequest(Request &&request, bool isInit = false);
+    void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t StartRenderSink();
     int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
     int32_t ConnectInputSession();
@@ -103,7 +104,7 @@ private:
     void AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t> &moveIds,
         MoveSessionType moveType);
-    void InitSinkInner(bool isReload = false);
+    int32_t InitSinkInner(bool isReload = false);
     void UpdateAppsUid();
 
     HpaeRenderSessionInfo sessionInfo_;
