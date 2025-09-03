@@ -305,14 +305,6 @@ enum AudioRendererRate {
 };
 
 /**
- * Enumerates the audio playback target.
- */
-enum RenderTarget {
-    PLAYBACK = 0,
-    INJECT_TO_VOICE_COMMUNICATION_CAPTURE = 1
-}
-
-/**
 * media safe volume status
 */
 enum SafeStatus : int32_t {
@@ -1961,6 +1953,14 @@ enum XperfEventId : int32_t {
     XPERF_EVENT_RELEASE = 2,
     XPERF_EVENT_FAULT = 3,
     XPERF_EVENT_MAX = 4,
+};
+
+/**
+ * Enumerates the audio playback target
+ */
+enum RenderTarget {
+    PLAY_BACK = 0,
+    INJECT_TO_VOICE_COMMUNICATION_CAPTURE = 1
 };
 } // namespace AudioStandard
 } // namespace OHOS

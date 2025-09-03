@@ -162,12 +162,12 @@ public:
     virtual bool GetMute() = 0;
     virtual int32_t SetRenderRate(AudioRendererRate renderRate) = 0;
     virtual AudioRendererRate GetRenderRate() = 0;
-    virtual int32_t SetRenderTarget(RenderTarget target) = 0;
-    virtual RenderTarget GetRenderTarget() = 0;
     virtual int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) = 0;
     virtual int32_t SetSpeed(float speed) = 0;
     virtual int32_t SetPitch(float pitch) = 0;
     virtual float GetSpeed() = 0;
+    virtual int32_t SetRenderTarget(RenderTarget target) { return 0; }
+    virtual RenderTarget GetRenderTarget() { return PLAY_BACK; }
 
     virtual void SetUnderflowCount(uint32_t underflowCount) = 0;
     virtual void SetOverflowCount(uint32_t overflowCount) = 0;

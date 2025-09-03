@@ -555,6 +555,8 @@ napi_value NapiAudioRenderer::GetRendererSamplingRate(napi_env env, napi_callbac
 
 napi_value NapiAudioRenderer::SetTarget(napi_env env, napi_callback_info info)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
     auto context = std::make_shared<AudioRendererAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("SetTarget failed : no memory");
@@ -566,7 +568,7 @@ napi_value NapiAudioRenderer::SetTarget(napi_env env, napi_callback_info info)
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
             NAPI_ERR_INVALID_PARAM);
-        context->status = NapiParamUtils::GetValueUInt32(env, context->target, argv[PARAM0]);
+        context->status = NapiParamUtils::GetValueInt32(env, context->target, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get Target failed",
             NAPI_ERR_INVALID_PARAM);
     };
@@ -580,22 +582,24 @@ napi_value NapiAudioRenderer::SetTarget(napi_env env, napi_callback_info info)
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        if (context->target != 0 or context->target != 1) {
+        if (!NapiAudioEnum::IsLegalRenderTargetType(context->target)) {
             context->SignError(NAPI_ERR_INVALID_PARAM);
             return;
         }
-        context->intValue = napiAudioRenderer->audioRenderer_->SetTarget(context->target);
+        RenderTarget target = static_cast<RenderTarget>(context->target);
+        context->intValue = napiAudioRenderer->audioRenderer_->SetTarget(target);
         CHECK_AND_RETURN(context->intValue != SUCCESS);
         if (context->intValue == ERR_PERMISSION_DENIED) {
             context->SignError(NAPI_ERR_NO_PERMISSION);
         } else if (context->intValue == ERR_SYSTEM_PERMISSION_DENIED) {
             context->SignError(NAPI_ERR_PERMISSION_DENIED);
-        } else if (context->intValue == ERR_ILLEGAL_STATE) {
+        } else if (context->intValue == ERR_INJECT_TO_VOICE_COMMUNICATION_CAPTURE_BY_ILLEGAL_STATE) {
             context->SignError(NAPI_ERR_ILLEGAL_STATE);
+        } else if (context->intValue == ERR_INJECT_TO_VOICE_COMMUNICATION_CAPTURE_BY_ILLEGAL_STREAM) {
+            context->SignError(NAPI_ERR_UNSUPPORTED);
         } else {
             context->SignError(NAPI_ERR_SYSTEM);
         }
-        //todo NAPI_ERR_UNSUPPORTED
     };
 
     auto complete = [env](napi_value &output) {
@@ -606,30 +610,15 @@ napi_value NapiAudioRenderer::SetTarget(napi_env env, napi_callback_info info)
 
 napi_value NapiAudioRenderer::GetTarget(napi_env env, napi_callback_info info)
 {
-    auto context = std::make_shared<AudioRendererAsyncContext>();
-    if (context == nullptr) {
-        AUDIO_ERR_LOG("GetTarget failed : no memory");
-        NapiAudioError::ThrowError(env, "GetTarget failed : no memory",
-            NAPI_ERR_NO_MEMORY);
-        return NapiParamUtils::GetUndefinedValue(env);
-    }
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+    auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer!= nullptr, result, "napiAudioRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
 
-    context->GetCbInfo(env, info);
-
-    auto executor = [context]() {
-        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRenderer = objectGuard.GetPtr();
-        CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
-            "context object state is error.");
-        context->rendererSampleRate = napiAudioRenderer->audioRenderer_->GetTarget();
-    };
-
-    auto complete = [env, context](napi_value &output) {
-        NapiParamUtils::SetValueUInt32(env, context->target, output);
-    };
-    return NapiAsyncWork::Enqueue(env, context, "GetTarget", executor, complete);
+    int32_t target = napiAudioRenderer->audioRenderer_->GetTarget();
+    NapiParamUtils::SetValueInt32(env, target, result);
+    return result;
 }
 
 napi_value NapiAudioRenderer::Start(napi_env env, napi_callback_info info)
