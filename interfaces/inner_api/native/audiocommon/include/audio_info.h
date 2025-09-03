@@ -1947,6 +1947,14 @@ enum BoostTriggerMethod : uint32_t {
     METHOD_MAX
 };
 
+/**
+ * Enumerates the audio playback target
+ */
+enum RenderTarget {
+    PLAY_BACK = 0,
+    INJECT_TO_VOICE_COMMUNICATION_CAPTURE = 1
+};
+
 enum XperfEventId : int32_t {
     XPERF_EVENT_START = 0,
     XPERF_EVENT_STOP = 1,

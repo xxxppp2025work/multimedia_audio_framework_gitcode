@@ -2274,5 +2274,11 @@ void RendererInServer::InitDupBuffer(int32_t innerCapId)
     AUDIO_INFO_LOG("InitDupBuffer success, innerCapId: %{public}d, stream sessionId: %{public}u",
         innerCapId, streamIndex_);
 }
+
+int32_t RendererInServer::SetTarget(int32_t target, int32_t &ret)
+{
+    ret = SUCCESS;
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

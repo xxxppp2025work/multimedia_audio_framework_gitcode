@@ -58,6 +58,7 @@ private:
         int32_t audioRendererRate;
         int32_t rendererFlags;
         int32_t interruptMode;
+        int32_t target;
         bool isTrue;
         uint64_t time;
         size_t bufferLen;
@@ -134,6 +135,8 @@ private:
     static napi_value SetSpeed(napi_env env, napi_callback_info info);
     static napi_value GetSpeed(napi_env env, napi_callback_info info);
     static napi_value GetState(napi_env env, napi_callback_info info);
+    static napi_value SetTarget(napi_env env, napi_callback_info info);
+    static napi_value GetTarget(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);
     static napi_value SetSilentModeAndMixWithOthers(napi_env env, napi_callback_info info);

@@ -1113,6 +1113,22 @@ public:
     virtual void ResetFirstFrameState() {};
 
     /**
+     * @brief Sef the render target
+     * @param target The target at which the stream needs to be rendered.
+     * @return Returns {@link SUCCESS} if render target is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 22
+     */
+    virtual int32_t SetTarget(RenderTarget target) const = 0;
+
+    /**
+     * @brief Obtains the current render target
+     * @return Returns current render target
+     * @since 22
+     */
+    virtual RenderTarget GetTarget() const = 0;
+
+    /**
      * @brief check whether sampling rate is supported by audio renderer
      *
      * @param rates sampling rate
