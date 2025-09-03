@@ -308,7 +308,7 @@ void AudioCacheMgrInner::GetCachedDuration(int64_t &startTime, int64_t &endTime)
         return;
     }
 
-    int64_t temp;
+    int64_t temp = 0;
     if (memChunkDeque_.front() != nullptr) {
         memChunkDeque_.front()->GetMemChunkDuration(startTime, temp);
     }
