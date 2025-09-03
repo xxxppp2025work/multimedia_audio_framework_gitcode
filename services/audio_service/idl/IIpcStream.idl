@@ -40,7 +40,6 @@ interface IIpcStream {
     void GetLatency([out] unsigned long latency);
     void SetRate([in] int rate); // SetRenderRate
     void GetRate([out] int rate); // SetRenderRate
-    void SetTarget([in] int target); // SetRenderTarget
     void SetLowPowerVolume([in] float volume); // renderer only
     void GetLowPowerVolume([out] float volume); // renderer only
     void SetAudioEffectMode([in] int effectMode); // renderer only
@@ -66,4 +65,5 @@ interface IIpcStream {
     void ResolveBufferBaseAndGetServerSpanSize([out] sharedptr<OHAudioBufferBase> buffer,
         [out] unsigned int spanSizeInFrame, [out] unsigned long engineTotalSizeInFrame);
     void SetAudioHapticsSyncId([in] int audioHapticsSyncId);
+    void SetTarget([in] int target, [out] int ret); //SetRenderTarget
 }

@@ -603,20 +603,21 @@ AudioRendererRate RendererInClientInner::GetRenderRate()
     return rendererRate_;
 }
 
-int32_t RendererInClientInner::SetRenderTarget(RenderTarget target)
+
+int32_t RendererInClientInner::SetRenderTarget(RenderTarget renderTarget)
 {
-    if (renderTarget_ == target) {
-        AUDIO_INFO_LOG("Set same target");
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET_LOG(renderTarget_ != renderTarget, SUCCESS, "Set same renderTarget");
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
-    renderTarget_ = target;
-    return ipcStream_->SetTarget(target);
+    renderTarget_ = renderTarget;
+    int32_t ret = 0;
+    AUDIO_INFO_LOG("Set render target: %{public}d", renderTarget);
+    ipcStream_->SetTarget(renderTarget, ret);
+    return ret;
 }
 
-AudioRendererRate RendererInClientInner::GetRenderTarget()
+RenderTarget RendererInClientInner::GetRenderTarget()
 {
-    AUDIO_INFO_LOG("Get RenderTarget %{public}d", renderTarget_);
+    AUDIO_INFO_LOG("Get RenderRate %{public}d", renderTarget_);
     return renderTarget_;
 }
 

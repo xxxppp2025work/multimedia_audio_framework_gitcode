@@ -1412,11 +1412,6 @@ int32_t RendererInServer::SetRate(int32_t rate)
     return stream_->SetRate(rate);
 }
 
-int32_t RendererInServer::SetTarget(int32_t target)
-{
-    return SUCCESS;
-}
-
 int32_t RendererInServer::SetLowPowerVolume(float volume)
 {
     if (volume < MIN_FLOAT_VOLUME || volume > MAX_FLOAT_VOLUME) {
@@ -2278,6 +2273,12 @@ void RendererInServer::InitDupBuffer(int32_t innerCapId)
         ReConfig(dupTotalSizeInFrame_ * dupByteSizePerFrame_, false);
     AUDIO_INFO_LOG("InitDupBuffer success, innerCapId: %{public}d, stream sessionId: %{public}u",
         innerCapId, streamIndex_);
+}
+
+int32_t RendererInServer::SetTarget(int32_t target, int32_t &ret)
+{
+    ret = SUCCESS;
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -85,8 +85,6 @@ public:
     bool GetMute() override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
-    int32_t SetRenderTarget(RenderTarget target) override;
-    RenderTarget GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
     int32_t SetRendererFirstFrameWritingCallback(
         const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback) override;
@@ -223,6 +221,8 @@ public:
     void NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId) override;
     bool GetStopFlag() const override;
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
+    int32_t SetRenderTarget(RenderTarget renderTarget) override;
+    RenderTarget GetRenderTarget() override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -316,7 +316,7 @@ private:
     bool streamTrackerRegistered_ = false;
 
     std::atomic<bool> needSetThreadPriority_ = true;
-
+    RenderTarget renderTarget_ = PLAY_BACK;
     AudioStreamParams curStreamParams_ = {0}; // in plan next: replace it with AudioRendererParams
     AudioStreamParams streamParams_ = {0};
 
