@@ -1286,6 +1286,8 @@ public:
      */
     int32_t SetRenderWhitelist(std::vector<std::string> list);
 
+    void CleanUpResource();
+
 #ifdef HAS_FEATURE_INNERCAPTURER
     /**
     * @brief check capture limit

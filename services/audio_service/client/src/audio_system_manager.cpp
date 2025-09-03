@@ -55,6 +55,7 @@ mutex g_asProxyMutex;
 mutex g_audioListenerMutex;
 sptr<IStandardAudioService> g_asProxy = nullptr;
 sptr<AudioManagerListenerStubImpl> g_audioListener = nullptr;
+sptr<AudioServerDeathRecipient> asDeathRecipient = nullptr;
 
 AudioSystemManager::AudioSystemManager()
 {
@@ -187,8 +188,7 @@ inline const sptr<IStandardAudioService> GetAudioSystemManagerProxy()
         xcollieGetSystemAbility.CancelXCollieTimer();
 
         // register death recipent to restore proxy
-        sptr<AudioServerDeathRecipient> asDeathRecipient =
-            new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
+        asDeathRecipient = new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
         if (asDeathRecipient != nullptr) {
             asDeathRecipient->SetNotifyCb([] (pid_t pid, pid_t uid) {
                 AudioSystemManager::AudioServerDied(pid, uid);
@@ -2607,6 +2607,27 @@ int32_t AudioSystemManager::GetVolumeBySessionId(const uint32_t &sessionId, floa
     IPCSkeleton::SetCallingIdentity(identity);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed: %{public}d", ret);
     return ret;
+}
+
+void AudioSystemManager::CleanUpResource()
+{
+    lock_guard<mutex> lock(g_asProxyMutex);
+    if (g_asProxy == nullptr) {
+        return;
+    }
+
+    sptr<IRemoteObject> object = g_asProxy->AsObject();
+    if (object == nullptr) {
+        return;
+    }
+
+    if (asDeathRecipient != nullptr) {
+        AUDIO_INFO_LOG("Remove DeathRecipient Success.");
+        object->RemoveDeathRecipient(asDeathRecipient);
+        asDeathRecipient = nullptr;
+    }
+    g_asProxy = nullptr;
+    AUDIO_INFO_LOG("Remove DeathRecipient end.");
 }
 } // namespace AudioStandard
 } // namespace OHOS
