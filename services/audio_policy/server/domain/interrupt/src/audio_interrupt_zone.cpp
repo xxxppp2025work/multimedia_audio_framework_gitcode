@@ -139,7 +139,8 @@ void AudioInterruptZoneManager::ForceStopAudioFocusInZone(int32_t zoneId, const 
     audioSession->RemoveStreamInfo(interrupt.streamId);
 }
 
-int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func)
+int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneId, int32_t &destZoneId,
+    GetZoneIdFunc func)
 {
     CHECK_AND_RETURN_RET_LOG(service_ != nullptr, ERR_INVALID_PARAM, "interrupt service is nullptr");
     CHECK_AND_RETURN_RET_LOG(func != nullptr, ERR_INVALID_PARAM, "zone id is invalid");
@@ -164,6 +165,7 @@ int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneI
         }
         focusInfoList.erase(itFocus++);
         isMigrate = true;
+        destZoneId = toZoneId;
     }
     CHECK_AND_RETURN_RET_LOG(isMigrate, SUCCESS, "no interrupt need migrate");
 

@@ -1125,13 +1125,14 @@ int32_t AudioInterruptService::ReleaseAudioInterruptZone(const int32_t zoneId, G
 int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func)
 {
     std::unique_lock<std::mutex> lock(mutex_);
-    int32_t ret = zoneManager_.MigrateAudioInterruptZone(zoneId, func);
+    int32_t destZoneId = zoneId;
+    int32_t ret = zoneManager_.MigrateAudioInterruptZone(zoneId, destZoneId, func);
     if (ret != SUCCESS) {
         return ret;
     }
-    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+    AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, destZoneId);
     return SUCCESS;
 }
 
