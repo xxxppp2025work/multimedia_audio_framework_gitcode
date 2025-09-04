@@ -460,7 +460,7 @@ int32_t AudioPolicyUtils::GetDeviceNameFromDataShareHelper(std::string &deviceNa
     resultSet->GetColumnIndex(SETTINGS_DATA_FIELD_VALUE, columnIndex);
     resultSet->GetString(columnIndex, deviceName);
     AUDIO_INFO_LOG("GetDeviceNameFromDataShareHelper");
-
+    AUDIO_INFO_LOG("GetDeviceNameFromDataShareHelper deviceName = %{public}s.", deviceName.c_str());
     resultSet->Close();
     dataShareHelper->Release();
     return SUCCESS;
