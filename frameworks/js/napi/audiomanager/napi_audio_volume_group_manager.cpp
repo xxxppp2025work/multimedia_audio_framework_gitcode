@@ -37,7 +37,7 @@ using namespace std;
 using namespace HiviewDFX;
 const std::string AUDIO_VOLUME_GROUP_MNGR_NAPI_CLASS_NAME = "AudioVolumeGroupManager";
 static __thread napi_ref g_groupmanagerConstructor = nullptr;
-std::atomic<int32_t> NapiAudioVolumeGroupManager::isConstructSuccess_ = SUCCESS;
+int32_t NapiAudioVolumeGroupManager::isConstructSuccess_ = SUCCESS;
 std::mutex NapiAudioVolumeGroupManager::volumeGroupManagerMutex_;
 
 bool NapiAudioVolumeGroupManager::CheckContextStatus(std::shared_ptr<AudioVolumeGroupManagerAsyncContext> context)
