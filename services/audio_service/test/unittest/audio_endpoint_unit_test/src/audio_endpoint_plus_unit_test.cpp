@@ -1877,24 +1877,6 @@ HWTEST_F(AudioEndpointPlusUnitTest, ProcessToDupStream_001, TestSize.Level1)
 }
 
 /*
- * @tc.name  : Test ProcessToDupStream API
- * @tc.type  : FUNC
- * @tc.number: HandleDisableFastCap_001
- * @tc.desc  : Test AudioEndpointInner::HandleDisableFastCap()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, ProcessToDupStream_001, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
-    ASSERT_NE(audioEndpointInner, nullptr);
-    CaptureInfo captureInfo;
-    
-    EXPECT_EQ(audioEndpointInner->HandleDisableFastCap(captureInfo), SUCCESS);
-}
-
-/*
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC
  * @tc.number: AudioEndpointInner_008
@@ -1937,6 +1919,156 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_008, TestSize.Level1)
     srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
     srcData.streamInfo.channels = AudioChannel::CHANNEL_3;
     audioEndpointInner->HandleRendererDataParams(srcData, dstData);
+}
+
+/*
+ * @tc.name  : Test ProcessToDupStream API
+ * @tc.type  : FUNC
+ * @tc.number: DisableFastInnerCap_001
+ * @tc.desc  : Test AudioEndpointInner::DisableFastInnerCap()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, DisableFastInnerCap_001, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    ASSERT_NE(audioEndpointInner, nullptr);
+    int32_t innerCapId = 1;
+    
+    int32_t ret = audioEndpointInner->DisableFastInnerCap(innerCapId);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/*
+ * @tc.name  : Test ProcessToDupStream API
+ * @tc.type  : FUNC
+ * @tc.number: HandleDisableFastCap_001
+ * @tc.desc  : Test AudioEndpointInner::HandleDisableFastCap()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, HandleDisableFastCap_001, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    ASSERT_NE(audioEndpointInner, nullptr);
+    CaptureInfo captureInfo;
+
+    int32_t ret = audioEndpointInner->HandleDisableFastCap(captureInfo);
+    EXPECT_EQ(ret, SUCCESS);
+    
+    captureInfo.isInnerCapEnabled = true;
+    ret = audioEndpointInner->HandleDisableFastCap(captureInfo);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/*
+ * @tc.name  : Test ProcessToDupStream API
+ * @tc.type  : FUNC
+ * @tc.number: ConfigInputPoint_001
+ * @tc.desc  : Test AudioEndpointInner::ConfigInputPoint()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, ConfigInputPoint_001, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    ASSERT_NE(audioEndpointInner, nullptr);
+    AudioDeviceDescriptor deviceInfo(1);
+    deviceInfo.networkId_ = "abc";
+
+    bool ret = audioEndpointInner->ConfigInputPoint(deviceInfo);
+    EXPECT_FALSE(ret);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: UnlinkProcessStream_001
+ * @tc.desc  : Test AudioEndpointInner::UnlinkProcessStream()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, UnlinkProcessStream_001, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_VOIP_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    sptr<AudioProcessInServer> firstProcessStream = CreateAudioProcessInServer();
+    std::shared_ptr<OHAudioBufferBase> processBuffer = firstProcessStream->GetStreamBuffer();
+    audioEndpointInner->AddProcessStreamToList(firstProcessStream, processBuffer);
+
+    int32_t ret = audioEndpointInner->UnlinkProcessStream(firstProcessStream);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: OnStart_001
+ * @tc.desc  : Test AudioEndpointInner::OnStart()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, OnStart_001, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_VOIP_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    sptr<AudioProcessInServer> firstProcessStream = CreateAudioProcessInServer();
+    audioEndpointInner->endpointStatus_ = AudioEndpoint::RUNNING;
+    int32_t ret = audioEndpointInner->OnStart(firstProcessStream);
+    EXPECT_EQ(ret, SUCCESS);
+
+    audioEndpointInner->endpointStatus_ = AudioEndpoint::IDEL;
+    audioEndpointInner->isStarted_ = false;
+    ret = audioEndpointInner->OnStart(firstProcessStream);
+    EXPECT_EQ(ret, SUCCESS);
+
+    audioEndpointInner->isStarted_ = true;
+    ret = audioEndpointInner->OnStart(firstProcessStream);
+    EXPECT_EQ(ret, SUCCESS);
+
+    audioEndpointInner->endpointStatus_ = AudioEndpoint::UNLINKED;
+    audioEndpointInner->isStarted_ = true;
+    ret = audioEndpointInner->OnStart(firstProcessStream);
+    EXPECT_EQ(ret, SUCCESS);
+
+    audioEndpointInner->isStarted_ = false;
+    ret = audioEndpointInner->OnStart(firstProcessStream);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: OnPause_001
+ * @tc.desc  : Test AudioEndpointInner::OnPause()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, OnPause_001, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_VOIP_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    sptr<AudioProcessInServer> firstProcessStream = CreateAudioProcessInServer();
+    audioEndpointInner->endpointStatus_ = AudioEndpoint::RUNNING;
+    int32_t ret = audioEndpointInner->OnPause(firstProcessStream);
+    EXPECT_EQ(ret, SUCCESS);
+
+    audioEndpointInner->endpointStatus_ = AudioEndpoint::IDEL;
+    ret = audioEndpointInner->OnPause(firstProcessStream);
+    EXPECT_EQ(ret, SUCCESS);
+
+    audioEndpointInner->endpointStatus_ = AudioEndpoint::UNLINKED;
+    ret = audioEndpointInner->OnPause(firstProcessStream);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS
