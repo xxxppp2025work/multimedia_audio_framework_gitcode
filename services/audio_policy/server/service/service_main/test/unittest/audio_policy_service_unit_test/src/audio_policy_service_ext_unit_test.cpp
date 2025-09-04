@@ -104,7 +104,6 @@ static void GetPermission()
     }
 }
 
-
 /**
 * @tc.name  : Test AudioPolicyService.
 * @tc.number: AudioPolicyServiceTest_001
@@ -357,6 +356,173 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_016, TestSize.Lev
     propertyArray.property.push_back(tmp);
     auto ret = AudioPolicyService::GetAudioPolicyService().SetAudioEffectProperty(propertyArray);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
+* @tc.name  : Test AudioPolicyService.
+* @tc.number: AudioPolicyServiceTest_Deinit_001
+* @tc.desc  : Test Deinit interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, Deinit_001, TestSize.Level4)
+{
+    AudioPolicyService::isBtListenerRegistered = false;
+    AudioPolicyService::GetAudioPolicyService().Deinit();
+    EXPECT_EQ(false, AudioPolicyService::isBtListenerRegistered);
+}
+
+/**
+* @tc.name  : Test AudioPolicyService.
+* @tc.number: AudioPolicyServiceTest_Deinit_002
+* @tc.desc  : Test Deinit interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, Deinit_002, TestSize.Level4)
+{
+    auto& service = AudioPolicyService::GetAudioPolicyService();
+    auto originalPtr = service.RecoveryDevicesThread_.get();
+    service.RecoveryDevicesThread_ = std::make_unique<std::thread>();
+    EXPECT_TRUE(service.RecoveryDevicesThread_ != nullptr);
+    EXPECT_FALSE(service.RecoveryDevicesThread_->joinable());
+    service.Deinit();
+    EXPECT_NE(nullptr, service.RecoveryDevicesThread_);
+    EXPECT_FALSE(service.RecoveryDevicesThread_->joinable());
+}
+
+/**
+ * @tc.name  : Test GetCurrentCapturerChangeInfos.
+ * @tc.number: AudioPolicyServiceTest_GetCurrentCapturerChangeInfos_001
+ * @tc.desc  : Test when deviceType does not match, UpdateCapturerInfoWhenNoPermission is not called.
+ */
+HWTEST_F(AudioPolicyServiceExtUnitTest, GetCurrentCapturerChangeInfos_001, TestSize.Level4)
+{
+    auto& service = AudioPolicyService::GetAudioPolicyService();
+    AudioDeviceDescriptor activeInputDesc(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    AudioActiveDevice::GetInstance().SetCurrentInputDevice(activeInputDesc);
+    auto connectedDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE);
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(connectedDesc);
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    auto info = std::make_shared<AudioCapturerChangeInfo>();
+    info->clientUID = 1001;
+    info->capturerState = CAPTURER_NEW;
+    audioCapturerChangeInfos.push_back(info);
+    int32_t result = service.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos, false, false);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(audioCapturerChangeInfos[0]->clientUID, 1001);
+    EXPECT_EQ(audioCapturerChangeInfos[0]->capturerState, CAPTURER_NEW);
+}
+
+/**
+ * @tc.name  : Test GetCurrentCapturerChangeInfos.
+ * @tc.number: AudioPolicyServiceTest_GetCurrentCapturerChangeInfos_002
+ * @tc.desc  : Test when deviceRole does not match, UpdateCapturerInfoWhenNoPermission is not called.
+ */
+HWTEST_F(AudioPolicyServiceExtUnitTest, GetCurrentCapturerChangeInfos_002, TestSize.Level4)
+{
+    auto& service = AudioPolicyService::GetAudioPolicyService();
+    AudioDeviceDescriptor activeInputDesc(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    AudioActiveDevice::GetInstance().SetCurrentInputDevice(activeInputDesc);
+    auto connectedDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, OUTPUT_DEVICE);
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(connectedDesc);
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    auto info = std::make_shared<AudioCapturerChangeInfo>();
+    info->clientUID = 1001;
+    info->capturerState = CAPTURER_NEW;
+    audioCapturerChangeInfos.push_back(info);
+    int32_t result = service.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos, false, false);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(audioCapturerChangeInfos[0]->clientUID, 1001);
+    EXPECT_EQ(audioCapturerChangeInfos[0]->capturerState, CAPTURER_NEW);
+}
+
+/**
+* @tc.name  : Test AudioPolicyService.
+* @tc.number: AudioPolicyServiceTest_GetCurrentCapturerChangeInfos_003
+* @tc.desc  : Test GetCurrentCapturerChangeInfos interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, GetCurrentCapturerChangeInfos_003, TestSize.Level4)
+{
+    auto& service = AudioPolicyService::GetAudioPolicyService();
+    AudioDeviceDescriptor activeInputDesc(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    AudioActiveDevice::GetInstance().SetCurrentInputDevice(activeInputDesc);
+    auto connectedDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(connectedDesc);
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    auto info = std::make_shared<AudioCapturerChangeInfo>();
+    info->clientUID = 1001;
+    info->capturerState = CAPTURER_NEW;
+    audioCapturerChangeInfos.push_back(info);
+    int32_t result = service.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos, false, true);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(audioCapturerChangeInfos[0]->clientUID, 1001);
+    EXPECT_EQ(audioCapturerChangeInfos[0]->capturerState, CAPTURER_NEW);
+}
+
+/**
+* @tc.name  : Test AudioPolicyService.
+* @tc.number: AudioPolicyServiceTest_GetCurrentCapturerChangeInfos_004
+* @tc.desc  : Test GetCurrentCapturerChangeInfos interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, GetCurrentCapturerChangeInfos_004, TestSize.Level4)
+{
+    auto& service = AudioPolicyService::GetAudioPolicyService();
+    AudioDeviceDescriptor activeInputDesc(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    AudioActiveDevice::GetInstance().SetCurrentInputDevice(activeInputDesc);
+    auto connectedDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(connectedDesc);
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    auto info = std::make_shared<AudioCapturerChangeInfo>();
+    info->clientUID = 1001;
+    info->capturerState = CAPTURER_NEW;
+    audioCapturerChangeInfos.push_back(info);
+    int32_t result = service.GetCurrentCapturerChangeInfos(audioCapturerChangeInfos, false, false);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(audioCapturerChangeInfos[0]->clientUID, 0);
+    EXPECT_EQ(audioCapturerChangeInfos[0]->capturerState, CAPTURER_INVALID);
+}
+
+/**
+* @tc.name  : Test AudioPolicyService.
+* @tc.number: AudioPolicyServiceTest_RegisterBluetoothListener_001
+* @tc.desc  : Test RegisterBluetoothListener interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterBluetoothListener_001, TestSize.Level4)
+{
+    auto& service = AudioPolicyService::GetAudioPolicyService();
+    service.isBtCrashed = true;
+    service.RegisterBluetoothListener();
+    EXPECT_EQ(service.isBtCrashed, false);
+}
+
+/**
+* @tc.name  : Test AudioPolicyService.
+* @tc.number: AudioPolicyServiceTest_OffloadGetRenderPosition_001
+* @tc.desc  : Test OffloadGetRenderPosition interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadGetRenderPosition_001, TestSize.Level4)
+{
+    auto& service = AudioPolicyService::GetAudioPolicyService();
+    AudioA2dpOffloadFlag::GetInstance().SetA2dpOffloadFlag(A2DP_OFFLOAD);
+    auto& activeDevice = service.audioActiveDevice_;
+    activeDevice.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    activeDevice.currentActiveDevice_.networkId_ = LOCAL_NETWORK_ID;
+    uint32_t delayValue = 0;
+    uint64_t sendDataSize = 0;
+    uint32_t timeStamp = 0;
+    int32_t ret = service.OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
+    AudioA2dpOffloadFlag::GetInstance().SetA2dpOffloadFlag(NO_A2DP_DEVICE);
+    EXPECT_TRUE(true);
+}
+
+/**
+* @tc.name  : Test AudioPolicyService.
+* @tc.number: AudioPolicyServiceTest_GetA2dpOffloadFlag_001
+* @tc.desc  : Test GetA2dpOffloadFlag interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, GetA2dpOffloadFlag_001, TestSize.Level4)
+{
+    auto& service = AudioPolicyService::GetAudioPolicyService();
+    service.audioA2dpOffloadManager_ = nullptr;
+    BluetoothOffloadState result = service.GetA2dpOffloadFlag();
+    EXPECT_EQ(result, NO_A2DP_DEVICE);
 }
 } // namespace AudioStandard
 } // namespace OHOS
