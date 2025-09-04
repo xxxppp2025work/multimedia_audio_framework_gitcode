@@ -30,7 +30,7 @@ public:
     static napi_value Init(napi_env env, napi_value exports);
     static napi_value CreateAudioVolumeGroupManagerWrapper(napi_env env, int32_t groupId);
 
-    static int32_t isConstructSuccess_;
+    static std::atomic<int32_t> isConstructSuccess_;
 
 private:
     struct AudioVolumeGroupManagerAsyncContext : public ContextBase {
