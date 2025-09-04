@@ -63,11 +63,11 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_001, TestSize.Level1)
 
     auto observer = std::make_shared<TestDeviceStatusObserver>();
     audioUsbManager->initialized_ = false;
-    audioUsbManager->Init(observer);
+    audioUsbManager->Init(INIT_CTRL_ALL, observer);
     EXPECT_EQ(audioUsbManager->initialized_, true);
 
     audioUsbManager->initialized_ = true;
-    audioUsbManager->Init(observer);
+    audioUsbManager->Init(INIT_CTRL_ALL, observer);
     EXPECT_EQ(audioUsbManager->initialized_, true);
 }
 
@@ -131,7 +131,7 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_006, TestSize.Level1)
     ASSERT_TRUE(audioUsbManager != nullptr);
 
     auto observer = std::make_shared<TestDeviceStatusObserver>();
-    audioUsbManager->Init(observer);
+    audioUsbManager->Init(INIT_CTRL_ALL, observer);
     ASSERT_TRUE(observer != nullptr);
 
     UsbAudioDevice device;
@@ -155,7 +155,7 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_007, TestSize.Level1)
     ASSERT_TRUE(audioUsbManager != nullptr);
 
     auto observer = std::make_shared<TestDeviceStatusObserver>();
-    audioUsbManager->Init(observer);
+    audioUsbManager->Init(INIT_CTRL_ALL, observer);
     ASSERT_TRUE(observer != nullptr);
 
     UsbAudioDevice device;
@@ -179,7 +179,7 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_008, TestSize.Level1)
     ASSERT_TRUE(audioUsbManager != nullptr);
 
     auto observer = std::make_shared<TestDeviceStatusObserver>();
-    audioUsbManager->Init(observer);
+    audioUsbManager->Init(INIT_CTRL_ALL, observer);
     ASSERT_TRUE(observer != nullptr);
 
     UsbAudioDevice device;

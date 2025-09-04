@@ -404,45 +404,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioConnectedDevice::GetDev
     return devices;
 }
 
-bool AudioConnectedDevice::IsArmDevice(const std::string& address, const DeviceRole role)
-{
-    std::shared_lock<std::shared_mutex> lock(mutex_);
-    return std::any_of(connectedDevices_.begin(), connectedDevices_.end(),
-        [&address, &role](const auto& item) {
-            return (item->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET &&
-                item->macAddress_ == address && item->deviceRole_ == role);
-        });
-}
-
-bool AudioConnectedDevice::HasArm(const DeviceRole role)
-{
-    std::shared_lock<std::shared_mutex> lock(mutex_);
-    return std::find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [role](const auto& item) {
-        return item->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET && item->deviceRole_ == role;
-    }) != connectedDevices_.cend();
-}
-
-bool AudioConnectedDevice::HasHifi(const DeviceRole role)
-{
-    std::shared_lock<std::shared_mutex> lock(mutex_);
-    return std::find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [role](const auto& item) {
-        return item->deviceType_ == DEVICE_TYPE_USB_HEADSET && item->deviceRole_ == role;
-    }) != connectedDevices_.cend();
-}
-
-std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetUsbDeviceDescriptor(const std::string &address,
-    const DeviceRole role)
-{
-    std::shared_lock<std::shared_mutex> lock(mutex_);
-    auto it = std::find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [&address, role](const auto &item) {
-        return IsUsb(item->deviceType_) && item->macAddress_ == address && item->deviceRole_ == role;
-    });
-    if (it != connectedDevices_.cend()) {
-        return *it;
-    }
-    return nullptr;
-}
-
 static std::string GetSha256EncryptAddress(const std::string& address)
 {
     const int32_t HexWidth = 2;

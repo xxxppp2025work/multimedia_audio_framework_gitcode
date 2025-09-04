@@ -203,7 +203,6 @@ void NoNeedChangeUsbDeviceFuzzTest()
     audioDeviceStatus.Init(audioA2dpOffloadManager, audioPolicyServerHandler);
 
     std::string address = "00:11:22:33:44:55";
-    audioDeviceStatus.NoNeedChangeUsbDevice(address);
 
     audioDeviceStatus.DeInit();
 }

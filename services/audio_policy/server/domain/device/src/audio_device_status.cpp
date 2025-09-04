@@ -574,40 +574,10 @@ int32_t AudioDeviceStatus::LoadAccessoryModule(std::string deviceInfo)
     return SUCCESS;
 }
 
-bool AudioDeviceStatus::NoNeedChangeUsbDevice(const string &address)
-{
-    auto key = string("need_change_usb_device#C") + GetField(address, "card", ';') + "D0";
-    auto ret = AudioServerProxy::GetInstance().GetAudioParameterProxy(key);
-    AUDIO_INFO_LOG("key=%{public}s, ret=%{public}s", key.c_str(), ret.c_str());
-    return ret == "false";
-}
-
 int32_t AudioDeviceStatus::HandleSpecialDeviceType(DeviceType &devType, bool &isConnected,
     const std::string &address, DeviceRole role)
 {
-    if (devType == DEVICE_TYPE_USB_HEADSET || devType == DEVICE_TYPE_USB_ARM_HEADSET) {
-        CHECK_AND_RETURN_RET(!address.empty() && role != DEVICE_ROLE_NONE, ERROR);
-        AUDIO_INFO_LOG("Entry. Addr:%{public}s, Role:%{public}d, HasHifi:%{public}d, HasArm:%{public}d",
-            GetEncryptAddr(address).c_str(), role,
-            audioConnectedDevice_.HasHifi(role), audioConnectedDevice_.HasArm(role));
-        if (isConnected) {
-            // Usb-c maybe reported repeatedly, the devType remains unchanged
-            auto exists = audioConnectedDevice_.GetUsbDeviceDescriptor(address, role);
-            if (exists) {
-                devType = exists->deviceType_;
-                return SUCCESS;
-            }
-            if (audioConnectedDevice_.HasHifi(role) || NoNeedChangeUsbDevice(address)) {
-                devType = DEVICE_TYPE_USB_ARM_HEADSET;
-            }
-        } else if (audioConnectedDevice_.IsArmDevice(address, role)) {
-            devType = DEVICE_TYPE_USB_ARM_HEADSET;
-            // Temporary resolution to avoid pcm driver problem
-            string condition = string("address=") + address + " role=" + to_string(DEVICE_ROLE_NONE);
-            string deviceInfo = AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE,
-                condition);
-        }
-    } else if (devType == DEVICE_TYPE_EXTERN_CABLE) {
+    if (devType == DEVICE_TYPE_EXTERN_CABLE) {
         CheckAndWriteDeviceChangeExceptionEvent(isConnected,
             AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE,
             devType, role, ERROR, "Extern cable disconnected, do nothing");

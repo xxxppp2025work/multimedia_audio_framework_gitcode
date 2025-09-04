@@ -71,10 +71,6 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> CheckExistOutputDevice(DeviceType activeDevice, std::string macAddress);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetCopy();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevicesForGroup(GroupType type, int32_t groupId);
-    bool HasArm(const DeviceRole role);
-    bool HasHifi(const DeviceRole role);
-    bool IsArmDevice(const std::string &address, const DeviceRole role);
-    std::shared_ptr<AudioDeviceDescriptor> GetUsbDeviceDescriptor(const std::string &address, const DeviceRole role);
     void UpdateSpatializationSupported(const std::string macAddress, const bool support);
     void RegisterNameMonitorHelper();
 private:

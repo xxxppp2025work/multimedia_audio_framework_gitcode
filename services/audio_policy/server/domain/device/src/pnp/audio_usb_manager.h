@@ -52,6 +52,7 @@ struct UsbAudioDevice {
     UsbAddr usbAddr_;
     string name_;
     uint32_t cardNum_{0};
+    DeviceType devType_{DEVICE_TYPE_INVALID};
     bool isCapturer_{false};
     bool isPlayer_{false};
     inline bool operator==(const UsbAudioDevice &o) const
@@ -59,6 +60,12 @@ struct UsbAudioDevice {
         return usbAddr_ == o.usbAddr_;
     }
 };
+
+typedef int8_t InitCtrl;
+constexpr InitCtrl INIT_CTRL_INVALID{0};
+constexpr InitCtrl INIT_CTRL_USB{1};
+constexpr InitCtrl INIT_CTRL_CES{2};
+constexpr InitCtrl INIT_CTRL_ALL{INIT_CTRL_USB | INIT_CTRL_CES};
 
 class AudioUsbManager {
 public:
@@ -73,9 +80,8 @@ public:
     static map<UsbAddr, SoundCard> GetUsbSoundCardMap();
     static int32_t GetUsbAudioDevices(vector<UsbAudioDevice> &result);
 
-    void Init(std::shared_ptr<IDeviceStatusObserver> observer);
+    void Init(InitCtrl initCtrl, shared_ptr<IDeviceStatusObserver> observer);
     void Deinit();
-    void SubscribeEvent();
 
 private:
     AudioUsbManager() = default;
@@ -84,7 +90,10 @@ private:
     void HandleAudioDeviceEvent(pair<UsbAudioDevice, bool> &&p);
     bool FillUsbAudioDevice(UsbAudioDevice &device);
     // must be called in mutex_ lock
-    void UpdateDevice(const UsbAudioDevice &dev, std::__wrap_iter<UsbAudioDevice *> &it);
+    void UpdateDevice(const UsbAudioDevice &dev);
+    void HandleDeviceAttach(vector<UsbAudioDevice> &&devices);
+    void HandleDeviceAttachAsync(vector<UsbAudioDevice> &&devices);
+    DeviceType DetectAudioDeviceType(uint32_t cardNum);
 
     std::shared_ptr<IDeviceStatusObserver> observer_{nullptr};
     std::shared_ptr<EventSubscriber> eventSubscriber_{nullptr};
@@ -92,6 +101,7 @@ private:
     map<UsbAddr, SoundCard> soundCardMap_;
     
     bool initialized_{false};
+    InitCtrl initCtrl_{INIT_CTRL_INVALID};
     mutex mutex_;
 };
 
