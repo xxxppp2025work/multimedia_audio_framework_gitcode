@@ -92,7 +92,7 @@ private:
     static constexpr uint32_t PA_CONNECT_RETRY_SLEEP_IN_MICRO_SECONDS = 500000;
     pa_context *mContext = NULL;
     pa_threaded_mainloop *mMainLoop = NULL;
-    static SafeMap<uint32_t, uint32_t> sinkIndexSessionIDMap;
+    //static SafeMap<uint32_t, uint32_t> sinkIndexSessionIDMap;
     static SafeMap<uint32_t, uint32_t> sourceIndexSessionIDMap;
     std::mutex lock_;
     bool isSetDefaultSink_ = false;
