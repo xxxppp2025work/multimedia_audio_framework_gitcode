@@ -117,6 +117,9 @@ napi_status NapiAudioVolumeGroupManager::InitNapiAudioVolumeGroupManager(napi_en
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_FUNCTION("getMaxAmplitudeForOutputDevice", GetMaxAmplitudeForOutputDevice),
         DECLARE_NAPI_FUNCTION("getMaxAmplitudeForInputDevice", GetMaxAmplitudeForInputDevice),
+        DECLARE_NAPI_FUNCTION("setVolumeDegree", SetVolumeDegree),
+        DECLARE_NAPI_FUNCTION("getVolumeDegree", GetVolumeDegree),
+        DECLARE_NAPI_FUNCTION("getMinVolumeDegree", GetMinVolumeDegree),
     };
 
     napi_status status = napi_define_class(env, AUDIO_VOLUME_GROUP_MNGR_NAPI_CLASS_NAME.c_str(),
@@ -1607,6 +1610,132 @@ napi_value NapiAudioVolumeGroupManager::GetMaxAmplitudeForInputDevice(napi_env e
         NapiParamUtils::SetValueDouble(env, context->inputMaxAmplitude, output);
     };
     return NapiAsyncWork::Enqueue(env, context, "GetMaxAmplitudeForInputDevice", executor, complete);
+}
+
+napi_value NapiAudioVolumeGroupManager::SetVolumeDegree(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioVolumeGroupManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("no memory");
+        NapiAudioError::ThrowError(env, "no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueInt32(env, context->volType, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed",
+            NAPI_ERR_INVALID_PARAM);
+        if (!NapiAudioEnum::IsLegalInputArgumentVolType(context->volType)) {
+            context->SignError(context->errCode == NAPI_ERR_INVALID_PARAM?
+            NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED);
+        }
+        context->status = NapiParamUtils::GetValueInt32(env, context->volDegree, argv[PARAM1]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volDegree failed",
+            NAPI_ERR_INVALID_PARAM);
+    };
+    context->GetCbInfo(env, info, inputParser);
+#ifdef FEATURE_HIVIEW_ENABLE
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+    HiviewDFX::ReportXPowerJsStackSysEvent(env, "VOLUME_CHANGE", "SRC=Audio");
+#endif
+#endif
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioVolumeGroupManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
+            "audio volume group manager state is error.");
+        context->intValue = napiAudioVolumeGroupManager->audioGroupMngr_->SetVolumeDegree(
+            NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->volDegree);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "set volume degree failed",
+            NAPI_ERR_SYSTEM);
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "SetVolumeDegree", executor, complete);
+}
+
+napi_value NapiAudioVolumeGroupManager::GetVolumeDegree(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioVolumeGroupManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("no memory");
+        NapiAudioError::ThrowError(env, "no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueInt32(env, context->volType, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed",
+            NAPI_ERR_INVALID_PARAM);
+        if (!NapiAudioEnum::IsLegalInputArgumentVolType(context->volType)) {
+            context->SignError(NAPI_ERR_UNSUPPORTED);
+            return;
+        }
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioVolumeGroupManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
+            "audio volume group manager state is error.");
+        context->volDegree = napiAudioVolumeGroupManager->audioGroupMngr_->GetVolumeDegree(
+            NapiAudioEnum::GetNativeAudioVolumeType(context->volType));
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueInt32(env, context->volDegree, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetVolumeDegree", executor, complete);
+}
+
+napi_value NapiAudioVolumeGroupManager::GetMinVolumeDegree(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioVolumeGroupManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("no memory");
+        NapiAudioError::ThrowError(env, "no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueInt32(env, context->volType, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed",
+            NAPI_ERR_INVALID_PARAM);
+        if (!NapiAudioEnum::IsLegalInputArgumentVolType(context->volType)) {
+            context->SignError(NAPI_ERR_UNSUPPORTED);
+        }
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioVolumeGroupManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
+            "audio volume group manager state is error.");
+        context->volDegree = napiAudioVolumeGroupManager->audioGroupMngr_->GetMinVolumeDegree(
+            NapiAudioEnum::GetNativeAudioVolumeType(context->volType));
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueInt32(env, context->volDegree, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetMinVolumeDegree", executor, complete);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

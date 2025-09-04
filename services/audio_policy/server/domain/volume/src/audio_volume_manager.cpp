@@ -153,8 +153,10 @@ bool AudioVolumeManager::SetSharedVolume(AudioVolumeType streamType, DeviceType 
     volumeVector_[index].isMute = vol.isMute;
     volumeVector_[index].volumeFloat = vol.volumeFloat;
     volumeVector_[index].volumeInt = vol.volumeInt;
-    AUDIO_INFO_LOG("Success Set Shared Volume with StreamType:%{public}d, DeviceType:%{public}d, volume:%{public}d",
-        streamType, deviceType, vol.volumeInt);
+    volumeVector_[index].volumeDegree = vol.volumeDegree;
+    AUDIO_INFO_LOG("Success Set Shared Volume with StreamType:%{public}d, DeviceType:%{public}d, \
+        volume:%{public}d, volumeDegree:%{public}d",
+        streamType, deviceType, vol.volumeInt, vol.volumeDegree);
 
     AudioServerProxy::GetInstance().NotifyStreamVolumeChangedProxy(streamType, vol.volumeFloat);
     return true;
@@ -463,6 +465,22 @@ int32_t AudioVolumeManager::HandleNearlinkDeviceAbsVolume(AudioStreamType stream
 int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
     int32_t zoneId)
 {
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    int32_t currentVolumeLevel = GetSystemVolumeLevel(streamType, zoneId);
+    if (volumeLevel != currentVolumeLevel) {
+        int32_t volumeLevelMax = GetMaxVolumeLevel(volumeType);
+        int32_t volumeDegree = VolumeUtils::VolumeLevelToDegree(volumeLevel, volumeLevelMax);
+        SetSystemVolumeDegreeInner(streamType, volumeDegree, zoneId);
+    } else {
+        AUDIO_WARNING_LOG("volume level dont change, keep volume degree unchanged");
+    }
+
+    return SetSystemVolumeLevelInner(streamType, volumeLevel, zoneId);
+}
+
+int32_t AudioVolumeManager::SetSystemVolumeLevelInner(AudioStreamType streamType, int32_t volumeLevel,
+    int32_t zoneId)
+{
     if (zoneId > 0) {
         return audioPolicyManager_.SetZoneVolumeLevel(zoneId,
             VolumeUtils::GetVolumeTypeFromStreamType(streamType), volumeLevel);
@@ -583,6 +601,10 @@ int32_t AudioVolumeManager::SetA2dpDeviceVolume(const std::string &macAddress, c
 
     audioA2dpDevice_.SetA2dpDeviceMute(macAddress, mute);
     audioPolicyManager_.SetAbsVolumeMute(mute);
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(STREAM_MUSIC);
+    int32_t volumeLevelMax = GetMaxVolumeLevel(volumeType);
+    int32_t volumeDegree = VolumeUtils::VolumeLevelToDegree(volumeLevel, volumeLevelMax);
+    audioPolicyManager_.SetSystemVolumeDegree(volumeType, volumeDegree);
     AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
         GetEncryptAddr(macAddress).c_str(), sVolumeLevel);
     CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERR_UNKNOWN, "safevolume did not deal");
@@ -633,6 +655,10 @@ int32_t AudioVolumeManager::SetNearlinkDeviceVolume(const std::string &macAddres
         }
         isBtFirstBoot_ = false;
     }
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    int32_t volumeLevelMax = GetMaxVolumeLevel(volumeType);
+    int32_t volumeDegree = VolumeUtils::VolumeLevelToDegree(volumeLevel, volumeLevelMax);
+    audioPolicyManager_.SetSystemVolumeDegree(volumeType, volumeDegree);
     ret = SleAudioDeviceManager::GetInstance().SetNearlinkDeviceVolumeLevel(macAddress, streamType, sVolumeLevel);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetDeviceAbsVolume failed");
     ret = SetNearlinkDeviceVolumeEx(streamType, sVolumeLevel);
@@ -975,11 +1001,13 @@ void AudioVolumeManager::SetSafeVolumeCallback(AudioStreamType streamType)
     VolumeEvent volumeEvent;
     volumeEvent.volumeType = streamType;
     volumeEvent.volume = GetSystemVolumeLevel(streamType);
+    volumeEvent.volumeDegree = GetSystemVolumeDegree(streamType);
     volumeEvent.updateUi = true;
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
     if (audioPolicyServerHandler_ != nullptr && IsRingerModeMute()) {
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
+        audioPolicyServerHandler_->SendVolumeDegreeEventCallback(volumeEvent);
     }
 }
 
@@ -1491,6 +1519,46 @@ void ForceControlVolumeTypeMonitor::SetTimer(int32_t duration,
     }
     duration_ = (duration > MAX_DURATION_TIME_S ? MAX_DURATION_TIME_S : duration);
     StartMonitor(duration_, cb);
+}
+
+int32_t AudioVolumeManager::SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree,
+    int32_t zoneId)
+{
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    int32_t volumeLevelMax = GetMaxVolumeLevel(volumeType);
+    int32_t volumeLevel = VolumeUtils::VolumeDegreeToLevel(volumeDegree, volumeLevelMax);
+    SetSystemVolumeLevelInner(streamType, volumeLevel, zoneId);
+    return SetSystemVolumeDegreeInner(streamType, volumeDegree, zoneId);
+}
+
+int32_t AudioVolumeManager::SetSystemVolumeDegreeInner(AudioStreamType streamType, int32_t volumeDegree,
+    int32_t zoneId)
+{
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    int32_t maxLevel = GetMaxVolumeLevel(volumeType);
+    int32_t volumeLevel = VolumeUtils::VolumeDegreeToLevel(volumeDegree, maxLevel);
+    Volume vol{};
+    vol.isMute = volumeDegree == 0;
+    vol.volumeInt = volumeLevel;
+    vol.volumeDegree = static_cast<uint32_t>(volumeDegree);
+    vol.volumeFloat = audioPolicyManager_.CalculateVolumeDb(volumeDegree, MAX_VOLUME_DEGREE);
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    SetSharedVolume(streamType, curOutputDeviceType, vol);
+
+    return audioPolicyManager_.SetSystemVolumeDegree(volumeType, volumeDegree);
+}
+
+int32_t AudioVolumeManager::GetSystemVolumeDegree(AudioStreamType streamType)
+{
+    return audioPolicyManager_.GetSystemVolumeDegree(streamType);
+}
+
+int32_t AudioVolumeManager::GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType) const
+{
+    if (volumeType == STREAM_ALL) {
+        volumeType = STREAM_MUSIC;
+    }
+    return audioPolicyManager_.GetMinVolumeDegree(volumeType, deviceType);
 }
 }
 }

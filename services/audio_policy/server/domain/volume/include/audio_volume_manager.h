@@ -139,6 +139,10 @@ public:
     bool IsNeedForceControlVolumeType();
     AudioVolumeType GetForceControlVolumeType();
     void SendLoudVolumeMode(FunctionHoldType funcHoldType, bool state, bool repeatTrigNotif = false);
+    int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree,
+        int32_t zoneId);
+    int32_t GetSystemVolumeDegree(AudioStreamType streamType);
+    int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType) const;
 
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -179,6 +183,8 @@ private:
     int32_t HandleA2dpAbsVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType curDeviceType);
     int32_t HandleNearlinkDeviceAbsVolume(AudioStreamType streamType, int32_t volumeLevel,
         DeviceType curDeviceType);
+    int32_t SetSystemVolumeLevelInner(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId);
+    int32_t SetSystemVolumeDegreeInner(AudioStreamType streamType, int32_t volumeDegree, int32_t zoneId);
 private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
