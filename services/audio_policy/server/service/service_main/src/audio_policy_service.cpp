@@ -58,8 +58,6 @@ static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
 }
 
-const int32_t UID_AUDIO = 1041;
-
 mutex g_dataShareHelperMutex;
 bool AudioPolicyService::isBtListenerRegistered = false;
 bool AudioPolicyService::isBtCrashed = false;

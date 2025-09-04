@@ -31,11 +31,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const size_t SELECT_DEVICE_HISTORY_LIMIT = 10;
-const uint32_t FIRST_SESSIONID = 100000;
 static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
-static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
-static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 static constexpr int32_t MAX_TRY = 100;
 static constexpr int32_t DELAY_MS = 100;
 }

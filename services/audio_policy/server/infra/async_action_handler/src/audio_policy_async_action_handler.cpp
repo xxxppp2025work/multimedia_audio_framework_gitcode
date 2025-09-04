@@ -72,7 +72,6 @@ void AudioPolicyAsyncActionHandler::ProcessEvent(const AppExecFwk::InnerEvent::P
 {
     CHECK_AND_RETURN_LOG(event != nullptr, "event is nullptr");
 
-    uint32_t eventId = event->GetInnerEventId();
     std::shared_ptr<PolicyAsyncAction> action = event->GetSharedObject<PolicyAsyncAction>();
     CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
     action->Exec();

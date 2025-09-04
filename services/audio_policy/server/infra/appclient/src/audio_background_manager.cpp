@@ -33,8 +33,6 @@
 namespace OHOS {
 namespace AudioStandard {
 
-constexpr int32_t BOOTUP_MUSIC_UID = 1003;
-static const int64_t WATI_PLAYBACK_TIME = 200000; // 200ms
 mutex g_isAllowedPlaybackListenerMutex;
 mutex g_backgroundMuteListenerMutex;
 
