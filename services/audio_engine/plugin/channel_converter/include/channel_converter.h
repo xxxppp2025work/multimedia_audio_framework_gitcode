@@ -33,8 +33,9 @@ public:
     int32_t SetOutChannelInfo(AudioChannelInfo outChannelInfo);
     void Reset();
 private:
-    int32_t Upmix(uint32_t frameSize, float* in, uint32_t inLen, float* out, uint32_t outLen);
+    int32_t MixProcess(vector<vector<float>> mixTable, uint32_t frameLen, float* in, float* out);
     DownMixer downMixer_;
+    std::vector<std::vector<float>> upMixTable_;
     AudioChannelInfo inChannelInfo_;
     AudioChannelInfo outChannelInfo_;
     AudioSampleFormat workFormat_ = INVALID_WIDTH;  // work format, for now only supports float

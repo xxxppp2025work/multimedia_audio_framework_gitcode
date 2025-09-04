@@ -19,6 +19,7 @@
 #include <cinttypes>
 #include "securec.h"
 #include "down_mixer.h"
+#include "general_mixer.h"
 #include "audio_engine_log.h"
 
 namespace OHOS {
@@ -41,7 +42,6 @@ static constexpr uint32_t INDEX_EIGHT = 8;
 static constexpr uint32_t INDEX_NINE = 9;
 static constexpr uint32_t INDEX_TEN = 10;
 static constexpr uint32_t INDEX_ELEVEN = 11;
-static constexpr uint32_t MAX_FRAME_LENGTH = SAMPLE_RATE_192000 * 10; // max framelength is sample rate 192000, 10s
 
 // channel masks for downmixing general output channel layout
 static constexpr uint64_t MASK_MIDDLE_FRONT = FRONT_LEFT | FRONT_RIGHT | FRONT_CENTER |
@@ -69,10 +69,6 @@ static constexpr uint64_t MASK_BOTTOM = BOTTOM_FRONT_CENTER
 static constexpr uint64_t MASK_LFE = LOW_FREQUENCY
 | LOW_FREQUENCY_2;
 
-static uint32_t BitCounts(uint64_t bits);
-static bool IsValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts);
-
-// 改成默认构造
 DownMixer::DownMixer()
 {
     downMixTable_.resize(MAX_CHANNELS, std::vector<float>(MAX_CHANNELS, 0));
@@ -108,24 +104,7 @@ int32_t DownMixer::Process(uint32_t frameLen, float* in, uint32_t inLen, float* 
     CHECK_AND_RETURN_RET_LOG(out, DMIX_ERR_INVALID_ARG, "output pointer is nullptr");
     CHECK_AND_RETURN_RET_LOG(frameLen <= MAX_FRAME_LENGTH, DMIX_ERR_INVALID_ARG, "invalid frameSize");
     CHECK_AND_RETURN_RET_LOG(isInitialized_, DMIX_ERR_ALLOC_FAILED, "Downmixe table has not been initialized!");
-    
-    uint32_t expectInLen = frameLen * inChannels_ * formatSize_;
-    uint32_t expectOutLen = frameLen * outChannels_ * formatSize_;
-    if ((expectInLen > inLen) || (expectOutLen > outLen)) {
-        AUDIO_ERR_LOG("unexpected inLen %{public}d or outLen %{public}d", inLen, outLen);
-        int32_t ret = memcpy_s(out, outLen, in, inLen);
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, DMIX_ERR_ALLOC_FAILED, "memcpy failed when processing unexpected len");
-        return DMIX_ERR_ALLOC_FAILED;
-    }
-    // For HOA, copy the first channel into all output channels
-    if (isInLayoutHOA_) {
-        for (uint32_t i = 0; i < frameLen; i++) {
-            for (uint32_t c = 0; c < outChannels_; c++) {
-                out[outChannels_ * i + c] = in[inChannels_ * i];
-            }
-        }
-        return DMIX_ERR_SUCCESS;
-    }
+
     float a;
     for (; frameLen > 0; frameLen--) {
         for (uint32_t i = 0; i < outChannels_; i++) {
@@ -149,7 +128,17 @@ int32_t DownMixer::SetupDownMixTable()
             inChannels_, inLayout_, outChannels_, outLayout_);
         return DMIX_ERR_INVALID_ARG;
     }
-    CheckIsHOA(inLayout_);
+    // for HOA intput, use the first channel input for every output channel
+    if(CheckIsHOA(inLayout_)) {
+        for (int i = 0; i < outChannels_; i++) {
+            downMixTable_[i][0] = COEF_0DB_F;
+        }
+        return DMIX_ERR_SUCCESS;
+    }
+    // for HOA output set them to default channelLayout
+    if (CheckIsHOA(outLayout_)) {
+        outLayout_ = SetDefaultChannelLayout(outChannels_);
+    }
     switch (outLayout_) {
         case CH_LAYOUT_STEREO: {
             SetupStereoDmixTable();
@@ -180,7 +169,9 @@ int32_t DownMixer::SetupDownMixTable()
             break;
         }
         default: {
-            SetupGeneralDmixTable();
+            AudioChannelInfo inChannelInfo = {inLayout_, inChannels_};
+            AudioChannelInfo outChannelInfo = {outLayout_, outChannels_};
+            SetUpGeneralMixingTable(downMixTable_, inChannelInfo, outChannelInfo_, mixLfe_);
             break;
         }
     }
@@ -347,46 +338,6 @@ void DownMixer::Setup7Point1Point4DmixTable()
         Setup7Point1Point4DmixTablePart1(bit, i);
         Setup7Point1Point4DmixTablePart2(bit, i);
         inChMsk ^= bit;
-    }
-}
-
-void DownMixer::SetupGeneralDmixTable()
-{
-    // MONO
-    if (outLayout_ == CH_LAYOUT_MONO) {
-        for (uint32_t i = 0; i < inChannels_; i++) {
-            downMixTable_[0][i] = COEF_0DB_F;
-        }
-    }
-    // check invalid output musk later in init()
-    uint64_t outChMsk = outLayout_;
-
-    for (uint32_t i = 0; i < outChannels_; i++) {
-        uint64_t outBit = outChMsk & (~outChMsk + 1);
-        uint64_t inChMsk = inLayout_;
-        for (uint32_t j = 0; j < inChannels_; j++) {
-            uint64_t inBit = inChMsk & (~inChMsk + 1);
-            if (inBit & outBit) { // if in channel and out channel is the same
-                downMixTable_[i][j] = COEF_0DB_F;
-            } else if (inBit == TOP_CENTER) {
-                // check general downmix table!
-                DownMixTopCenter(inBit, outBit, i, j);
-            } else if ((inBit & MASK_MIDDLE_FRONT) != 0) {
-                DownMixMidFront(inBit, outBit, i, j);
-            } else if ((inBit & MASK_MIDDLE_REAR) != 0) {
-                DownMixMidRear(inBit, outBit, i, j);
-            } else if ((inBit & MASK_BOTTOM) != 0) {
-                DownMixBottom(inBit, outBit, i, j);
-            } else if ((inBit & MASK_LFE) != 0) {
-                DownMixLfe(inBit, outBit, i, j);
-            } else if ((inBit & MASK_TOP_FRONT) != 0) {
-                DownMixTopFront(inBit, outBit, i, j);
-            } else if ((inBit & MASK_TOP_REAR) != 0) {
-                DownMixTopRear(inBit, outBit, i, j);
-            }
-            inChMsk ^= inBit;
-        }
-        outChMsk ^= outBit;
     }
 }
 
@@ -937,182 +888,13 @@ void DownMixer::Setup7Point1Point4DmixTablePart2(uint64_t bit, uint32_t i)
     }
 }
 
-void DownMixer::DownMixBottom(uint64_t inBit, uint64_t outBit, uint32_t i, uint32_t j)
+vector<vector<float>> DownMixer::GetDownMixTable()
 {
-    if ((inBit & MASK_BOTTOM) && (outBit & MASK_BOTTOM)) {
-        downMixTable_[i][j] = COEF_M3DB_F;
-    } else {
-        DownMixMidFront(inBit, outBit, i, j);
+    if (isInitialized_) {
+        AUDIO_WARNING_LOG("downmix Table is not initialized yet!");
     }
+    return downMixTable_;
 }
-
-void DownMixer::DownMixMidFront(uint64_t inBit, uint64_t outBit, uint32_t i, uint32_t j)
-{
-    if ((inBit & MASK_MIDDLE_FRONT) && (outBit & MASK_MIDDLE_FRONT)) {
-        downMixTable_[i][j] = COEF_M3DB_F;
-    }
-}
-
-void DownMixer::DownMixMidRear(uint64_t inBit, uint64_t outBit, uint32_t i, uint32_t j)
-{
-    // Middle layer
-    switch (inBit) {
-        case BACK_CENTER:
-            if ((outBit == BACK_LEFT) || (outBit == SIDE_LEFT) || (outBit == WIDE_LEFT) || (outBit == FRONT_LEFT) ||
-                (outBit == BACK_RIGHT) || outBit == SIDE_RIGHT || outBit == WIDE_RIGHT || outBit == FRONT_RIGHT) {
-                downMixTable_[i][j] = COEF_M3DB_F;
-            }
-            break;
-        case BACK_LEFT:
-            if (outBit == SIDE_LEFT) {
-                downMixTable_[i][j] = COEF_0DB_F;
-            } else if (outBit == BACK_CENTER) {
-                downMixTable_[i][j] = COEF_0DB_F;
-            } else {
-                DownMixMidFront(WIDE_LEFT, outBit, i, j);
-            }
-            break;
-        case BACK_RIGHT:
-            if (outBit == SIDE_RIGHT) {
-                downMixTable_[i][j] = COEF_0DB_F;
-            } else if (outBit == BACK_CENTER) {
-                downMixTable_[i][j] = COEF_0DB_F;
-            } else {
-                DownMixMidFront(WIDE_RIGHT, outBit, i, j);
-            }
-            break;
-        default:
-            break;
-    }
-}
-
-void DownMixer::DownMixLfe(uint64_t inBit, uint64_t outBit, uint32_t i, uint32_t j)
-{
-    if ((MASK_LFE & inBit) && (MASK_LFE & outBit)) {
-        downMixTable_[i][j] = COEF_0DB_F;
-    } else {
-        if ((inBit == LOW_FREQUENCY) && ((outBit & CH_LAYOUT_STEREO)!= 0)) {
-            downMixTable_[i][j] = COEF_M6DB_F;
-        } else if ((inBit == LOW_FREQUENCY_2) && ((outBit & CH_LAYOUT_STEREO) != 0)) {
-            downMixTable_[i][j] = COEF_M6DB_F;
-        }
-    }
-}
-
-void DownMixer::DownMixTopCenter(uint64_t inBit, uint64_t outBit, uint32_t i, uint32_t j)
-{
-    uint64_t exitTopOuts = outLayout_ & (MASK_TOP_FRONT | MASK_TOP_REAR);
-    uint64_t exitMiddleOuts = outLayout_ & (MASK_MIDDLE_FRONT | MASK_MIDDLE_REAR);
-    if (exitTopOuts != 0) { // exist top outs
-        uint32_t numChannels = BitCounts(exitTopOuts);
-        uint32_t coeff = 1.0f / sqrt((float)numChannels);
-        if ((outBit & exitTopOuts) != 0) {
-            downMixTable_[i][j] = coeff;
-        }
-    } else if (exitMiddleOuts != 0) {
-        uint32_t numChannels = BitCounts(exitMiddleOuts);
-        uint32_t coeff = 1.0f / sqrt((float)numChannels);
-        if ((outBit & exitMiddleOuts) != 0) {
-            downMixTable_[i][j] = coeff;
-        }
-    }
-}
-
-void DownMixer::DownMixTopFront(uint64_t inBit, uint64_t outBit, uint32_t i, uint32_t j)
-{
-    uint64_t existTopFrontOuts = outLayout_ & MASK_TOP_FRONT;
-    if (existTopFrontOuts != 0) {
-        if ((outBit & MASK_TOP_FRONT) != 0) {
-            downMixTable_[i][j] = COEF_M3DB_F;
-        }
-    } else {
-        DownMixMidFront(TOP_FRONT_CENTER, outBit, i, j);
-    }
-}
-
-void DownMixer::DownMixTopRear(uint64_t inBit, uint64_t outBit, uint32_t i, uint32_t j)
-{
-    uint64_t existTopRearOuts = outLayout_ & MASK_TOP_REAR;
-    if (existTopRearOuts != 0) {
-        if ((outBit & MASK_TOP_REAR) != 0) {
-            downMixTable_[i][j] = COEF_M3DB_F;
-        }
-    } else {
-        DownMixMidRear(BACK_CENTER, outBit, i, j);
-    }
-}
-
-static uint32_t BitCounts(uint64_t bits)
-{
-    uint32_t num = 0;
-    for (; bits != 0; bits &= bits - 1) {
-        num++;
-    }
-    return num;
-}
-
-static bool IsValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts)
-{
-    if (chCounts < MONO || chCounts > CHANNEL_16) {
-        return false;
-    }
-    if (chLayout == CH_LAYOUT_UNKNOWN || BitCounts(chLayout) != chCounts) {
-        chLayout = DownMixer::SetDefaultChannelLayout((AudioChannel)chCounts);
-    }
-    return true;
-}
-
-AudioChannelLayout DownMixer::SetDefaultChannelLayout(AudioChannel channels)
-{
-    CHECK_AND_RETURN_RET_LOG((channels >= MONO) && (channels <= CHANNEL_16), CH_LAYOUT_UNKNOWN,
-        "invalid channel count");
-    switch (channels) {
-        case MONO:
-            return CH_LAYOUT_MONO;
-        case STEREO:
-            return CH_LAYOUT_STEREO;
-        case CHANNEL_3:
-            return CH_LAYOUT_SURROUND;
-        case CHANNEL_4:
-            return CH_LAYOUT_3POINT1;
-        case CHANNEL_5:
-            return CH_LAYOUT_4POINT1;
-        case CHANNEL_6:
-            return CH_LAYOUT_5POINT1;
-        case CHANNEL_7:
-            return CH_LAYOUT_6POINT1;
-        case CHANNEL_8:
-            return CH_LAYOUT_5POINT1POINT2;
-        case CHANNEL_9:
-            return CH_LAYOUT_HOA_ORDER2_ACN_N3D;
-        case CHANNEL_10:
-            return CH_LAYOUT_7POINT1POINT2;
-        case CHANNEL_12:
-            return CH_LAYOUT_7POINT1POINT4;
-        case CHANNEL_14:
-            return CH_LAYOUT_9POINT1POINT4;
-        case CHANNEL_16:
-            return CH_LAYOUT_9POINT1POINT6;
-        default:
-            return CH_LAYOUT_UNKNOWN;
-    }
-}
-
-bool DownMixer::CheckIsHOA(AudioChannelLayout layout)
-{
-    if ((layout == CH_LAYOUT_HOA_ORDER1_ACN_N3D) || (layout == CH_LAYOUT_HOA_ORDER1_ACN_SN3D) ||
-        (layout == CH_LAYOUT_HOA_ORDER1_FUMA) || (layout == CH_LAYOUT_HOA_ORDER2_ACN_N3D) ||
-        (layout == CH_LAYOUT_HOA_ORDER2_ACN_SN3D) || (layout == CH_LAYOUT_HOA_ORDER2_FUMA) ||
-        (layout == CH_LAYOUT_HOA_ORDER3_ACN_N3D) || (layout == CH_LAYOUT_HOA_ORDER3_ACN_SN3D) ||
-        (layout == CH_LAYOUT_HOA_ORDER3_FUMA))
-    {
-        isInLayoutHOA_ = true;
-        return true;
-    }
-    isInLayoutHOA_ = false;
-    return false;
-}
-
 } // HPAE
 } // AudioStandard
 } // OHOS

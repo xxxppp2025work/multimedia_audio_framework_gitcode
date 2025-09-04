@@ -17,6 +17,7 @@
 #endif
 #include "channel_converter.h"
 #include "audio_engine_log.h"
+#include <algorithm>
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -65,11 +66,13 @@ int32_t ChannelConverter::SetParam(AudioChannelInfo inChannelInfo, AudioChannelI
     workFormat_ = format;
     workSize_ = GetFormatSize(format);
     mixLfe_ = mixLfe;
-    isInitialized_ = true;
     int32_t ret = DMIX_ERR_SUCCESS;
     if (inChannelInfo_.numChannels > outChannelInfo_.numChannels) {
         ret = downMixer_.SetParam(inChannelInfo, outChannelInfo, workSize_, mixLfe);
-    }
+    } else if (
+        ret = SetUpGeneralMixingTable(upMixTable_, inChannelInfo_, outChannelInfo_, mixLfe_);
+    )
+    isInitialized_ = (ret == DMIX_ERR_SUCCESS);
     return ret;
 }
 
@@ -80,7 +83,7 @@ int32_t ChannelConverter::SetInChannelInfo(AudioChannelInfo inChannelInfo)
     if (inChannelInfo_.numChannels > outChannelInfo_.numChannels) {
         return downMixer_.SetParam(inChannelInfo_, outChannelInfo_, workSize_, mixLfe_);
     }
-    return DMIX_ERR_SUCCESS;
+    return SetUpGeneralMixingTable(upMixTable_, inChannelInfo_, outChannelInfo_, mixLfe_);
 }
  
  
@@ -91,7 +94,7 @@ int32_t ChannelConverter::SetOutChannelInfo(AudioChannelInfo outChannelInfo)
     if (inChannelInfo_.numChannels > outChannelInfo_.numChannels) {
         return downMixer_.SetParam(inChannelInfo_, outChannelInfo_, workSize_, mixLfe_);
     }
-    return DMIX_ERR_SUCCESS;
+    return SetUpGeneralMixingTable(upMixTable_, inChannelInfo_, outChannelInfo_, mixLfe_);
 }
 
 AudioChannelInfo ChannelConverter::GetInChannelInfo() const
@@ -104,40 +107,53 @@ AudioChannelInfo ChannelConverter::GetOutChannelInfo() const
     return outChannelInfo_;
 }
  
-int32_t ChannelConverter::Process(uint32_t frameSize, float* in, uint32_t inLen, float* out, uint32_t outLen)
+int32_t ChannelConverter::Process(uint32_t frameLen, float* in, uint32_t inByteLen, float* out, uint32_t outByteLen)
 {
-    CHECK_AND_RETURN_RET_LOG(isInitialized_, DMIX_ERR_ALLOC_FAILED, "ChannelConverter is not initialized_");
-    CHECK_AND_RETURN_RET_LOG(in, DMIX_ERR_INVALID_ARG, "input pointer is nullptr");
-    CHECK_AND_RETURN_RET_LOG(out, DMIX_ERR_INVALID_ARG, "output pointer is nullptr");
-    CHECK_AND_RETURN_RET_LOG(frameSize >= 0, DMIX_ERR_INVALID_ARG, "invalid frameSize");
-    if (inChannelInfo_.numChannels < outChannelInfo_.numChannels) {
-        return Upmix(frameSize, in, inLen, out, outLen);
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, MIX_ERR_ALLOC_FAILED, "ChannelConverter is not initialized_");
+    CHECK_AND_RETURN_RET_LOG(in, MIX_ERR_INVALID_ARG, "input pointer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(out, MIX_ERR_INVALID_ARG, "output pointer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(frameLen >= 0, MIX_ERR_INVALID_ARG, "invalid negative frameSize");
+    CHECK_AND_RETURN_RET_LOG(frameLen <= MAX_FRAME_LENGTH, MIX_ERR_INVALID_ARG, "invalid frameSize oversize");
+
+    uint32_t expectInLen = frameLen * inChannelInfo_.numChannels * workSize_;
+    uint32_t expectOutLen = frameLen * outChannelInfo_.numChannels * workSize_;
+    if ((expectInLen > inByteLen) || (expectOutLen > outByteLen)) {
+        AUDIO_ERR_LOG("unexpected inLen %{public}d or outLen %{public}d", inLen, outLen);
+        int32_t ret = memcpy_s(out, outByteLen, in, std::min(inByteLen, outByteLen));
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, DMIX_ERR_ALLOC_FAILED, "memcpy failed when processing unexpected len");
+        return MIX_ERR_ALLOC_FAILED;
     }
-    return downMixer_.Process(frameSize, in, inLen, out, outLen);
+
+
+    if (inChannelInfo_.numChannels < outChannelInfo_.numChannels) {
+        return MixProcess(upMixTable_, frameLen, in, out);
+    }
+    return MixProcess(downMixer_.GetDownMixTable(), frameLen, in, out);
 }
 
 void ChannelConverter::Reset()
 {
     isInitialized_ = false;
     downMixer_.Reset();
+    for (auto &row : upMixTable_) {
+        std::fill(row.begin(), row.end(), 0.0f);
+    }
 }
 
-int32_t ChannelConverter::Upmix(uint32_t frameSize, float* in, uint32_t inLen, float* out, uint32_t outLen)
+int32_t ChannelConverter::MixProcess(const vector<vector<float>> &mixTable, uint32_t frameLen, float* in, float* out)
 {
-    CHECK_AND_RETURN_RET_LOG(frameSize <= MAX_FRAME_LENGTH, DMIX_ERR_INVALID_ARG,
-        "invalid frameSize %{public}d", frameSize);
-    uint32_t expectInLen = frameSize * inChannelInfo_.numChannels * workSize_; // to be added size of other formats
-    uint32_t expectOutLen = frameSize * outChannelInfo_.numChannels * workSize_;
-    CHECK_AND_RETURN_RET_LOG(expectInLen <= inLen, DMIX_ERR_ALLOC_FAILED, "invalid inLen %{public}d", inLen);
-    CHECK_AND_RETURN_RET_LOG(expectOutLen <= outLen, DMIX_ERR_ALLOC_FAILED, "invalid outLen %{public}d", outLen);
-    
-    for (uint32_t i = 0; i < frameSize; ++i) {
-        for (uint32_t ch = 0; ch < outChannelInfo_.numChannels; ++ch) {
-            uint32_t leftChIndex = Min(ch, inChannelInfo_.numChannels - 1);
-            out[i * outChannelInfo_.numChannels + ch] = in[i * inChannelInfo_.numChannels + leftChIndex];
+    float a;
+    for (; frameLen > 0; frameLen--) {
+        for (uint32_t i = 0; i < outChannelInfo_.numChannels; i++) {
+            a = 0.0f;
+            for (uint32_t j = 0; j < inChannelInfo_.numChannels; j++) {
+                a += in[j] * mixTable[i][j];
+            }
+            *(out++) = a;
         }
+        in += inChannelInfo_.numChannels;
     }
-    return DMIX_ERR_SUCCESS;
+    return MIX_ERR_SUCCESS;
 }
 
 } // HPAE
