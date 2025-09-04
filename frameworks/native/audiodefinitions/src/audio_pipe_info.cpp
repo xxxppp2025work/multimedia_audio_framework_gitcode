@@ -118,7 +118,7 @@ void AudioPipeInfo::DumpInputAttrs(std::string &dumpString)
 {
     AppendFormat(dumpString, "  - SourceType: %s\n", moduleInfo_.sourceType.c_str());
 }
-
+//update
 std::string AudioPipeInfo::ToString()
 {
     std::string out = "";
