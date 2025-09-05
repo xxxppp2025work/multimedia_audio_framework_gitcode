@@ -935,6 +935,8 @@ void AudioPolicyServer::AddAudioServiceOnStart()
         ConnectServiceAdapter();
         LoadEffectLibrary();
         isFirstAudioServiceStart_ = true;
+        CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+        coreService_->RegisterDeviceStatusListener();
     } else {
         AUDIO_WARNING_LOG("OnAddSystemAbility audio service is not first start");
     }

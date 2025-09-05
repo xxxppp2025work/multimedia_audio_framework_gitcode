@@ -113,25 +113,42 @@ static void ReceiveRemoteOffloadInfo(std::string &info, DStatusInfo &statusInfo)
     }
 }
 
+static void ProcessDistributedInfoChanged(DeviceStatusListener *devListener, std::string &info, AudioPin hdiPin)
+{
+    CHECK_AND_RETURN(devListener != nullptr);
+    DStatusInfo statusInfo;
+    PnpEventType pnpEventType = PNP_EVENT_UNKNOWN;
+    statusInfo.connectType = ConnectType::CONNECT_TYPE_DISTRIBUTED;
+    if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;NID=%[^;];PIN=%d;VID=%d;IID=%d", &pnpEventType,
+        statusInfo.networkId, sizeof(statusInfo.networkId), &(statusInfo.hdiPin), &(statusInfo.mappingVolumeId),
+        &(statusInfo.mappingInterruptId)) < D_EVENT_PARAMS) {
+        AUDIO_ERR_LOG("[DeviceStatusListener]: Failed to scan info string");
+        return;
+    }
+
+    statusInfo.isConnected = (pnpEventType == PNP_EVENT_DEVICE_ADD) ? true : false;
+    if (hdiPin != AUDIO_PIN_NONE) {
+        statusInfo.hdiPin = hdiPin;
+    }
+    ReceiveRemoteOffloadInfo(info, statusInfo);
+    devListener->deviceObserver_.OnDeviceStatusUpdated(statusInfo);
+}
+
 static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::string & info,
     DeviceStatusListener * devListener)
 {
+    CHECK_AND_RETURN_LOG(serviceStatus != nullptr, "ReceviceDistributedInfo invalid serviceStatus");
+    CHECK_AND_RETURN_LOG(devListener != nullptr, "ReceviceDistributedInfo invalid devListener");
+    AUDIO_INFO_LOG("serviceStatus->status = %{public}d", serviceStatus->status);
+    AUDIO_INFO_LOG("info = %{public}s", info.c_str());
     DStatusInfo statusInfo;
     PnpEventType pnpEventType = PNP_EVENT_UNKNOWN;
     if (serviceStatus->status == SERVIE_STATUS_START) {
         AUDIO_DEBUG_LOG("distributed service online");
+        ProcessDistributedInfoChanged(devListener, info, AUDIO_PIN_OUT_SPEAKER);
+        ProcessDistributedInfoChanged(devListener, info, AUDIO_PIN_IN_MIC);
     } else if (serviceStatus->status == SERVIE_STATUS_CHANGE && !info.empty()) {
-        statusInfo.connectType = ConnectType::CONNECT_TYPE_DISTRIBUTED;
-        if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;NID=%[^;];PIN=%d;VID=%d;IID=%d", &pnpEventType,
-            statusInfo.networkId, sizeof(statusInfo.networkId), &(statusInfo.hdiPin), &(statusInfo.mappingVolumeId),
-            &(statusInfo.mappingInterruptId)) < D_EVENT_PARAMS) {
-            AUDIO_ERR_LOG("[DeviceStatusListener]: Failed to scan info string");
-            return;
-        }
-
-        statusInfo.isConnected = (pnpEventType == PNP_EVENT_DEVICE_ADD) ? true : false;
-        ReceiveRemoteOffloadInfo(info, statusInfo);
-        devListener->deviceObserver_.OnDeviceStatusUpdated(statusInfo);
+        ProcessDistributedInfoChanged(devListener, info, AUDIO_PIN_NONE);
     } else if (serviceStatus->status == SERVIE_STATUS_STOP) {
         AUDIO_DEBUG_LOG("distributed service offline");
         JUDGE_AND_ERR_LOG(sscanf_s(info.c_str(), "EVENT_TYPE=%d;NID=%[^;];PIN=%d;VID=%d;IID=%d", &pnpEventType,
