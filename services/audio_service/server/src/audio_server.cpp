@@ -1132,7 +1132,7 @@ const std::string AudioServer::GetUsbParameter(const std::string &condition)
     CHECK_AND_RETURN_RET_LOG(StringConverter(GetField(condition, "role", ' '), deviceRoleNum), usbInfoStr,
         "convert invalid value: %{public}s", GetField(condition, "role", ' ').c_str());
     DeviceRole role = static_cast<DeviceRole>(deviceRoleNum);
-
+    lock_guard<mutex> lg(mtxGetUsbParameter_);
     std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB, true);
     CHECK_AND_RETURN_RET_LOG(sink, "", "rendererSink is nullptr");
     std::string infoCond = std::string("get_usb_info#C") + GetField(address, "card", ';') + "D0";
@@ -1956,6 +1956,11 @@ int32_t AudioServer::InnerCheckCaptureLimit(const AudioPlaybackCaptureConfig &co
     int32_t ret = playbackCapturerMgr->CheckCaptureLimit(config, innerCapId);
     if (ret == SUCCESS) {
         PolicyHandler::GetInstance().LoadModernInnerCapSink(innerCapId);
+        bool isSupportInnerCaptureOffload = PolicyHandler::GetInstance().IsSupportInnerCaptureOffload();
+        AUDIO_INFO_LOG("LoadModernOffloadCapSource %{public}d", isSupportInnerCaptureOffload);
+        if (isSupportInnerCaptureOffload) {
+            PolicyHandler::GetInstance().LoadModernOffloadCapSource();
+        }
     }
     return ret;
 }
@@ -2488,7 +2493,6 @@ int32_t AudioServer::NotifyStreamVolumeChanged(int32_t streamType, float volume)
         return ERR_NOT_SUPPORTED;
     }
     AudioStreamType streamTypeTmp = static_cast<AudioStreamType>(streamType);
-    SetSystemVolumeToEffect(streamTypeTmp, volume);
 
     int32_t ret = AudioService::GetInstance()->NotifyStreamVolumeChanged(streamTypeTmp, volume);
     if (ret != SUCCESS) {
@@ -2859,6 +2863,7 @@ int32_t AudioServer::ReleaseCaptureLimit(int32_t innerCapId)
     uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     if (callingUid == ROOT_UID) {
         PlaybackCapturerManager::GetInstance()->CheckReleaseUnloadModernInnerCapSink(innerCapId);
+        PlaybackCapturerManager::GetInstance()->CheckReleaseUnloadModernOffloadCapSource();
         return SUCCESS;
     }
 #endif

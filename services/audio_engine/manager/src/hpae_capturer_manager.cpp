@@ -33,6 +33,7 @@ namespace AudioStandard {
 namespace HPAE {
 const std::string DEFAULT_DEVICE_CLASS = "primary";
 const std::string DEFAULT_DEVICE_NETWORKID = "LocalDevice";
+const uint32_t FRAME_LENGTH_LIMIT = 38400;
 
 HpaeCapturerManager::HpaeCapturerManager(HpaeSourceInfo &sourceInfo)
     : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT), sourceInfo_(sourceInfo)
@@ -86,7 +87,12 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
     nodeInfo.samplingRate = (AudioSamplingRate)streamInfo.samplingRate;
     HpaeProcessorType sceneType = TransSourceTypeToSceneType(streamInfo.sourceType);
     nodeInfo.sceneType = sceneType;
-    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+    if (streamInfo.sourceType == SOURCE_TYPE_OFFLOAD_CAPTURE) {
+        nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_EC;
+    } else {
+        nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+    }
+    
     nodeInfo.statusCallback = weak_from_this();
 
     // todo: sourceType->processorType->sceneType => sourceType->sceneType
@@ -193,6 +199,10 @@ int32_t HpaeCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         AUDIO_ERR_LOG("HpaeCapturerManager is not init");
         return ERR_INVALID_OPERATION;
     }
+    int32_t checkRet = CheckStreamInfo(streamInfo);
+    if (checkRet != SUCCESS) {
+        return checkRet;
+    }
     auto request = [this, streamInfo]() {
         AUDIO_INFO_LOG("CreateStream sessionId %{public}u deviceName %{public}s",
             streamInfo.sessionId,
@@ -201,6 +211,18 @@ int32_t HpaeCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         SetSessionState(streamInfo.sessionId, HPAE_SESSION_PREPARED);
     };
     SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeCapturerManager::CheckStreamInfo(const HpaeStreamInfo &streamInfo)
+{
+    if (streamInfo.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (streamInfo.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -655,9 +677,9 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     HpaeNodeInfo nodeInfo;
     HpaeNodeInfo ecNodeInfo;
     HpaeNodeInfo micRefNodeInfo;
-    if (sourceInfo_.frameLen == 0) {
-        AUDIO_ERR_LOG("FrameLen is 0");
-        return ERROR;
+    int32_t checkRet = CheckFramelen();
+    if (checkRet != SUCCESS) {
+        return checkRet;
     }
     nodeInfo.deviceClass = sourceInfo_.deviceClass;
     nodeInfo.channels = sourceInfo_.channels;
@@ -684,6 +706,9 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     }
 
     sourceInputClusterMap_[mainMicType_]->SetSourceInputNodeType(mainMicType_);  // to do rewrite, optimise
+    if (sourceInfo_.sourceType == SOURCE_TYPE_OFFLOAD_CAPTURE) {
+        sourceInputClusterMap_[mainMicType_]->SetSourceInputNodeType(HPAE_SOURCE_OFFLOAD);
+    }
     int32_t ret = sourceInputClusterMap_[mainMicType_]->GetCapturerSourceInstance(
         sourceInfo_.deviceClass, sourceInfo_.deviceNetId, sourceInfo_.sourceType, sourceInfo_.sourceName);
     captureId_ = sourceInputClusterMap_[mainMicType_]->GetCaptureId();
@@ -696,6 +721,17 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     return SUCCESS;
 }
 
+int32_t HpaeCapturerManager::CheckFramelen()
+{
+    if (sourceInfo_.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (sourceInfo_.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
+    return SUCCESS;
+}
 
 int32_t HpaeCapturerManager::Init(bool isReload)
 {
@@ -856,7 +892,7 @@ int32_t HpaeCapturerManager::AddNodeToSource(const HpaeCaptureMoveInfo &moveInfo
 void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveInfo, bool isConnect)
 {
     uint32_t sessionId = moveInfo.sessionId;
-    HILOG_COMM_INFO("[FinishMove] session :%{public}u to source:[%{public}s].",
+    HILOG_COMM_INFO("[FinishMove] session :%{public}u to source:[%{public}s]",
         sessionId, sourceInfo_.sourceName.c_str());
     CHECK_AND_RETURN_LOG(moveInfo.sourceOutputNode != nullptr, "move fail, sourceoutputnode is null");
     HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
