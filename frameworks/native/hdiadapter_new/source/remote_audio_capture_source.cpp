@@ -22,6 +22,8 @@
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
+#include "audio_dump_pcm.h"
+#include "volume_tools.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 
@@ -53,6 +55,7 @@ int32_t RemoteAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 
 void RemoteAudioCaptureSource::DeInit(void)
 {
+    Trace trace("RemoteAudioCaptureSource::DeInit");
     AUDIO_INFO_LOG("in");
     sourceInited_.store(false);
     captureInited_.store(false);
@@ -71,9 +74,13 @@ bool RemoteAudioCaptureSource::IsInited(void)
 
 int32_t RemoteAudioCaptureSource::Start(void)
 {
+    Trace trace("RemoteAudioCaptureSource::Start");
     AUDIO_INFO_LOG("in");
     std::lock_guard<std::mutex> lock(createCaptureMutex_);
-    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, DUMP_REMOTE_CAPTURE_SOURCE_FILENAME, &dumpFile_);
+    dumpFileName_ = std::string(DUMP_REMOTE_CAPTURE_SOURCE_FILENAME) + "_" + GetTime() + "_" +
+        std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
+        std::to_string(attr_.format) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     if (!captureInited_.load()) {
         int32_t ret = CreateCapture();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create capture fail");
@@ -93,6 +100,7 @@ int32_t RemoteAudioCaptureSource::Start(void)
 
 int32_t RemoteAudioCaptureSource::Stop(void)
 {
+    Trace trace("RemoteAudioCaptureSource::Stop");
     AUDIO_INFO_LOG("in");
     if (!started_.load()) {
         AUDIO_INFO_LOG("already stopped");
@@ -112,6 +120,7 @@ int32_t RemoteAudioCaptureSource::Stop(void)
 
 int32_t RemoteAudioCaptureSource::Resume(void)
 {
+    Trace trace("RemoteAudioCaptureSource::Resume");
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "not start, invalid state");
 
@@ -129,6 +138,7 @@ int32_t RemoteAudioCaptureSource::Resume(void)
 
 int32_t RemoteAudioCaptureSource::Pause(void)
 {
+    Trace trace("RemoteAudioCaptureSource::Pause");
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "not start, invalid state");
 
@@ -146,6 +156,7 @@ int32_t RemoteAudioCaptureSource::Pause(void)
 
 int32_t RemoteAudioCaptureSource::Flush(void)
 {
+    Trace trace("RemoteAudioCaptureSource::Flush");
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "not start, invalid state");
 
@@ -157,6 +168,7 @@ int32_t RemoteAudioCaptureSource::Flush(void)
 
 int32_t RemoteAudioCaptureSource::Reset(void)
 {
+    Trace trace("RemoteAudioCaptureSource::Reset");
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "not start, invalid state");
 
@@ -174,6 +186,8 @@ int32_t RemoteAudioCaptureSource::CaptureFrame(char *frame, uint64_t requestByte
         return ERR_ILLEGAL_STATE;
     }
 
+    Trace trace("RemoteAudioCaptureSource::CaptureFrame");
+    int64_t stamp = ClockTime::GetCurNano();
     std::vector<int8_t> bufferVec(requestBytes);
     int32_t ret = audioCapture_->CaptureFrame(bufferVec, replyBytes);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_READ_FAILED, "fail, ret: %{public}x", ret);
@@ -181,8 +195,12 @@ int32_t RemoteAudioCaptureSource::CaptureFrame(char *frame, uint64_t requestByte
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "copy fail, error code: %{public}d", ret);
     replyBytes = requestBytes;
 
-    DumpFileUtil::WriteDumpFile(dumpFile_, frame, requestBytes);
+    DumpData(frame, replyBytes);
     CheckUpdateState(frame, requestBytes);
+    stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
+    int64_t stampThreshold = 50; // 50ms
+    CHECK_AND_RETURN_RET(stamp >= stampThreshold, SUCCESS);
+    AUDIO_WARNING_LOG("len: [%{public}" PRIu64 "], cost: [%{public}" PRId64 "]ms", requestBytes, stamp);
     return SUCCESS;
 }
 
@@ -408,6 +426,7 @@ void RemoteAudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &devi
 
 int32_t RemoteAudioCaptureSource::CreateCapture(void)
 {
+    Trace trace("RemoteAudioCaptureSource::CreateCapture");
     struct AudioSampleAttributes param;
     struct AudioDeviceDescriptor deviceDesc;
     InitAudioSampleAttr(param);
@@ -452,6 +471,17 @@ void RemoteAudioCaptureSource::CheckUpdateState(char *frame, size_t replyBytes)
             }
         }
     }
+}
+
+void RemoteAudioCaptureSource::DumpData(char *frame, uint64_t &replyBytes)
+{
+    BufferDesc buffer = { reinterpret_cast<uint8_t*>(frame), replyBytes, replyBytes };
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
+        static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
+    VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_, volumeDataCount_);
+    CHECK_AND_RETURN(AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION);
+    DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
+    AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(frame), replyBytes);
 }
 
 void RemoteAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
