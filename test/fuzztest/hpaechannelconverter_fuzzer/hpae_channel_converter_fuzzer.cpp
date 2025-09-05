@@ -160,6 +160,20 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
+void SetAudioChannelInfoTest()
+{
+    ChannelConverter channelConverter;
+    AudioChannelInfo inChannelInfo;
+    AudioChannelInfo outChannelInfo;
+    inChannelInfo.channelLayout = static_cast<AudioChannelLayout>(GetData<uint64_t>());
+    inChannelInfo.numChannels = BitCounts(inChannelInfo.channelLayout);
+
+    outChannelInfo.channelLayout = static_cast<AudioChannelLayout>(GetData<uint64_t>());
+    outChannelInfo.numChannels = BitCounts(outChannelInfo.channelLayout);
+
+    channelConverter.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE);
+}
+
 void SetParamFuzzTest()
 {
     // invalid input Param
@@ -280,6 +294,7 @@ void UpMixProcesFuzzTest()
 
 typedef void (*TestFuncs)();
 TestFuncs g_testFuncs[] = {
+    SetAudioChannelInfoTest,
     SetParamFuzzTest,
     DownMixProcesFuzzTest,
     UpMixProcesFuzzTest,

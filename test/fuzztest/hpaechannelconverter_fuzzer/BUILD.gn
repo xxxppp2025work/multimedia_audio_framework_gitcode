@@ -18,7 +18,7 @@ import("../../../appgallery.gni")
 import("../../../bluetooth_part.gni")
 import("../../../config.gni")
 
-ohos_fuzztest("HpaeDownMixerFuzzTest") {
+ohos_fuzztest("HpaeChannelConverterFuzzTest") {
   module_out_path = "audio_framework/audio_framework_engine"
   fuzz_config_file = "../hpaechannelconverter_fuzzer"
 
@@ -66,5 +66,5 @@ ohos_fuzztest("HpaeDownMixerFuzzTest") {
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":HpaeDownMixerFuzzTest" ]
+  deps = [ ":HpaeChannelConverterFuzzTest" ]
 }
