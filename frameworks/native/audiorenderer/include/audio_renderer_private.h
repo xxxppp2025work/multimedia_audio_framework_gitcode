@@ -106,6 +106,8 @@ public:
     float GetMaxStreamVolume() const override;
     int32_t GetCurrentOutputDevices(AudioDeviceDescriptor &deviceInfo) const override;
     uint32_t GetUnderflowCount() const override;
+    int32_t SetTarget(RenderTarget target) const override;
+    RenderTarget GetTarget() const override;
 
     int32_t RegisterOutputDeviceChangeWithInfoCallback(
         const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback) override;
@@ -163,10 +165,8 @@ public:
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
         AudioStreamParams audioStreamParams;
-
         audioStreamParams.format = params.sampleFormat;
         audioStreamParams.samplingRate = params.sampleRate;
-        audioStreamParams.customSampleRate = params.customSampleRate;
         audioStreamParams.channels = params.channelCount;
         audioStreamParams.encoding = params.encodingType;
         audioStreamParams.channelLayout = params.channelLayout;
@@ -214,6 +214,7 @@ private:
         IAudioStream::SwitchInfo &info);
     bool GenerateNewStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo, RendererState previousState,
         IAudioStream::SwitchInfo &info);
+    bool ContinueAfterConcede(IAudioStream::StreamClass &targetClass, RestoreInfo restoreInfo);
     bool ContinueAfterSplit(RestoreInfo restoreInfo);
     bool InitTargetStream(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> &audioStream);
     void HandleAudioInterruptWhenServerDied();

@@ -592,6 +592,24 @@ AudioRendererRate RendererInClientInner::GetRenderRate()
     return rendererRate_;
 }
 
+
+int32_t RendererInClientInner::SetRenderTarget(RenderTarget renderTarget)
+{
+    CHECK_AND_RETURN_RET_LOG(renderTarget_ != renderTarget, SUCCESS, "Set same renderTarget");
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
+    renderTarget_ = renderTarget;
+    int32_t ret = 0;
+    AUDIO_INFO_LOG("Set render target: %{public}d", renderTarget);
+    ipcStream_->SetTarget(renderTarget, ret);
+    return ret;
+}
+
+RenderTarget RendererInClientInner::GetRenderTarget()
+{
+    AUDIO_INFO_LOG("Get RenderRate %{public}d", renderTarget_);
+    return renderTarget_;
+}
+
 int32_t RendererInClientInner::SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback)
 {
     if (callback == nullptr) {
