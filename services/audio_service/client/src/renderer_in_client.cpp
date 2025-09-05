@@ -557,7 +557,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSi
 
     converter_->Process(bufDesc);
     uint8_t *buffer;
-    uint32_t bufferSize;
+    uint32_t bufferSize = 0;
     converter_->GetOutputBufferStream(buffer, bufferSize);
     return WriteInner(buffer, bufferSize);
 }
