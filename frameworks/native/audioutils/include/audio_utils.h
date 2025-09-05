@@ -15,7 +15,9 @@
 #ifndef AUDIO_UTILS_H
 #define AUDIO_UTILS_H
 
+#include <chrono>
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <list>
 #include <map>
@@ -30,6 +32,8 @@
 #include <condition_variable>
 #include <charconv>
 #include <unistd.h>
+#include <thread>
+#include "audio_log.h"
 #include "securec.h"
 
 #include "audio_info.h"
@@ -588,6 +592,32 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
     const std::vector<std::map<AudioInterrupt, int32_t>> &from);
 
 std::string GetBundleNameByToken(const uint32_t &tokenIdNum);
+
+template<typename Func__, typename... Args__>
+void RunAsync(Func__&& func, Args__&&... args)
+{
+    std::thread th(func, args...);
+    pthread_setname_np(th.native_handle(), "OS_RUNASYNC");
+    th.detach();
+}
+
+template<typename... Args__>
+void TryAsync(const char *task, int32_t maxTry, int32_t delayMs,
+    std::function<bool(Args__&&...)> &&func, Args__&&... args)
+{
+    RunAsync([task, maxTry, delayMs](std::function<bool(Args__&&...)> &&func, Args__&&... args) {
+        for (int32_t i = 0; i < maxTry; ++i) {
+            if (i > 0) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
+            }
+            if (func()) {
+                return;
+            }
+        }
+        AUDIO_ERR_LOG("Try %{public}s over %{public}d times, failed", task, maxTry);
+    }, func, args...);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H
