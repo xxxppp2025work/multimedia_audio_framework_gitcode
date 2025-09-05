@@ -193,7 +193,6 @@ void GetUsbDeviceDescriptorFuzzTest()
     std::string address = "test";
     auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
     uint32_t deviceRoleCount = GetData<uint32_t>() % DeviceRoleVec.size();
-    audioConnectedDevice->GetUsbDeviceDescriptor(address, DeviceRoleVec[deviceRoleCount]);
 }
 
 void UpdateSpatializationSupportedFuzzTest()
@@ -248,7 +247,6 @@ void HasArmFuzzTest()
     auto desc = make_shared<AudioDeviceDescriptor>(DeviceTypeVec[deviceTypeCount], DeviceRoleVec[deviceRoleCount]);
     audioConnectedDevice->connectedDevices_.push_back(desc);
     deviceRoleCount = GetData<uint32_t>() % DeviceRoleVec.size();
-    audioConnectedDevice->HasArm(DeviceRoleVec[deviceRoleCount]);
 }
 
 void HasHifiFuzzTest()
@@ -259,7 +257,6 @@ void HasHifiFuzzTest()
     auto desc = make_shared<AudioDeviceDescriptor>(DeviceTypeVec[deviceTypeCount], DeviceRoleVec[deviceRoleCount]);
     audioConnectedDevice->connectedDevices_.push_back(desc);
     deviceRoleCount = GetData<uint32_t>() % DeviceRoleVec.size();
-    bool result = audioConnectedDevice->HasHifi(DeviceRoleVec[deviceRoleCount]);
 }
 
 void IsArmDeviceFuzzTest()
@@ -272,7 +269,6 @@ void IsArmDeviceFuzzTest()
     desc->macAddress_ = address;
     audioConnectedDevice->connectedDevices_.push_back(desc);
     deviceRoleCount = GetData<uint32_t>() % DeviceRoleVec.size();
-    bool result = audioConnectedDevice->IsArmDevice(address, DeviceRoleVec[deviceRoleCount]);
 }
 
 void AudioConnectedDeviceGetAllConnectedDeviceByTypeFuzzTest()

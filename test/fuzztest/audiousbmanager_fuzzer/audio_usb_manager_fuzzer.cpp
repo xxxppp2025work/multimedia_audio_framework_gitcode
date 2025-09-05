@@ -83,7 +83,7 @@ void AudioUsbManagerInitFuzzTest()
 
     auto observer = std::make_shared<FuzzTestDeviceStatusObserver>();
     audioUsbManager.initialized_ = GetData<bool>();
-    audioUsbManager.Init(observer);
+    audioUsbManager.Init(INIT_CTRL_ALL, observer);
 }
 
 void AudioUsbManagerDeinitFuzzTest()
@@ -101,7 +101,6 @@ void AudioUsbManagerSubscribeEventFuzzTest()
     AudioUsbManager &audioUsbManager = AudioUsbManager::GetInstance();
 
     audioUsbManager.eventSubscriber_ = nullptr;
-    audioUsbManager.SubscribeEvent();
 }
 
 void AudioUsbManagerGetUsbSoundCardMapFuzzTest()
@@ -139,7 +138,7 @@ void AudioUsbManagerHandleAudioDeviceEventFuzzTest()
     AudioUsbManager &audioUsbManager = AudioUsbManager::GetInstance();
 
     auto observer = std::make_shared<FuzzTestDeviceStatusObserver>();
-    audioUsbManager.Init(observer);
+    audioUsbManager.Init(INIT_CTRL_ALL, observer);
 
     UsbAudioDevice device;
     SoundCard soundCard;
@@ -156,7 +155,7 @@ void AudioUsbManagerNotifyDeviceFuzzTest()
     CHECK_AND_RETURN(audioUsbManager != nullptr);
 
     auto observer = std::make_shared<FuzzTestDeviceStatusObserver>();
-    audioUsbManager->Init(observer);
+    audioUsbManager->Init(INIT_CTRL_ALL, observer);
     CHECK_AND_RETURN(observer != nullptr);
 
     UsbAudioDevice device;

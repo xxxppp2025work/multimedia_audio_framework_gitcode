@@ -356,7 +356,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
 #ifdef USB_ENABLE
         case USB_SYSTEM_ABILITY_ID:
-            usbManager_.Init(eventEntry_);
+            usbManager_.Init(INIT_CTRL_USB, eventEntry_);
             break;
 #endif
         default:
@@ -999,7 +999,7 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     SubscribeCommonEvent("usual.event.SCREEN_UNLOCKED");
     SubscribeCommonEvent("usual.event.LOCALE_CHANGED");
 #ifdef USB_ENABLE
-    usbManager_.SubscribeEvent();
+    usbManager_.Init(INIT_CTRL_CES, eventEntry_);
 #endif
     SubscribeSafeVolumeEvent();
     isAlreadyRegisterCommonEventListener_ = true;

@@ -91,21 +91,6 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_002, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioDeviceStatus.
-* @tc.number: AudioDeviceStatus_003
-* @tc.desc  : Test NoNeedChangeUsbDevice interface.
-*/
-HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_003, TestSize.Level1)
-{
-    std::string address = "00:11:22:33:44:55";
-    bool bRet = true;
-    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-
-    bRet = audioDeviceStatus.NoNeedChangeUsbDevice(address);
-    EXPECT_EQ(bRet, true);
-}
-
-/**
-* @tc.name  : Test AudioDeviceStatus.
 * @tc.number: AudioDeviceStatus_004
 * @tc.desc  : Test TriggerMicrophoneBlockedCallback interface.
 */
