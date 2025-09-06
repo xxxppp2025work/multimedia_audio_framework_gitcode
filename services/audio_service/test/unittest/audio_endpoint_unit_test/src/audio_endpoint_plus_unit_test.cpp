@@ -59,6 +59,8 @@ public:
     MOCK_METHOD(uint32_t, GetSpanSizeInFrame, (), (override));
     MOCK_METHOD(uint32_t, GetByteSizePerFrame, (), (override));
 
+    MOCK_METHOD(StreamStatus, GetStreamInServerStatus, (), (override));
+
     // Non-pure virtual methods (with default implementations in interface)
     MOCK_METHOD(void, EnableStandby, (), (override));
 
@@ -1937,6 +1939,89 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_008, TestSize.Level1)
     srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
     srcData.streamInfo.channels = AudioChannel::CHANNEL_3;
     audioEndpointInner->HandleRendererDataParams(srcData, dstData);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: PrepareRingBuffer_001
+ * @tc.desc  : Test AudioEndpointInner::PrepareRingBuffer()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, PrepareRingBuffer_001, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+
+    ASSERT_NE(audioEndpointInner, nullptr);
+    std::vector<uint8_t> buffer1(1, 0);
+    RingBufferWrapper ringBuffer = {
+        {{
+            {.buffer = buffer1.data(), .bufLength = 1},
+            {.buffer = nullptr, .bufLength = 0},
+        }},
+        .dataLength = 1
+    };
+    std::shared_ptr<OHAudioBufferBase> processBuffer = std::make_shared<OHAudioBufferBase>(bufferHolder,
+        totalSizeInFrame, byteSizePerFrame);
+    processBuffer->totalSizeInFrame_ = 10;
+    BasicBufferInfo basicBufferInfo;
+    processBuffer->basicBufferInfo_ = &basicBufferInfo;
+    uint64_t pos = 0;
+    processBuffer->basicBufferInfo_->basePosInFrame.store(pos);
+    uint64_t writePos = 0;
+    processBuffer->basicBufferInfo_->curWriteFrame.store(writePos);
+    AudioProcessConfig config = {};
+    config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    sptr<AudioProcessInServer> audioProcess = AudioProcessInServer::Create(config, AudioService::GetInstance());
+    audioProcess->byteSizePerFrame_ = 1;
+    audioProcess->spanSizeInbyte_ = 0;
+    audioEndpointInner->processList_.push_back(audioProcess);
+    audioEndpointInner->processBufferList_.push_back(processBuffer);
+    bool result = audioEndpointInner->PrepareRingBuffer(0, 0, ringBuffer);
+    EXPECT_EQ(result, true);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: PrepareRingBuffer_002
+ * @tc.desc  : Test AudioEndpointInner::PrepareRingBuffer()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, PrepareRingBuffer_002, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+
+    ASSERT_NE(audioEndpointInner, nullptr);
+    std::vector<uint8_t> buffer1(1, 0);
+    RingBufferWrapper ringBuffer = {
+        {{
+            {.buffer = buffer1.data(), .bufLength = 1},
+            {.buffer = nullptr, .bufLength = 0},
+        }},
+        .dataLength = 1
+    };
+    std::shared_ptr<OHAudioBufferBase> processBuffer = std::make_shared<OHAudioBufferBase>(bufferHolder,
+        totalSizeInFrame, byteSizePerFrame);
+    processBuffer->totalSizeInFrame_ = 10;
+    BasicBufferInfo basicBufferInfo;
+    processBuffer->basicBufferInfo_ = &basicBufferInfo;
+    uint64_t pos = 0;
+    processBuffer->basicBufferInfo_->basePosInFrame.store(pos);
+    uint64_t writePos = 0;
+    processBuffer->basicBufferInfo_->curWriteFrame.store(writePos);
+    config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    sptr<AudioProcessInServer> audioProcess = AudioProcessInServer::Create(config, AudioService::GetInstance());
+    audioProcess->byteSizePerFrame_ = 1;
+    audioProcess->spanSizeInframe_ = 2;
+    audioEndpointInner->processList_.push_back(audioProcess);
+    audioEndpointInner->processBufferList_.push_back(processBuffer);
+    bool result = audioEndpointInner->PrepareRingBuffer(0, 0, ringBuffer);
+    EXPECT_EQ(result, true);
 }
 } // namespace AudioStandard
 } // namespace OHOS
