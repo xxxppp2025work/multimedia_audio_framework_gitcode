@@ -1977,10 +1977,10 @@ void AudioEndpointInner::WriteToProcessBuffers(const BufferDesc &readBuf)
     std::lock_guard<std::mutex> lock(listLock_);
     for (size_t i = 0; i < processBufferList_.size(); i++) {
         CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr, "process buffer %{public}zu is null.", i);
-        if (processBufferList_[i]->GetStreamStatus() &&
-            processBufferList_[i]->GetStreamStatus()->load() != STREAM_RUNNING) {
+        CHECK_AND_CONTINUE_LOG(processList_[i] != nullptr, "process %{public}zu is null.", i);
+        if (processList_[i]->GetStreamInServerStatus() != STREAM_RUNNING) {
             AUDIO_WARNING_LOG("process buffer %{public}zu not running, stream status %{public}d.",
-                i, processBufferList_[i]->GetStreamStatus()->load());
+                i, processList_[i]->GetStreamInServerStatus());
             continue;
         }
 
