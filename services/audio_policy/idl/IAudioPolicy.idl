@@ -135,6 +135,7 @@ interface IAudioPolicy {
     void GetMinStreamVolume([out] float retVolume);
     void GetMaxStreamVolume([out] float retVolume);
     void GetMaxRendererInstances([out] int ret);
+    void IsSupportInnerCaptureOffload([out] boolean ret);
     void IsVolumeUnadjustable([out] boolean retIsUnadjustable);
     void AdjustVolumeByStep([in] int adjustType);
     void AdjustSystemVolumeByStep([in] int volumeType, [in] int adjustType);
@@ -289,6 +290,8 @@ interface IAudioPolicy {
     void SetDefaultOutputDevice([in] int deviceType /* deviceType */);
     void ForceVolumeKeyControlType([in] int volumeType, [in] int duration, [out] int ret);
     void SetQueryDeviceVolumeBehaviorCallback([in] IRemoteObject object);
+    void GetVADeviceBroker([out] IRemoteObject client);
+    void GetVADeviceController([in] String macAddress, [out] IRemoteObject controller);
     void SetAppConcurrencyMode([in] int appUid, [in] int mode);
     void SetAppSilentOnDisplay([in] int displayId);
     void IsIntelligentNoiseReductionEnabledForCurrentDevice([in] int sourceType, [out] boolean ret);

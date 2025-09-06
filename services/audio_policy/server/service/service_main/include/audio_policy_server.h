@@ -378,6 +378,8 @@ public:
 
     int32_t GetMaxRendererInstances(int32_t &ret) override;
 
+    int32_t IsSupportInnerCaptureOffload(bool &ret) override;
+
     void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
 
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;
@@ -605,6 +607,10 @@ public:
     int32_t IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo, bool &ret) override;
 
     int32_t ForceVolumeKeyControlType(int32_t volumeType, int32_t duration, int32_t &ret) override;
+
+    int32_t GetVADeviceBroker(sptr<IRemoteObject> &client) override;
+
+    int32_t GetVADeviceController(const std::string &macAddress, sptr<IRemoteObject> &controller) override;
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
     std::set<int32_t> GetStreamIdsForAudioSessionByStreamUsage(

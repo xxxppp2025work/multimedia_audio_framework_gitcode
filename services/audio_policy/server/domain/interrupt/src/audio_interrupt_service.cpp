@@ -260,11 +260,11 @@ int32_t AudioInterruptService::ActivateAudioSession(const int32_t zoneId, const 
             return result;
         }
 
-        AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+        AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
         // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
         // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
         lock.unlock();
-        UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
+        UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
         return SUCCESS;
     }
 
@@ -889,11 +889,11 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
         return ret;
     }
 
-    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+    AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
     // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1116,9 +1116,9 @@ int32_t AudioInterruptService::ReleaseAudioInterruptZone(const int32_t zoneId, G
     if (ret != SUCCESS) {
         return ret;
     }
-    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+    AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1129,9 +1129,9 @@ int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, G
     if (ret != SUCCESS) {
         return ret;
     }
-    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+    AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1143,9 +1143,9 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InjectInterruptToAudioZone failed");
     CHECK_AND_RETURN_RET_LOG(zoneId != ZONEID_DEFAULT, SUCCESS, "zone id is default");
 
-    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+    AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1157,9 +1157,9 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InjectInterruptToAudioZone failed");
     CHECK_AND_RETURN_RET_LOG(zoneId != ZONEID_DEFAULT, SUCCESS, "zone id is default");
 
-    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+    AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1734,8 +1734,8 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
         }
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, audioInterrupt);
         SendActiveVolumeTypeChangeEvent(zoneId);
-        AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
-        UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
+        AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
+        UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
         shouldReturnSuccess = true;
         return;
     }
@@ -1783,14 +1783,14 @@ int32_t AudioInterruptService::SetQueryBundleNameListCallback(const sptr<IRemote
     return SUCCESS;
 }
 
-std::string AudioInterruptService::GetRealBundleName(uint32_t uid)
+std::string AudioInterruptService::GetAudioInterruptBundleName(const AudioInterrupt &audioInterrupt)
 {
-    CHECK_AND_RETURN_RET_LOG(policyServer_ != nullptr, "", "policyServer nullptr");
-    if (IPCSkeleton::GetCallingUid() == MEDIA_SA_UID) {
-        auto info = AudioBundleManager::GetBundleInfoFromUid(uid);
-        return info.name;
+    if (audioInterrupt.bundleName.empty()) {
+        auto info = AudioBundleManager::GetBundleInfoFromUid(audioInterrupt.uid);
+        audioInterrupt.bundleName = info.name;
+        AUDIO_INFO_LOG("Get audio interrupt bundle name: %{public}s", audioInterrupt.bundleName.c_str());
     }
-    return AudioBundleManager::GetBundleName();
+    return audioInterrupt.bundleName;
 }
 
 std::string AudioInterruptService::GetCurrentBundleName(uint32_t uid)
@@ -1809,7 +1809,7 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     int32_t incomingPid = incomingInterrupt.pid;
     AudioFocusType incomingAudioFocusType = incomingInterrupt.audioFocusType;
     AudioFocusType existAudioFocusType = currentInterrupt.audioFocusType;
-    std::string bundleName = GetRealBundleName(static_cast<uint32_t>(uid));
+    std::string bundleName = GetAudioInterruptBundleName(incomingInterrupt);
     std::string currentBundleName = GetCurrentBundleName(static_cast<int32_t>(currentUid));
     CHECK_AND_RETURN_LOG(!bundleName.empty(), "bundleName is empty");
     AudioStreamType existStreamType = existAudioFocusType.streamType;

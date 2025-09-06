@@ -37,6 +37,7 @@
 #include "audio_combine_denoising_manager.h"
 #include "audio_stream_descriptor.h"
 #include "sle_audio_operation_callback_stub_impl.h"
+#include "audio_capturer_options.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -280,6 +281,12 @@ public:
 
     int32_t UnsetAudioSessionCurrentDeviceChangeCallback(
         const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
+    
+    int32_t SetAudioSessionCurrentInputDeviceChangeCallback(
+        const std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback> &deviceChangedCallback);
+
+    int32_t UnsetAudioSessionCurrentInputDeviceChangeCallback(
+        const std::optional<std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback>> &deviceChangedCallback);
 
     int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
@@ -628,6 +635,7 @@ public:
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
+    bool IsSupportInnerCaptureOffload();
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
     bool SetKaraokeParameters(const std::string &parameters);
     int32_t SetAudioRouteCallback(uint32_t sessionId, std::shared_ptr<AudioRouteCallback> callback, uint32_t clientUid);
@@ -706,6 +714,7 @@ private:
     int32_t SetCallbackStreamInfo(const CallbackChange &callbackChange);
     int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = -1);
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo);
+    int32_t CheckAudioPolicyClientRegisted();
 
     std::mutex listenerStubMutex_;
     std::mutex registerCallbackMutex_;

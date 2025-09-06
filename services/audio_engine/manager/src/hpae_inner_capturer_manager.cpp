@@ -28,6 +28,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+const uint32_t FRAME_LENGTH_LIMIT = 38400;
 // todo sinkInfo
 HpaeInnerCapturerManager::HpaeInnerCapturerManager(HpaeSinkInfo &sinkInfo)
     : sinkInfo_(sinkInfo), hpaeNoLockQueue_(CURRENT_REQUEST_COUNT)
@@ -55,7 +56,8 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     HpaeNodeInfo nodeInfo = node->GetNodeInfo();
     uint32_t sessionId = nodeInfo.sessionId;
     Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::AddSingleNodeToSinkInner");
-    HILOG_COMM_INFO("[FinishMove] session :%{public}u to sink:%{public}s", sessionId, sinkInfo_.deviceClass.c_str());
+    HILOG_COMM_INFO("[FinishMove] session :%{public}u to sink:%{public}s, sceneType is %{public}d",
+        sessionId, sinkInfo_.deviceClass.c_str(), node->GetSceneType());
     sinkInputNodeMap_[sessionId] = node;
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
@@ -76,7 +78,7 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     }
 
     if (node->GetState() == HPAE_SESSION_RUNNING) {
-        HILOG_COMM_INFO("[FinishMove] session:%{public}u connect to sink:%{public}s",
+        AUDIO_INFO_LOG("[FinishMove] session:%{public}u connect to sink:%{public}s",
             sessionId, sinkInfo_.deviceClass.c_str());
         ConnectRendererInputSessionInner(sessionId);
     }
@@ -118,7 +120,7 @@ void HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner(const std::string &si
     for (const auto &it : sessionIds) {
         DeleteRendererInputSessionInner(it);
     }
-    HILOG_COMM_INFO("[StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
+    HILOG_COMM_INFO("StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
     if (moveType == MOVE_ALL) {
         TriggerSyncCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
@@ -180,6 +182,10 @@ int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         AUDIO_INFO_LOG("CreateStream not init");
         return ERR_INVALID_OPERATION;
     }
+    int32_t checkRet = CheckStreamInfo(streamInfo);
+    if (checkRet != SUCCESS) {
+        return checkRet;
+    }
     auto request = [this, streamInfo]() {
         if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
             Trace trace("HpaeInnerCapturerManager::CreateRendererStream id[" +
@@ -199,6 +205,18 @@ int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         }
     };
     SendRequestInner(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeInnerCapturerManager::CheckStreamInfo(const HpaeStreamInfo &streamInfo)
+{
+    if (streamInfo.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (streamInfo.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -272,11 +290,11 @@ int32_t HpaeInnerCapturerManager::Init(bool isReload)
 int32_t HpaeInnerCapturerManager::InitSinkInner(bool isReload)
 {
     Trace trace("HpaeInnerCapturerManager::InitSinkInner");
-    if (sinkInfo_.frameLen == 0) {
+    int32_t checkRet = CheckFramelen();
+    if (checkRet != SUCCESS) {
         TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
                         sinkInfo_.deviceName, ERR_INVALID_PARAM);
-        AUDIO_ERR_LOG("FrameLen is 0");
-        return ERROR;
+        return checkRet;
     }
     HpaeNodeInfo nodeInfo;
     nodeInfo.channels = sinkInfo_.channels;
@@ -292,6 +310,18 @@ int32_t HpaeInnerCapturerManager::InitSinkInner(bool isReload)
     hpaeInnerCapSinkNode_->InnerCapturerSinkInit();
     isInit_.store(true);
     TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT :INIT_DEVICE_RESULT, sinkInfo_.deviceName, SUCCESS);
+    return SUCCESS;
+}
+
+int32_t HpaeInnerCapturerManager::CheckFramelen()
+{
+    if (sinkInfo_.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (sinkInfo_.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
     return SUCCESS;
 }
 

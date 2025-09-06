@@ -108,6 +108,8 @@ uint32_t IdHandler::GetCaptureIdByDeviceClass(const std::string &deviceClass, co
             return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT);
         }
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);
+    } else if (deviceClass == "va") {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_VA, HDI_ID_INFO_VA);
     } else if (deviceClass == "usb") {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
     } else if (deviceClass == "a2dp") {
@@ -122,6 +124,8 @@ uint32_t IdHandler::GetCaptureIdByDeviceClass(const std::string &deviceClass, co
 #endif
     } else if (deviceClass == "accessory") {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY);
+    } else if (deviceClass == "offload") {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_OFFLOAD, HDI_ID_INFO_DEFAULT);
     }
 
     AUDIO_ERR_LOG("invalid param, deviceClass: %{public}s, sourceType: %{public}d, info: %{public}s",

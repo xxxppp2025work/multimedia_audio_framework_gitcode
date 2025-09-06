@@ -40,6 +40,8 @@
 #include "audio_bundle_manager.h"
 #include "audio_server_proxy.h"
 #include "audio_policy_client_holder.h"
+#include "va_device_broker_stub_impl.h"
+#include "va_device_manager.h"
 #include "standalone_mode_manager.h"
 
 using OHOS::Security::AccessToken::PrivacyKit;
@@ -998,6 +1000,7 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     SubscribeCommonEvent("usual.event.SCREEN_LOCKED");
     SubscribeCommonEvent("usual.event.SCREEN_UNLOCKED");
     SubscribeCommonEvent("usual.event.LOCALE_CHANGED");
+    SubscribeCommonEvent("usual.event.USER_STARTED");
 #ifdef USB_ENABLE
     usbManager_.SubscribeEvent();
 #endif
@@ -1067,7 +1070,7 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
     } else if (action == "usual.event.SCREEN_UNLOCKED") {
         AUDIO_INFO_LOG("receive SCREEN_UNLOCKED action, can change volume");
         isScreenOffOrLock_ = false;
-    } else if (action == "usual.event.LOCALE_CHANGED") {
+    } else if (action == "usual.event.LOCALE_CHANGED" || action == "usual.event.USER_STARTED") {
         CallRingtoneLibrary();
     }
 }
@@ -2073,6 +2076,9 @@ int32_t AudioPolicyServer::GetDevices(int32_t deviceFlagIn,
             desc->networkId_ = "";
             desc->interruptGroupId_ = GROUP_ID_NONE;
             desc->volumeGroupId_ = GROUP_ID_NONE;
+            if (desc->deviceType_ == DEVICE_TYPE_BT_SPP) {
+                desc->deviceType_ = DEVICE_TYPE_SYSTEM_PRIVATE;
+            }
         }
     }
 
@@ -2175,15 +2181,19 @@ int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRender
     }
 
     int32_t apiVersion = GetApiTargetVersion();
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
     clientInfo.isSupportedNearlink_ = audioPolicyUtils_.IsSupportedNearlink(AudioBundleManager::GetBundleName(),
-        apiVersion, PermissionUtil::VerifySystemPermission());
+        apiVersion, hasSystemPermission);
     for (auto &desc : deviceDescs) {
         CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
         desc->SetClientInfo(clientInfo);
         desc->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
         if (desc->IsAudioDeviceDescriptor()) {
             desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion);
+        }
+        if (!hasSystemPermission && desc->deviceType_ == DEVICE_TYPE_BT_SPP) {
+            desc->deviceType_ = DEVICE_TYPE_SYSTEM_PRIVATE;
         }
     }
 
@@ -2194,7 +2204,7 @@ int32_t AudioPolicyServer::GetPreferredInputDeviceDescriptors(const AudioCapture
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
     AudioCapturerInfo captureInfo = captureInfoIn;
-    deviceDescs = eventEntry_->GetPreferredInputDeviceDescriptors(captureInfo);
+    deviceDescs = eventEntry_->GetPreferredInputDeviceDescriptors(captureInfo, IPCSkeleton::GetCallingUid());
     bool hasBTPermission = VerifyBluetoothPermission();
     if (!hasBTPermission) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);
@@ -3383,6 +3393,7 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     eventEntry_->RegisteredTrackerClientDied(uid, pid);
     eventEntry_->ClearSelectedInputDeviceByUid(uid);
+    eventEntry_->PreferBluetoothAndNearlinkRecordByUid(uid, false);
 
     auto filter = [&pid](int val) {
         return pid == val;
@@ -3733,6 +3744,12 @@ int32_t AudioPolicyServer::GetMaxRendererInstances(int32_t &ret)
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::IsSupportInnerCaptureOffload(bool &ret)
+{
+    ret = audioPolicyService_.IsSupportInnerCaptureOffload();
+    return SUCCESS;
+}
+
 void AudioPolicyServer::RegisterDataObserver()
 {
     audioPolicyService_.RegisterDataObserver();
@@ -3896,6 +3913,8 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
             desc->networkId_ = "";
             desc->interruptGroupId_ = GROUP_ID_NONE;
             desc->volumeGroupId_ = GROUP_ID_NONE;
+            desc->deviceType_ = desc->deviceType_ == DEVICE_TYPE_BT_SPP ?
+                DEVICE_TYPE_SYSTEM_PRIVATE : desc->deviceType_;
         }
     }
 
@@ -5431,6 +5450,19 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
     dataShareHelper->Release();
     return SUCCESS;
 }
+
+int32_t AudioPolicyServer::GetVADeviceBroker(sptr<IRemoteObject> &client)
+{
+    client = sptr<VADeviceBrokerStubImpl>::MakeSptr()->AsObject();
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::GetVADeviceController(const std::string& macAddress, sptr<IRemoteObject>& controller)
+{
+    VADeviceManager::GetInstance().GetDeviceController(macAddress, controller);
+    return SUCCESS;
+}
+
 
 int32_t AudioPolicyServer::IsIntelligentNoiseReductionEnabledForCurrentDevice(int32_t sourceType, bool &ret)
 {
