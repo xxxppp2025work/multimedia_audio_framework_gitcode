@@ -51,6 +51,26 @@ FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
 typedef void (*TestFuncs)();
 
+void AudioInterruptZoneManagerForceStopAudioFocusInZoneFuzzTest()
+{
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    if (audioInterruptZoneManager == nullptr) {
+        return;
+    }
+    AudioInterruptService service;
+    audioInterruptZoneManager->service_ = &service;
+    if (audioInterruptZoneManager->service_ == nullptr) {
+        return;
+    }
+    AudioInterrupt interrupt;
+    audioInterruptZoneManager->service_->sessionService_ = std::make_shared<AudioSessionService>();
+    audioInterruptZoneManager->service_->handler_ = std::make_shared<AudioPolicyServerHandler>();
+    int32_t zoneId = g_fuzzUtils.GetData<int32_t>();
+    interrupt.streamId = g_fuzzUtils.GetData<uint32_t>();
+    interrupt.pid = g_fuzzUtils.GetData<int32_t>();
+    audioInterruptZoneManager->ForceStopAudioFocusInZone(zoneId, interrupt);
+}
+
 void AudioInterruptZoneManagerGetAudioFocusInfoListFuzzTest()
 {
     auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
@@ -70,26 +90,6 @@ void AudioInterruptZoneManagerGetAudioFocusInfoListFuzzTest()
     audioInterruptZoneManager->GetAudioFocusInfoList(zoneId, deviceTag, focusInfoList);
 }
 
-void AudioInterruptZoneManagerForceStopAudioFocusInZoneFuzzTest()
-{
-    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
-    if (audioInterruptZoneManager == nullptr) {
-        return;
-    }
-    AudioInterruptService service;
-    audioInterruptZoneManager->service_ = &service;
-    if (audioInterruptZoneManager->service_ == nullptr) {
-        return;
-    }
-    audioInterruptZoneManager->service_->sessionService_ = std::make_shared<AudioSessionService>();
-    audioInterruptZoneManager->service_->handler_ = std::make_shared<AudioPolicyServerHandler>();
-    int32_t zoneId = g_fuzzUtils.GetData<int32_t>();
-    AudioInterrupt interrupt;
-    interrupt.streamId = g_fuzzUtils.GetData<uint32_t>();
-    interrupt.pid = g_fuzzUtils.GetData<int32_t>();
-    audioInterruptZoneManager->ForceStopAudioFocusInZone(zoneId, interrupt);
-}
-
 void AudioInterruptZoneManagerForceStopAllAudioFocusInZoneFuzzTest()
 {
     auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
@@ -106,27 +106,6 @@ void AudioInterruptZoneManagerForceStopAllAudioFocusInZoneFuzzTest()
     zone->audioFocusInfoList.push_back(std::make_pair(interrupt, stateByGetData));
 
     audioInterruptZoneManager->ForceStopAllAudioFocusInZone(zone);
-}
-
-void AudioInterruptZoneManagerInjectInterruptToAudioZoneFuzzTest()
-{
-    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
-    if (audioInterruptZoneManager == nullptr) {
-        return;
-    }
-    AudioInterruptService service;
-    audioInterruptZoneManager->service_ = &service;
-    if (audioInterruptZoneManager->service_ == nullptr) {
-        return;
-    }
-    int32_t zoneId = g_fuzzUtils.GetData<int32_t>();
-    audioInterruptZoneManager->service_->zonesMap_.insert({zoneId, std::make_shared<AudioInterruptZone>()});
-    std::string deviceTag = "test_device_tag";
-    AudioInterrupt interrupt;
-    AudioFocuState stateByGetData = g_fuzzUtils.GetData<AudioFocuState>();
-    AudioFocusList interrupts;
-    interrupts.push_back(std::make_pair(interrupt, stateByGetData));
-    audioInterruptZoneManager->InjectInterruptToAudioZone(zoneId, deviceTag, interrupts);
 }
 
 void AudioInterruptZoneManagerQueryAudioFocusFromZoneFuzzTest()
@@ -150,6 +129,27 @@ void AudioInterruptZoneManagerQueryAudioFocusFromZoneFuzzTest()
     audioInterruptZoneManager->service_->zonesMap_.insert({zoneId, audioInterruptZone});
 
     audioInterruptZoneManager->QueryAudioFocusFromZone(zoneId, deviceTag);
+}
+
+void AudioInterruptZoneManagerInjectInterruptToAudioZoneFuzzTest()
+{
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    if (audioInterruptZoneManager == nullptr) {
+        return;
+    }
+    AudioInterruptService service;
+    audioInterruptZoneManager->service_ = &service;
+    if (audioInterruptZoneManager->service_ == nullptr) {
+        return;
+    }
+    int32_t zoneId = g_fuzzUtils.GetData<int32_t>();
+    audioInterruptZoneManager->service_->zonesMap_.insert({zoneId, std::make_shared<AudioInterruptZone>()});
+    std::string deviceTag = "test_device_tag";
+    AudioInterrupt interrupt;
+    AudioFocuState stateByGetData = g_fuzzUtils.GetData<AudioFocuState>();
+    AudioFocusList interrupts;
+    interrupts.push_back(std::make_pair(interrupt, stateByGetData));
+    audioInterruptZoneManager->InjectInterruptToAudioZone(zoneId, deviceTag, interrupts);
 }
 
 void AudioInterruptZoneManagerTryActiveAudioFocusForZoneFuzzTest()
