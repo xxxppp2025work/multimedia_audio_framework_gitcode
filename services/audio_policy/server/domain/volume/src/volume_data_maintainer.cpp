@@ -414,6 +414,19 @@ int32_t VolumeDataMaintainer::GetAppVolume(int32_t appUid)
     return appVolumeLevelMap_[appUid];
 }
 
+void VolumeDataMaintainer::CopyVolumeLevelAndMuteStatusMap<const VolumeDataMaintainer &other>
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    volumeLevelMap_ = other.volumeLevelMap_;
+    muteStatusMap_ = other.muteStatusMap_;
+}
+
+void VolumeDataMaintainer::CopyVolumeLevelAndMuteStatusMap<std::shared_ptr<VolumeDataMaintainer> other>
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    volumeLevelMap_ = other->volumeLevelMap_;
+    muteStatusMap_ = other->muteStatusMap_;
+}
 
 int32_t VolumeDataMaintainer::GetStreamVolumeInternal(AudioStreamType streamType)
 {

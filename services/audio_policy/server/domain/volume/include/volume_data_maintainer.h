@@ -100,6 +100,8 @@ public:
     int32_t GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType);
     int32_t GetAppVolume(int32_t appUid);
     bool IsSetAppVolume(int32_t appUid);
+    void CopyVolumeLevelAndMuteStatusMap<const VolumeDataMaintainer &other>;
+    void CopyVolumeLevelAndMuteStatusMap<std::shared_ptr<VolumeDataMaintainer> other>;
     std::unordered_map<AudioStreamType, int32_t> GetVolumeMap();
 
     bool GetMuteStatusWithDatabaseVolumeName(const std::string &databaseVolumeName, AudioStreamType streamType);
