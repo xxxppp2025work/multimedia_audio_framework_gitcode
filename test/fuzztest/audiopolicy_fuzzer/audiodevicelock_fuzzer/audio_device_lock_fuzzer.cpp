@@ -138,16 +138,6 @@ const vector<AudioDeviceUsage> AudioDeviceUsageVec = {
     D_ALL_DEVICES,
 };
 
-void RegisterTrackerFuzzTest()
-{
-    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
-    int32_t modeCount = static_cast<int32_t>(AudioMode::AUDIO_MODE_RECORD) + 1;
-    AudioMode mode = static_cast<AudioMode>(GetData<uint8_t>() % modeCount);
-    AudioStreamChangeInfo streamChangeInfo;
-    sptr<IRemoteObject> object = nullptr;
-    int32_t apiVersion = GetData<int32_t>();
-}
-
 void SendA2dpConnectedWhileRunningFuzzTest()
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
@@ -158,17 +148,34 @@ void SendA2dpConnectedWhileRunningFuzzTest()
     audioDeviceLock->audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
 }
 
-void HandleAudioCaptureStateFuzzTest()
+void RegisterTrackerFuzzTest()
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     int32_t modeCount = static_cast<int32_t>(AudioMode::AUDIO_MODE_RECORD) + 1;
     AudioMode mode = static_cast<AudioMode>(GetData<uint8_t>() % modeCount);
     AudioStreamChangeInfo streamChangeInfo;
+    sptr<IRemoteObject> object = nullptr;
+    int32_t apiVersion = GetData<int32_t>();
+}
+
+void HandleAudioCaptureStateFuzzTest()
+{
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    int32_t modeCount = static_cast<int32_t>(AudioMode::AUDIO_MODE_RECORD) + 1;
     int32_t capturerStateCount = static_cast<int32_t>(CapturerState::CAPTURER_PAUSED) + 1;
+    AudioMode mode = static_cast<AudioMode>(GetData<uint8_t>() % modeCount);
+    AudioStreamChangeInfo streamChangeInfo;
     streamChangeInfo.audioCapturerChangeInfo.capturerState =
         static_cast<CapturerState>(GetData<uint8_t>() % capturerStateCount);
     uint32_t sourceTypeCount = GetData<uint32_t>() % SourceTypeVec.size();
     streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = SourceTypeVec[sourceTypeCount];
+}
+
+void RegisteredTrackerClientDiedFuzzTest()
+{
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    int32_t uidCount = static_cast<int32_t>(AudioPipeType::PIPE_TYPE_DIRECT_VOIP) + 1;
+    pid_t uid = static_cast<pid_t>(GetData<uint8_t>() % uidCount);
 }
 
 void UpdateTrackerFuzzTest()
@@ -183,25 +190,6 @@ void UpdateTrackerFuzzTest()
         static_cast<RendererState>(GetData<uint8_t>() % rendererStateCount - 1);
 }
 
-void RegisteredTrackerClientDiedFuzzTest()
-{
-    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
-    int32_t uidCount = static_cast<int32_t>(AudioPipeType::PIPE_TYPE_DIRECT_VOIP) + 1;
-    pid_t uid = static_cast<pid_t>(GetData<uint8_t>() % uidCount);
-}
-
-void OnDeviceStatusUpdatedFuzzTest()
-{
-    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
-    AudioDeviceDescriptor updatedDesc;
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    updatedDesc.deviceType_ = DeviceTypeVec[deviceTypeCount];
-    int32_t connectStateCount = static_cast<int32_t>(ConnectState::DEACTIVE_CONNECTED) + 1;
-    updatedDesc.connectState_ = static_cast<ConnectState>(GetData<uint8_t>() % connectStateCount);
-    bool isConnected = GetData<uint32_t>() % NUM_2;
-    audioDeviceLock->OnDeviceStatusUpdated(updatedDesc, isConnected);
-}
-
 void GetCurrentRendererChangeInfosFuzzTest()
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
@@ -212,10 +200,16 @@ void GetCurrentRendererChangeInfosFuzzTest()
     bool hasSystemPermission = GetData<uint32_t>() % NUM_2;
 }
 
-void GetVolumeGroupInfosFuzzTest()
+void OnDeviceStatusUpdatedFuzzTest()
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
-    audioDeviceLock->audioVolumeManager_.isPrimaryMicModuleInfoLoaded_.store(GetData<uint32_t>() % NUM_2);
+    AudioDeviceDescriptor updatedDesc;
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    int32_t connectStateCount = static_cast<int32_t>(ConnectState::DEACTIVE_CONNECTED) + 1;
+    updatedDesc.deviceType_ = DeviceTypeVec[deviceTypeCount];
+    updatedDesc.connectState_ = static_cast<ConnectState>(GetData<uint8_t>() % connectStateCount);
+    bool isConnected = GetData<uint32_t>() % NUM_2;
+    audioDeviceLock->OnDeviceStatusUpdated(updatedDesc, isConnected);
 }
 
 void SetAudioSceneFuzzTest()
@@ -223,6 +217,12 @@ void SetAudioSceneFuzzTest()
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     int32_t audioSceneCount = static_cast<int32_t>(AudioScene::AUDIO_SCENE_MAX - AudioScene::AUDIO_SCENE_INVALID) + 1;
     AudioScene audioScene = static_cast<AudioScene>(GetData<uint8_t>() % audioSceneCount - 1);
+}
+
+void GetVolumeGroupInfosFuzzTest()
+{
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    audioDeviceLock->audioVolumeManager_.isPrimaryMicModuleInfoLoaded_.store(GetData<uint32_t>() % NUM_2);
 }
 
 void AudioDeviceLockGetDevicesFuzzTest()
@@ -320,18 +320,6 @@ void AudioDeviceLockGetExcludedDevicesFuzzTest()
     audioDeviceLock->GetExcludedDevices(audioDevUsage);
 }
 
-void AudioDeviceLockOnPnpDeviceStatusUpdatedFuzzTest()
-{
-    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
-    if (audioDeviceLock == nullptr) {
-        return;
-    }
-
-    AudioDeviceDescriptor desc;
-    bool isConnected = GetData<uint32_t>() % NUM_2;
-    audioDeviceLock->OnPnpDeviceStatusUpdated(desc, isConnected);
-}
-
 void AudioDeviceLockUpdateSpatializationSupportedFuzzTest()
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
@@ -342,6 +330,18 @@ void AudioDeviceLockUpdateSpatializationSupportedFuzzTest()
     std::string macAddress = "test_mac_address";
     bool support = GetData<uint32_t>() % NUM_2;
     audioDeviceLock->UpdateSpatializationSupported(macAddress, support);
+}
+
+void AudioDeviceLockOnPnpDeviceStatusUpdatedFuzzTest()
+{
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    if (audioDeviceLock == nullptr) {
+        return;
+    }
+
+    AudioDeviceDescriptor desc;
+    bool isConnected = GetData<uint32_t>() % NUM_2;
+    audioDeviceLock->OnPnpDeviceStatusUpdated(desc, isConnected);
 }
 
 void AudioDeviceDescriptorMarshallingToDeviceInfoFuzzTest()

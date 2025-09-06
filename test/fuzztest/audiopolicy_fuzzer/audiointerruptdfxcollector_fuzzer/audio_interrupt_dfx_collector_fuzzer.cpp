@@ -82,8 +82,8 @@ uint32_t GetArrLength(T& arr)
 void FlushDfxMsgFuzzTest()
 {
     AudioInterruptDfxCollector dfxCollector;
-    uint32_t index = 0;
     uint32_t appUid = GetData<uint32_t>();
+    uint32_t index = 0;
     std::list<InterruptDfxInfo> dfxInfoList;
     dfxCollector.dfxInfos_[index] = dfxInfoList;
     dfxCollector.FlushDfxMsg(index, appUid);
@@ -91,22 +91,14 @@ void FlushDfxMsgFuzzTest()
 
 void WriteEffectMsgFuzzTest()
 {
+    int32_t hintTypeCount = static_cast<int32_t>(InterruptHint::INTERRUPT_HINT_UNMUTE) + 1;
     InterruptDfxBuilder dfxBuilder;
-    uint8_t appstate = GetData<uint32_t>();
     std::string bundleName = "com.ohos.test";
     AudioInterrupt audioInterrupt;
-    int32_t hintTypeCount = static_cast<int32_t>(InterruptHint::INTERRUPT_HINT_UNMUTE) + 1;
+    uint8_t appstate = GetData<uint32_t>();
+    
     InterruptHint hintType = static_cast<InterruptHint>(GetData<uint8_t>() % hintTypeCount);
     dfxBuilder.WriteEffectMsg(appstate, bundleName, audioInterrupt, hintType);
-}
-
-void GetDfxIndexesFuzzTest()
-{
-    AudioInterruptDfxCollector dfxCollector;
-    uint32_t index = 0;
-    std::list<InterruptDfxInfo> dfxInfoList;
-    dfxCollector.dfxInfos_[index] = dfxInfoList;
-    dfxCollector.GetDfxIndexes(index);
 }
 
 void WriteActionMsgFuzzTest()
@@ -118,13 +110,13 @@ void WriteActionMsgFuzzTest()
     dfxBuilder.WriteActionMsg(infoIndex, effectIdx, stage);
 }
 
-void WriteInfoMsgFuzzTest()
+void GetDfxIndexesFuzzTest()
 {
-    InterruptDfxBuilder dfxBuilder;
-    AudioInterrupt audioInterrupt;
-    AudioSessionStrategy strategy;
-    InterruptRole interruptType = INTERRUPT_ROLE_DEFAULT;
-    dfxBuilder.WriteInfoMsg(audioInterrupt, strategy, interruptType);
+    AudioInterruptDfxCollector dfxCollector;
+    uint32_t index = 0;
+    std::list<InterruptDfxInfo> dfxInfoList;
+    dfxCollector.dfxInfos_[index] = dfxInfoList;
+    dfxCollector.GetDfxIndexes(index);
 }
 
 void GetFloatValueFuzzTest()
@@ -141,6 +133,15 @@ void IsValidKeyFuzzTest()
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     std::string key = "test";
     settingProvider.IsValidKey(key);
+}
+
+void WriteInfoMsgFuzzTest()
+{
+    InterruptDfxBuilder dfxBuilder;
+    AudioInterrupt audioInterrupt;
+    AudioSessionStrategy strategy;
+    InterruptRole interruptType = INTERRUPT_ROLE_DEFAULT;
+    dfxBuilder.WriteInfoMsg(audioInterrupt, strategy, interruptType);
 }
 
 void SetDataShareReadyFuzzTest()
