@@ -73,10 +73,9 @@ int32_t AudioZoneService::CreateAudioZone(const std::string &name, const AudioZo
         for (auto &pid : zoneReportClientList_) {
             zoneClientManager_->SendZoneAddEvent(pid, zone->GetDescriptor());
         }
-
-        CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
-        interruptService_->CreateAudioInterruptZone(zoneId, context);
     }
+    CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
+    interruptService_->CreateAudioInterruptZone(zoneId, context);
     AUDIO_INFO_LOG("create zone id %{public}d, name %{public}s", zoneId, name.c_str());
     return zoneId;
 }
@@ -496,11 +495,12 @@ int32_t AudioZoneService::GetSystemVolumeLevel(int32_t zoneId, AudioVolumeType v
 
 AudioZoneFocusList AudioZoneService::GetAudioInterruptForZone(int32_t zoneId)
 {
-    std::lock_guard<std::mutex> lock(zoneMutex_);
     AudioZoneFocusList interrupts;
-    CHECK_AND_RETURN_RET_LOG(CheckIsZoneValid(zoneId), interrupts, "zone id %{public}d is not valid", zoneId);
+    {
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        CHECK_AND_RETURN_RET_LOG(CheckIsZoneValid(zoneId), interrupts, "zone id %{public}d is not valid", zoneId);
+    }
     CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, interrupts, "interruptService_ is nullptr");
-
     interruptService_->GetAudioFocusInfoList(zoneId, interrupts);
     return interrupts;
 }
@@ -524,11 +524,12 @@ bool AudioZoneService::CheckZoneExist(int32_t zoneId)
 
 AudioZoneFocusList AudioZoneService::GetAudioInterruptForZone(int32_t zoneId, const std::string &deviceTag)
 {
-    std::lock_guard<std::mutex> lock(zoneMutex_);
     AudioZoneFocusList interrupts;
-    CHECK_AND_RETURN_RET_LOG(CheckIsZoneValid(zoneId), interrupts, "zone id %{public}d is not valid", zoneId);
+    {
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        CHECK_AND_RETURN_RET_LOG(CheckIsZoneValid(zoneId), interrupts, "zone id %{public}d is not valid", zoneId);
+    }
     CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, interrupts, "interruptService_ is nullptr");
-
     interruptService_->GetAudioFocusInfoList(zoneId, deviceTag, interrupts);
     return interrupts;
 }
