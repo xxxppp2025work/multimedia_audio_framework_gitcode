@@ -248,7 +248,7 @@ void HpaeManagerFuzzTest::AudioPortSetUp()
     hpaeManager_->Init();
     std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
     hpaeManager_->RegisterSerivceCallback(callback);
-     AudioModuleInfo sinkAudioModuleInfo = GetSinkAudioModeInfo();
+    AudioModuleInfo sinkAudioModuleInfo = GetSinkAudioModeInfo();
     hpaeManager_->OpenAudioPort(sinkAudioModuleInfo);
     WaitForMsgProcessing(hpaeManager_);
     AudioModuleInfo sourceAudioModuleInfo = GetSourceAudioModeInfo();
