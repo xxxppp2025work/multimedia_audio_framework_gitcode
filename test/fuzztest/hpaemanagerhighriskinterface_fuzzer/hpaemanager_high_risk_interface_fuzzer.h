@@ -206,7 +206,7 @@ public:
     std::vector<uint32_t> sinkInputIdList_;
     std::vector<uint32_t> renderSessionIdList;
     std::vector<uint32_t> captureSessionIdList;
-}
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // HPAE_MANAGER_HIGH_RISK_INTERFACE_FUZZER_H
