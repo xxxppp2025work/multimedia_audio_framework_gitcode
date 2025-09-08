@@ -18,7 +18,8 @@
 #include "audio_service_hpae_callback.h"
 #include "audio_info.h"
 #include "hpae_manager.h"
-using namespace OHOS::AudioStandard::HPAE;
+namespace OHOS {
+namespace AudioStandard {
 class HpaeAudioServiceCallbackFuzzTest : public OHOS::AudioStandard::AudioServiceHpaeCallback {
 public:
     ~HpaeAudioServiceCallbackFuzzTest() override {}
@@ -196,17 +197,16 @@ public:
     void HpaeCaptureStreamManagerMoveFuzzTest();
     void OpenAudioPortFuzzTest();
     void ReloadAudioPortFuzzTest();
-    std::shared_ptr<HpaeManager> hpaeManager_;
-    std::vecotr<std::string> sourceNameList_;
-    std::vecotr<std::string> sinkNameList_;
-    std::vecotr<std::string> audioPortNameList_;
-    std::vecotr<std::string> libList_;
-    std::vecotr<uint32_t> sourceOutputIdList_;
-    std::vecotr<uint32_t> sinkInputIdList_;
-    std::vecotr<uint32_t> renderSessionIdList;
-    std::vecotr<uint32_t> captureSessionIdList;
-    
-
-
+    std::shared_ptr<HPAE::HpaeManager> hpaeManager_;
+    std::vector<std::string> sourceNameList_;
+    std::vector<std::string> sinkNameList_;
+    std::vector<std::string> audioPortNameList_;
+    std::vector<std::string> libList_;
+    std::vector<uint32_t> sourceOutputIdList_;
+    std::vector<uint32_t> sinkInputIdList_;
+    std::vector<uint32_t> renderSessionIdList;
+    std::vector<uint32_t> captureSessionIdList;
 }
+} // namespace AudioStandard
+} // namespace OHOS
 #endif // HPAE_MANAGER_HIGH_RISK_INTERFACE_FUZZER_H
