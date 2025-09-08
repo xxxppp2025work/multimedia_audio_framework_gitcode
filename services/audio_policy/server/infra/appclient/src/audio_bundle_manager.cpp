@@ -31,7 +31,6 @@
 
 namespace {
 constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
-constexpr int32_t API_VERSION_REMAINDER = 1000;
 constexpr int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
 }
 

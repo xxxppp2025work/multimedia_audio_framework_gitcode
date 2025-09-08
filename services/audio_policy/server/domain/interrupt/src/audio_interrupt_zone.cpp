@@ -21,7 +21,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static constexpr uid_t UID_AUDIO = 1041;
 
 AudioInterruptZoneManager::AudioInterruptZoneManager()
 {}

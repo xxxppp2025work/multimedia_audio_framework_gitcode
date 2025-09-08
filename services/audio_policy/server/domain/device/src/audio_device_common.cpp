@@ -797,7 +797,6 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
         outputDevices.front()->deviceType_, GetEncryptAddr(outputDevices.front()->macAddress_).c_str(),
         static_cast<int>(reason));
 
-    DeviceType oldDevice = rendererChangeInfo->outputDeviceInfo.deviceType_;
     auto oldRendererChangeInfo = std::make_shared<AudioRendererChangeInfo>(*rendererChangeInfo.get());
 
     UpdateDeviceInfo(rendererChangeInfo->outputDeviceInfo,

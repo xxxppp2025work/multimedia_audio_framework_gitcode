@@ -30,9 +30,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const int32_t DATA_LINK_CONNECTED = 11;
-static constexpr int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_MS = 200; // 200ms
-static constexpr int32_t RETRY_TIMES = 25;
 
 void AudioDeviceLock::DeInit()
 {

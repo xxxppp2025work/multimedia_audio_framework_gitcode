@@ -22,9 +22,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-namespace {
-static const int64_t DELAY_CONTROL_TIME_NS = 100000000; // 100ms
-}
 void AudioConcurrencyService::Init()
 {
     AUDIO_INFO_LOG("AudioConcurrencyService Init");
