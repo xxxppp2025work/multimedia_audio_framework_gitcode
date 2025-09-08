@@ -3144,5 +3144,29 @@ int32_t AudioCoreService::SetSleVoiceStatusFlag(AudioScene audioScene)
     }
     return SUCCESS;
 }
+
+int32_t AudioCoreService::PlayBackToInjection(uint32_t sessionId)
+{
+    if (!PermissionUtil::VerifySystemPermission()) {
+        return ERR_PERMISSION_DENIED;
+    }
+    if (pipeManager_->IsVoIPCall() == NO_VOIP) {
+        return ERROR;
+    }
+    int32_t ret = audioInjectorPolicy_.Init();
+    //策略
+    return ret;
+}
+
+int32_t AudioCoreService::InjectionToPlayBack(uint32_t sessionId)
+{
+    int32_t ret = ERROR;
+    ret = audioInjectorPolicy_.MoveStream(sessionId, false);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Move Stream out failed");
+    ret = audioInjectorPolicy_.RemoveCaptureInjector();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "RemoveCaptureInjector failed");
+    ret = audioInjectorPolicy_.DeInit();
+     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "DeInit failed");
+    return SUCCESS;
 } // namespace AudioStandard
 } // namespace OHOS

@@ -2304,6 +2304,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     // Otherwise GetBufferDesc will return the buffer pointer of oldStream (causing Use-After-Free).
     UpdateRendererAudioStream(newAudioStream);
     newAudioStream->NotifyRouteUpdate(flag, networkId);
+    // newAudioStream->SetTarget(switchInfo.target);
 
     // Start new stream if old stream was in running state.
     // When restoring for audio server died, no need for restart.

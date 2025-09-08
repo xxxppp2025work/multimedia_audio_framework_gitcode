@@ -26,6 +26,7 @@
 #include "audio_stream_monitor.h"
 #include "audio_stream_checker.h"
 #include "player_dfx_writer.h"
+#include "audio_service_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -151,6 +152,7 @@ public:
     int32_t InitSoftLink(int32_t innerCapId);
     int32_t DestroySoftLink(int32_t innerCapId);
     int32_t InitSoftLinkVolume(std::shared_ptr<HPAE::IHpaeSoftLink> softLinkPtr);
+    int32_t SetTarget(RendererTarget target, int32_t &ret);
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -287,6 +289,8 @@ private:
 
     std::unordered_map<int32_t, SoftLinkInfo> softLinkInfos_;
     FILE *dumpSoftLink = nullptr;
+
+    RendererTarget lastTarget_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

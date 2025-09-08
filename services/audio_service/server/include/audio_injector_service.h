@@ -32,11 +32,12 @@ public:
     void SetSinkPortIdx(uint32_t sinkPortIdx);
     int32_t GetSinkPortIdx();
 private:
-    AudioInjectorService();
+    AudioInjectorService() = default;
+    ~AudioInjectorService() = default;
     AudioInjectorService(const AudioInjectorService&) = delete;
     AudioInjectorService& operator=(const AudioInjectorService&) = delete;
 private:
-    AudioModuleInfo moudleInfo_;
+    AudioModuleInfo moduleInfo_;
     uint32_t sinkPortIndex_;
 };
 } //  namespace AudioStandard

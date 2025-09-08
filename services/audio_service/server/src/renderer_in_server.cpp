@@ -1003,6 +1003,10 @@ int32_t RendererInServer::StartInner()
 {
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
     int32_t ret = 0;
+    if (lastTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
+        ret = CoreServiceHandler::GetInstance().StartInjection(streamIndex_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "StartInjection failed");
+    }
     if (standByEnable_) {
         return StartInnerDuringStandby();
     } else {
@@ -2473,6 +2477,21 @@ bool RendererInServer::IsMovieStream()
 {
     return processConfig_.streamType == STREAM_MOVIE &&
     processConfig_.rendererInfo.originalFlag == AUDIO_FLAG_PCM_OFFLOAD;
+}
+
+int32_t RendererInServer::SetTarget(RendererTarget target, int32_t &ret)
+{
+    if (target == lastTarget_) {
+        ret = SUCCESS;
+        return ret;
+    }
+    if (status_ == I_STATUS_IDLE || status_ == I_STATUS_PAUSED || status_ == I_STATUS_STOPPED) {
+        ret = CoreServiceHandler::GetInstance().SetRendererTarget(target, lastTarget_, streamIndex_);
+        lastTarget_ = target;
+        return ret;
+    }
+    ret = ERR_ILLEGAL_STATE;
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS

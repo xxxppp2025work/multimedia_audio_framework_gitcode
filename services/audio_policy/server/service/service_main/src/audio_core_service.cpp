@@ -83,7 +83,8 @@ AudioCoreService::AudioCoreService()
       audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()),
       audioPipeSelector_(AudioPipeSelector::GetPipeSelector()),
       audioSessionService_(AudioSessionService::GetAudioSessionService()),
-      pipeManager_(AudioPipeManager::GetPipeManager())
+      pipeManager_(AudioPipeManager::GetPipeManager()),
+      audioInjectorPolicy_(AudioInjectorPolicy::GetInstance())
 {
     AUDIO_INFO_LOG("Ctor");
 }
@@ -1518,6 +1519,30 @@ int32_t AudioCoreService::CaptureConcurrentCheck(uint32_t sessionId)
 void AudioCoreService::SetFirstScreenOn()
 {
     isFirstScreenOn_ = true;
+}
+
+int32_t AudioCoreService::SetRendererTarget(RendererTarget target, RendererTarget lastTarget, uint32_t sessionId)
+{
+    int32_t ret = ERROR;
+    if (lastTarget == PLAYBACK_DEFAULT && target == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
+        ret = PlayBackToInjection(sessionId);
+    } else if(lastTarget == INJECT_TO_VOICE_COMMUNICATION_CAPTURE && target == PLAYBACK_DEFAULT) {
+        ret = InjectionToPlayBack(sessionId);
+    }
+    return ret;
+}
+
+int32_t AudioCoreService::StartInjection(uint32_t streamId)
+{
+    if (pipeManager_->IsVoIPCall() == NO_VOIP) {
+        return ERROR;
+    }
+    int32_t ret = ERROR;
+    ret = audioInjectorPolicy_.AddCaptureInjector();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "AddCaptureInjector failed");
+    ret = audioInjectorPolicy_.MoveStream(streamId, true);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Move Stream in failed");
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS
