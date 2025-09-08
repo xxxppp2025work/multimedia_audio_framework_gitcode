@@ -85,13 +85,14 @@ private:
     int32_t CreateCapture(void);
     void DestroyCapture(void);
     void CheckUpdateState(char *frame, size_t replyBytes);
+    void DumpData(char *frame, uint64_t &replyBytes);
 
 private:
     static constexpr uint32_t DEEP_BUFFER_CAPTURE_PERIOD_SIZE = 4096;
     static constexpr uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
     static constexpr int32_t HALF_FACTOR = 2;
     static constexpr uint32_t AUDIO_BUFFER_SIZE = 16 * 1024;
-    static constexpr const char *DUMP_REMOTE_CAPTURE_SOURCE_FILENAME = "dump_remote_audiosource.pcm";
+    static constexpr const char *DUMP_REMOTE_CAPTURE_SOURCE_FILENAME = "dump_remote_audiosource";
 
     const std::string deviceNetworkId_ = "";
     IAudioSourceAttr attr_ = {};
@@ -109,6 +110,9 @@ private:
     int64_t last10FrameStartTime_ = 0;
     bool startUpdate_ = false;
     int captureFrameNum_ = 0;
+    // for dfx log
+    std::string logUtilsTag_ = "RemoteSource";
+    mutable int64_t volumeDataCount_ = 0;
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     bool muteState_ = false;
