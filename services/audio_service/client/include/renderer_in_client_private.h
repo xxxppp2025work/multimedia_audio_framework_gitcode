@@ -502,6 +502,8 @@ private:
     std::optional<pid_t> lastCallStartByUserTid_ = std::nullopt;
 
     std::function<uid_t()> uidGetter_ = [] { return getuid(); };
+
+    uint32_t target_ = 0;
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

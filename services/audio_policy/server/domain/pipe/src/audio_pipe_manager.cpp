@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_pipe_manager.h"
+#include "audio_injector_policy.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -596,6 +597,66 @@ bool AudioPipeManager::IsStreamUsageActive(const StreamUsage &usage)
         }
     }
     return false;
+}
+
+int32_t AudioPipeManager::IsVoIPCall()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto it = curPipeList_.rbegin(); it != curPipeList_.rend(); ++it) {
+        if ((*it)->routeFlag_ & AUDIO_INPUT_FLAG_VOIP) {
+            AudioInjectorPolicy &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+            audioInjectorPolicy.SetCapturePortIdx((*it)->paIndex_);
+            if ((*it)->routeFlag_ & AUDIO_INPUT_FLAG_NORMAL) {
+                return NORMAL_VOIP;
+            } else if ((*it)->routeFlag_ & AUDIO_INPUT_FLAG_FAST) {
+                return FAST_VOIP;
+            }
+        }
+    }
+    return NO_VOIP;
+}
+
+std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetPipeBySessionId(uint32_t sessionId)
+{
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (const auto &pipe : curPipeList_) {
+        if (pipe == nullptr) {
+            continue;
+        }
+        for (const auto &stream : pipe->streamDescriptors_) {
+            if (stream == nullptr) {
+                continue;
+            }
+            if (stream->sessionId_ == sessionId) {
+                AUDIO_INFO_LOG("find pipe: %{public}s by sessionId: %{public}u", pipe->name_.c_str(), sessionId);
+                return pipe;
+            }
+        }
+    }
+    return nullptr;
+}
+
+bool AudioPipeManager::IsPipeAlive(std::shared_ptr<AudioPipeInfo> pipe)
+{
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto iter = curPipeList_.begin(); iter != curPipeList_.end(); iter++) {
+        if (IsSamePipe(pipe, *iter)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+uint32_t AudioPipeManager::GetPaIndexByName(std::string portName)
+{
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto iter = curPipeList_.begin(); iter != curPipeList_.end(); iter++) {
+        CHECK_AND_CONTINUE_LOG((*iter) != nullptr, "iter is null");
+        if ((*iter)->name_ == portName) {
+            return (*iter)->paIndex_;
+        }
+    }
+    return HDI_INVALID_ID;
 }
 } // namespace AudioStandard
 } // namespace OHOS

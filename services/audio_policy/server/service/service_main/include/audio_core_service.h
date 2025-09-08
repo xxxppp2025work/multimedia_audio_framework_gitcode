@@ -48,6 +48,7 @@
 #include "audio_event_utils.h"
 #include "audio_stream_id_allocator.h"
 #include "i_hpae_soft_link.h"
+#include "audio_injector_policy.h"
 namespace OHOS {
 namespace AudioStandard {
 enum OffloadType {
@@ -177,6 +178,8 @@ public:
         std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
         int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) override;
         int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
+        int32_t SetRendererTarget(RendererTarget target, RendererTarget lastTarget, uint32_t sessionId) override;
+        int32_t StartInjection(uint32_t sessionId) override;
 private:
         std::shared_ptr<AudioCoreService> coreService_;
         std::shared_mutex eventMutex_;
@@ -318,6 +321,9 @@ private:
     void SetFirstScreenOn();
     void FetchOutputDupDevice(std::string caller, uint32_t sessionId,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    int32_t SetRendererTarget(RendererTarget target, RendererTarget lastTarget, uint32_t sessionId);
+    int32_t StartInjection(uint32_t sessionId);
+
 private:
     static std::string GetEncryptAddr(const std::string &addr);
     int32_t FetchRendererPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
@@ -523,6 +529,9 @@ private:
     void CheckOpenHearingAidCall(const bool isModemCallRunning, const DeviceType type);
     std::shared_ptr<AudioDeviceDescriptor> GetCaptureClientDevice(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t sessionId);
+    
+    int32_t PlayBackToInjection(uint32_t sessionId);
+    int32_t InjectionToPlayBack(uint32_t sessionId);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;
@@ -609,6 +618,8 @@ private:
         .type = CAST_TYPE_NULL
     };
     bool isFirstScreenOn_ = false;
+
+    AudioInjectorPolicy &audioInjectorPolicy_;
 };
 }
 }

@@ -29,6 +29,11 @@ enum SessionOperationMsg : uint32_t {
     SESSION_OP_MSG_DEFAULT = 0,
     SESSION_OP_MSG_REMOVE_PIPE = 1,
 };
+
+enum RendererTarget {
+    PLAYBACK_DEFAULT = 0,
+    INJECT_TO_VOICE_COMMUNICATION_CAPTURE = 1,
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_SERVICE_ENUM_H
