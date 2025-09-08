@@ -275,7 +275,6 @@ bool AudioCapturerSession::IsStreamValid(const std::shared_ptr<AudioStreamDescri
 bool AudioCapturerSession::FindRunningNormalSession(uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo)
 {
     bool hasSession = false;
-    SourceType tmpSource = SOURCE_TYPE_INVALID;
 
     const std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = AudioPipeManager::GetPipeManager()->GetPipeList();
     std::shared_ptr<AudioPipeInfo> incommingPipe =
