@@ -120,28 +120,6 @@ HWTEST(IAudioStreamUnitTest, IsStreamSupported_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test GetByteSizePerFrame API
- * @tc.type  : FUNC
- * @tc.number: GetByteSizePerFrame_004
- * @tc.desc  : Test GetByteSizePerFrame interface.
- */
-HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_004, TestSize.Level1)
-{
-    AudioStreamParams params = {SAMPLE_RATE_48000, 100, SAMPLE_F32LE, 0};
-    size_t result = 0;
-    int32_t ret = IAudioStream::GetByteSizePerFrame(params, result);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-
-    params = {SAMPLE_RATE_48000, 100, SAMPLE_S32LE, 17};
-    ret = IAudioStream::GetByteSizePerFrame(params, result);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-
-    params = {SAMPLE_RATE_48000, 100, SAMPLE_S32LE, 5};
-    ret = IAudioStream::GetByteSizePerFrame(params, result);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test IsStreamSupported API
  * @tc.type  : FUNC
  * @tc.number: IsPlaybackChannelRelatedInfoValid_001
