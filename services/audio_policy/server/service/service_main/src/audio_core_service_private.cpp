@@ -2773,8 +2773,53 @@ void AudioCoreService::HandleDualStartClient(std::vector<std::pair<DeviceType, D
             make_pair(streamDesc->newDeviceDescs_[1]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG));
     }
 }
+void AudioCoreService::UpdateStreamDevicesForStart(
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Invalid stream desc");
+    HILOG_COMM_INFO("[UpdateStreamDevicesForStart] for stream %{public}d", streamDesc->sessionId_);
+    streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
+    
+    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_INVALID;
+    if (audioSessionService_ != nullptr) {
+        streamUsage = audioSessionService_->GetAudioSessionStreamUsage(GetRealPid(streamDesc));
+    }
+    streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
+    streamDesc->rendererInfo_.streamUsage;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
+        devices.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
+    } else {
+        devices = audioRouterCenter_.FetchOutputDevices(streamUsage, GetRealUid(streamDesc),
+            caller, RouterType::ROUTER_TYPE_NONE, streamDesc->rendererInfo_.privacyType);
+    }
+    AUDIO_INFO_LOG("[AudioSession] streamUsage %{public}d renderer streamUsage %{public}d",
+        streamUsage, streamDesc->rendererInfo_.streamUsage);
+    AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}u",
+        streamDesc->audioFlag_, streamDesc->sessionId_);
+    streamDesc->UpdateNewDevice(devices);
+    
+    HILOG_COMM_INFO("[UpdateStreamDevicesForStart] device %{public}s for stream %{public}d status %{public}u",
+        streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->sessionId_, streamDesc->streamStatus_);
+    SelectA2dpType(streamDesc, false);
+    FetchOutputDupDevice(caller, streamDesc->sessionId_, streamDesc);
+}
 
-void AudioCoreService::HandlePlaybackStreamInA2dp(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+void AudioCoreService::UpdateStreamDevicesForCreate(
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Invalid stream desc");
+    AUDIO_INFO_LOG("[UpdateStreamDevicesForCreate] for stream %{public}d", streamDesc->sessionId_);
+    streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
+    streamDesc->newDeviceDescs_ = audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage,
+    GetRealUid(streamDesc), caller, RouterType::ROUTER_TYPE_NONE, streamDesc->rendererInfo_.privacyType);
+    HILOG_COMM_INFO("[UpdateStreamDevicesForCreate] device %{public}s for stream %{public}d status %{public}u",
+        streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->sessionId_, streamDesc->streamStatus_);
+    SelectA2dpType(streamDesc, true);
+    FetchOutputDupDevice(caller, streamDesc->sessionId_, streamDesc);
+}
+
+void AudioCoreService::SelectA2dpType(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     bool isCreateProcess)
 {
 #ifdef BLUETOOTH_ENABLE
