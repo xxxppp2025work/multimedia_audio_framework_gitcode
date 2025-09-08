@@ -186,16 +186,16 @@ private:
     std::vector<OHOS::AudioStandard::SinkInfo> sinks_;
 };
 
-class HpaeManagerStreamFuzzTest {
+class HpaeManagerFuzzTest {
 public:
-    void SetUp1();
-    void SetUp2();
+    void StreamSetUp();
+    void AudioPortSetUp();
     void TearDown();
 
     void HpaeRenderStreamManagerMoveFuzzTest();
     void HpaeCaptureStreamManagerMoveFuzzTest();
-    void HpaeRenderOpenAudioPortFuzzTest();
-    void HpaeCaptureOpenAudioPortFuzzTest();
+    void OpenAudioPortFuzzTest();
+    void ReloadAudioPortFuzzTest();
     std::shared_ptr<HpaeManager> hpaeManager_;
     std::vecotr<std::string> sourceNameList_;
     std::vecotr<std::string> sinkNameList_;

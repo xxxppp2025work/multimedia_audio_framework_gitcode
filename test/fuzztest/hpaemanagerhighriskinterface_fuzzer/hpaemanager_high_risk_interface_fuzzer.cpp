@@ -143,8 +143,8 @@ AudioModuleInfo GetSinkAudioModeInfo(std::string name = "Speaker_File")
     audioModuleInfo.name = name;
     audioModuleInfo.adapterName = "file_io";
     audioModuleInfo.className = "file_io";
-    audioModuleInfo.bufferSize = "7680";
-    audioModuleInfo.format = "s32le";
+    audioModuleInfo.bufferSize = "3840";
+    audioModuleInfo.format = "s16le";
     audioModuleInfo.fixedLatency = "1";
     audioModuleInfo.offloadEnable = "0";
     audioModuleInfo.networkId = "LocalDevice";
@@ -213,7 +213,7 @@ HPAE::HpaeStreamInfo GetCaptureStreamInfo()
     return streamInfo;
 }
 
-void HpaeManagerStreamFuzzTest::SetUp1()
+void HpaeManagerFuzzTest::StreamSetUp()
 {
     hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
     hpaeManager_->Init();
@@ -241,35 +241,28 @@ void HpaeManagerStreamFuzzTest::SetUp1()
     WaitForMsgProcessing(hpaeManager_);
 }
 
-void HpaeManagerStreamFuzzTest::SetUp2()
+void HpaeManagerFuzzTest::AudioPortSetUp()
 {
     hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
     hpaeManager_->Init();
     std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
     hpaeManager_->RegisterSerivceCallback(callback);
-    audioPortNameList_ = {"Speaker_File", "mic", "test"};
-    libList_ = {"libmodule-hdi-source.z.so", "libmodule-inner-capturer-sink.z.so", "test"};
-}
-
-void HpaeManagerStreamFuzzTest::SetUp3()
-{
-    hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
-    hpaeManager_->Init();
-    std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
-    hpaeManager_->RegisterSerivceCallback(callback);
-    AudioModuleInfo sinkAudioModuleInfo = GetSinkAudioModeInfo();
+     AudioModuleInfo sinkAudioModuleInfo = GetSinkAudioModeInfo();
     hpaeManager_->OpenAudioPort(sinkAudioModuleInfo);
+    WaitForMsgProcessing(hpaeManager_);
+    AudioModuleInfo sourceAudioModuleInfo = GetSourceAudioModeInfo();
+    hpaeManager_->OpenAudioPort(sourceAudioModuleInfo);
     audioPortNameList_ = {"Speaker_File", "mic", "test"};
-    libList_ = {"libmodule-hdi-source.z.so", "libmodule-inner-capturer-sink.z.so", "test"};
+    libList_ = {"libmodule-hdi-source.z.so", "libmodule-inner-capturer-sink.z.so", "libmodule-hdi-sink.z.so", "test"};
 }
 
 void TearDown()
 {
     hpaeManager_->DeInit();
 }
-void HpaeManagerStreamFuzzTest::HpaeCaptureStreamManagerMoveFuzzTest()
+void HpaeManagerFuzzTest::HpaeCaptureStreamManagerMoveFuzzTest()
 {
-    SetUp1();
+    StreamSetUp();
     uint32_t sessionId = sourceOutputIdList_[GetData<uint32_t>() % sourceOutputIdList_.size()];
     uint32_t sourceIndex = GetData<uint32_t>();
     std::string sourceName = sourceNameList_[GetData<uint32_t>() % sourceOutputIdList_.size()];
@@ -277,9 +270,9 @@ void HpaeManagerStreamFuzzTest::HpaeCaptureStreamManagerMoveFuzzTest()
     TearDown();
 }
 
-void HpaeManagerStreamFuzzTest::HpaeRenderStreamManagerMoveFuzzTest()
+void HpaeManagerFuzzTest::HpaeRenderStreamManagerMoveFuzzTest()
 {
-    SetUp1();
+    StreamSetUp();
     uint32_t sessionId = sinkInputIdList_[GetData<uint32_t>() % sinkInputIdList_.size()];
     uint32_t sinkIndex = GetData<uint32_t>();
     std::string sinkName = sinkNameList_[GetData<uint32_t>() % sinkInputIdList_.size()];
@@ -287,47 +280,21 @@ void HpaeManagerStreamFuzzTest::HpaeRenderStreamManagerMoveFuzzTest()
     TearDown();
 }
 
-void HpaeManagerStreamFuzzTest::HpaeRenderOpenAudioPortFuzzTest()
+void HpaeManagerFuzzTest::OpenAudioPortFuzzTest()
 {
-    SetUp2();
-    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
-    hpaeManager_->OpenAudioPort(audioModuleInfo);
-    audioModuleInfo.lib = libList_[GetData<uint32_t>() % libList_.size()];
-    audioModuleInfo.name = audioPortNameList_[GetData<uint32_t>() % libList_.size()];
-    audioModuleInfo.class_name = DeviceClassList[GetData<uint32_t>() % DeviceClassList.size()];
-    hpaeManager_->OpenAudioPort(audioModuleInfo)
-    TearDown();
-}
-
-void HpaeManagerStreamFuzzTest::HpaeCaptureOpenAudioPortFuzzTest()
-{
-    SetUp2();
+    AudioPortSetUp();
     AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
     hpaeManager_->OpenAudioPort(audioModuleInfo);
-    audioModuleInfo .lib = libList_[GetData<uint32_t>() % libList_.size()];
-    audioModuleInfo.name = audioPortNameList_[GetData<uint32_t>() % libList_.size()];
-    DeviceType deviceType = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
-    audioModuleInfo.class_name = DeviceClassList[GetData<uint32_t>() % DeviceClassList.size()];
-    hpaeManager_->OpenAudioPort(audioModuleInfo)
-    TearDown();
-}
-
-void HpaeManagerStreamFuzzTest::OpenAudioPortFuzzTest()
-{
-    SetUp2();
-    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
-    hpaeManager_->OpenAudioPort(audioModuleInfo);
     audioModuleInfo.lib = libList_[GetData<uint32_t>() % libList_.size()];
     audioModuleInfo.name = audioPortNameList_[GetData<uint32_t>() % libList_.size()];
-    DeviceType deviceType = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
     audioModuleInfo.class_name = DeviceClassList[GetData<uint32_t>() % DeviceClassList.size()];
     hpaeManager_->OpenAudioPort()
     TearDown();
 }
 
-void HpaeManagerStreamFuzzTest::HpaeRenderReloadAudioPortFuzzTest()
+void HpaeManagerFuzzTest::ReloadAudioPortFuzzTest()
 {
-    SetUp3();
+    AudioPortSetUp();
     AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
     audioModuleInfo.lib = libList_[GetData<uint32_t>() % libList_.size()];
     audioModuleInfo.name = audioPortNameList_[GetData<uint32_t>() % libList_.size()];
@@ -338,40 +305,33 @@ void HpaeManagerStreamFuzzTest::HpaeRenderReloadAudioPortFuzzTest()
 
 void HpaeRenderStreamManagerMoveFuzzTest()
 {
-    HpaeManagerStreamFuzzTest t;
+    HpaeManagerFuzzTest t;
     t.HpaeRenderStreamManagerMoveFuzzTest();
 }
 
 void HpaeCaptureStreamManagerMoveFuzzTest()
 {
-    HpaeManagerStreamFuzzTest t;
+    HpaeManagerFuzzTest t;
     t.HpaeCaptureStreamManagerMoveFuzzTest();
 }
 
-void HpaeRenderOpenAudioPortFuzzTest()
+void OpenAudioPortFuzzTest()
 {
-    HpaeManagerStreamFuzzTest t;
-    t.HpaeRenderOpenAudioPortFuzzTest();
+    HpaeManagerFuzzTest t;
+    t.OpenAudioPortFuzzTest();
 }
 
-void HpaeCaptureOpenAudioPortFuzzTest()
+void ReloadAudioPortFuzzTest()
 {
-    HpaeManagerStreamFuzzTest t;
-    t.HpaeCaptureOpenAudioPortFuzzTest();
-}
-
-void HpaeRenderReloadAudioPortFuzzTest()
-{
-    HpaeManagerStreamFuzzTest t;
-    t.HpaeRenderReloadAudioPortFuzzTest();
+    HpaeManagerFuzzTest t;
+    t.ReloadAudioPortFuzzTest();
 }
 
 TestFuncs g_testFuncs[] = {
     HpaeRenderStreamManagerMoveFuzzTest,
     HpaeCaptureStreamManagerMoveFuzzTest,
-    HpaeRenderOpenAudioPortFuzzTest,
-    HpaeCaptureOpenAudioPortFuzzTest,
-    HpaeRenderReloadAudioPortFuzzTest,
+    OpenAudioPortFuzzTest,
+    ReloadAudioPortFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
