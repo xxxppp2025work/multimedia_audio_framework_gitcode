@@ -114,6 +114,7 @@ enum HpaeSourceInputNodeType {
     HPAE_SOURCE_MIC_EC,
     HPAE_SOURCE_EC,
     HPAE_SOURCE_MICREF,
+    HPAE_SOURCE_OFFLOAD,
 };
 
 struct HpaeDfxNodeInfo {
@@ -122,6 +123,7 @@ struct HpaeDfxNodeInfo {
     uint32_t frameLen;
     size_t historyFrameCount;
     AudioSamplingRate samplingRate;
+    uint32_t customSampleRate = 0;
     AudioSampleFormat format = AudioSampleFormat::SAMPLE_F32LE;
     AudioChannel channels;
     AudioChannelLayout channelLayout = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
