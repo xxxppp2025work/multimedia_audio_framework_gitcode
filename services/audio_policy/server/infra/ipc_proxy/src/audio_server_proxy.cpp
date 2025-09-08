@@ -68,7 +68,6 @@ float AudioServerProxy::GetMaxAmplitudeProxy(bool flag, std::string portName, So
 
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     float maxAmplitude = 0;
-    int32_t rest = gsp->GetMaxAmplitude(flag, portName, sourceType, maxAmplitude);
     IPCSkeleton::SetCallingIdentity(identity);
     return maxAmplitude;
 }
@@ -413,7 +412,6 @@ bool AudioServerProxy::LoadAudioEffectLibrariesProxy(const std::vector<Library> 
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     bool hasEffectsLoaded = false;
-    int32_t res = gsp->LoadAudioEffectLibraries(libraries, effects, successEffectList, hasEffectsLoaded);
     IPCSkeleton::SetCallingIdentity(identity);
     return hasEffectsLoaded;
 }

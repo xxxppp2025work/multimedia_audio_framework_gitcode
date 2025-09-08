@@ -21,7 +21,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static constexpr uid_t UID_AUDIO = 1041;
 
 AudioInterruptZoneManager::AudioInterruptZoneManager()
 {}
@@ -114,7 +113,6 @@ int32_t AudioInterruptZoneManager::ReleaseAudioInterruptZone(const int32_t zoneI
             it->first.streamUsage == STREAM_USAGE_MOVIE)) {
             ForceStopAudioFocusInZone(zoneId, it->first);
         } else {
-            int32_t destZoneId = func(it->first.uid, it->first.deviceTag, "", it->first.streamUsage);
             service_->ActivateAudioInterruptInternal(zoneId, it->first, false, updateScene);
         }
     }
