@@ -26,42 +26,55 @@
 #include "audio_source_type.h"
 #include "audio_ring_cache.h"
 #include "audio_thread_task.h"
-using namespace std;
+#include "../fuzz_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
-const int32_t LIMITSIZE = 4;
+using namespace std;
 static const std::string THREAD_NAME = "FuzzTestThreadName";
+FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
+typedef void (*TestFuncs)();
 
-void AudioThreadTaskFuzzTest(const uint8_t* rawData, size_t size)
+void AudioThreadTaskFuzzTest()
 {
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
     std::unique_ptr<AudioThreadTask> audioThreadTask;
     audioThreadTask = std::make_unique<AudioThreadTask>(THREAD_NAME);
+    CHECK_AND_RETURN(audioThreadTask != nullptr);
     auto myJob = []() {
         AUDIO_INFO_LOG("Hello Fuzz Test!");
     };
+    audioThreadTask->state_ = g_fuzzUtils.GetData<AudioThreadTask::RunningState>();
     audioThreadTask->RegisterJob(std::move(myJob));
+    audioThreadTask->state_ = g_fuzzUtils.GetData<AudioThreadTask::RunningState>();
     audioThreadTask->Start();
+    audioThreadTask->state_ = g_fuzzUtils.GetData<AudioThreadTask::RunningState>();
     audioThreadTask->CheckThreadIsRunning();
+    audioThreadTask->state_ = g_fuzzUtils.GetData<AudioThreadTask::RunningState>();
     audioThreadTask->Pause();
+    audioThreadTask->state_ = g_fuzzUtils.GetData<AudioThreadTask::RunningState>();
     audioThreadTask->Start();
+    audioThreadTask->state_ = g_fuzzUtils.GetData<AudioThreadTask::RunningState>();
     audioThreadTask->PauseAsync();
+    audioThreadTask->state_ = g_fuzzUtils.GetData<AudioThreadTask::RunningState>();
     audioThreadTask->Start();
+    audioThreadTask->state_ = g_fuzzUtils.GetData<AudioThreadTask::RunningState>();
     audioThreadTask->StopAsync();
+    audioThreadTask->state_ = g_fuzzUtils.GetData<AudioThreadTask::RunningState>();
     audioThreadTask->Start();
+    audioThreadTask->state_ = g_fuzzUtils.GetData<AudioThreadTask::RunningState>();
     audioThreadTask->Stop();
 }
 
+vector<TestFuncs> g_testFuncs = {
+    AudioThreadTaskFuzzTest,
+};
 } // namespace AudioStandard
-} // namesapce OHOS
+} // namespace OHOS
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Run your code on data */
-    OHOS::AudioStandard::AudioThreadTaskFuzzTest(data, size);
+    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
     return 0;
 }

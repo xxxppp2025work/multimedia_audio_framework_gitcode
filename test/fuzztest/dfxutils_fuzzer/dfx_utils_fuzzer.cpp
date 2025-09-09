@@ -18,6 +18,7 @@
 #include "audio_log.h"
 #include "dfx_utils.h"
 #include "../fuzz_utils.h"
+#include <fuzzer/FuzzedDataProvider.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -25,20 +26,33 @@ using namespace std;
 
 FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
+const int32_t COUNT = 100;
+const size_t MAX_BUNDLE_NAME_LENGTH = 64;
+static const uint8_t* RAW_DATA = nullptr;
+static size_t g_dataSize = 0;
 
 typedef void (*TestFuncs)();
-
 void SerializeToJSONString1FuzzTest()
 {
     DfxUtils dfxUtils;
-    RendererStats data;
+    CapturerStats data;
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    data.samplingRate = provider.ConsumeIntegralInRange<uint32_t>(0, COUNT - 1);
+    data.duration = provider.ConsumeIntegralInRange<uint64_t>(0, COUNT - 1);
     dfxUtils.SerializeToJSONString(data);
 }
 
 void SerializeToJSONString2FuzzTest()
 {
     DfxUtils dfxUtils;
-    CapturerStats data;
+    RendererStats data;
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    data.samplingRate = provider.ConsumeIntegralInRange<uint32_t>(0, COUNT - 1);
+    data.duration = provider.ConsumeIntegralInRange<uint64_t>(0, COUNT - 1);
+    data.underrunCnt = provider.ConsumeIntegralInRange<uint32_t>(0, COUNT - 1);
+    data.originalFlag = provider.ConsumeIntegralInRange<uint16_t>(0, COUNT - 1);
+    data.zeroDataPercent = provider.ConsumeIntegralInRange<uint16_t>(0, COUNT - 1);
+    data.frameWritten = provider.ConsumeIntegralInRange<int64_t>(0, COUNT - 1);
     dfxUtils.SerializeToJSONString(data);
 }
 
@@ -47,10 +61,11 @@ void SerializeToJSONString3FuzzTest()
     DfxUtils dfxUtils;
     std::vector<InterruptEffect> data;
     InterruptEffect gameEffect;
-    gameEffect.bundleName = "com.example.game";
-    gameEffect.streamUsage = g_fuzzUtils.GetData<uint8_t>();
-    gameEffect.appState = g_fuzzUtils.GetData<uint8_t>();
-    gameEffect.interruptEvent = g_fuzzUtils.GetData<uint8_t>();
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string moduleName = provider.ConsumeRandomLengthString (MAX_BUNDLE_NAME_LENGTH);
+    gameEffect.streamUsage = provider.ConsumeIntegralInRange<uint8_t>(0, COUNT - 1);
+    gameEffect.appState = provider.ConsumeIntegralInRange<uint8_t>(0, COUNT - 1);
+    gameEffect.interruptEvent = provider.ConsumeIntegralInRange<uint8_t>(0, COUNT - 1);
     data.push_back(gameEffect);
     dfxUtils.SerializeToJSONString(data);
 }

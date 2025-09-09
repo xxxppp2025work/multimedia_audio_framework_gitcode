@@ -111,7 +111,7 @@ void SaveAppInfoFuzzTest()
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
     DfxRunningAppInfo info;
-    info.appUid = 1;
+    info.appUid = GetData<int32_t>();
     dfxMsgManager.SaveAppInfo(info);
 }
 
@@ -122,8 +122,7 @@ void ProcessCheckFuzzTest()
     RenderDfxInfo renderInfo;
     InterruptDfxInfo interruptInfo;
     CapturerDfxInfo captureInfo;
-    msg.appUid = 1;
-    
+    msg.appUid = GetData<int32_t>() % COUNT;
     for (int i = 0; i < COUNT; i++) {
         msg.renderInfo.push_back(renderInfo);
     }
@@ -145,7 +144,7 @@ void ProcessFuzzTest()
 void ProcessInnerFuzzTest()
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
-    uint32_t index = 0;
+    uint32_t index = GetData<uint32_t>() % COUNT;
     std::list<RenderDfxInfo> dfxInfo;
     std::list<RenderDfxInfo> curDfxInfo;
     RenderDfxInfo renderInfo;
@@ -160,6 +159,7 @@ void EnqueueFuzzTest()
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
     DfxMessage msg;
+    msg.appUid = GetData<int32_t>() % COUNT;
     dfxMsgManager.isFull_ = GetData<uint32_t>() % NUM_2;
     dfxMsgManager.Enqueue(msg);
 }
@@ -168,6 +168,7 @@ void HandleToHiSysEventFuzzTest()
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
     DfxMessage msg;
+    msg.appUid = GetData<int32_t>() % COUNT;
     dfxMsgManager.reportedCnt_ = GetData<uint32_t>();
     dfxMsgManager.reportQueue_.clear();
     dfxMsgManager.HandleToHiSysEvent(msg);
@@ -179,7 +180,7 @@ void GetAdapterNameBySessionIdFuzzTest()
     DfxMessage msg;
     RenderDfxInfo renderInfo;
     std::unique_ptr<DfxReportResult> bean = std::make_unique<DfxReportResult>();
-    msg.appUid = 1;
+    msg.appUid = GetData<int32_t>() % COUNT;
     dfxMsgManager.reportQueue_.clear();
     for (int i = 0; i < COUNT; i++) {
         msg.renderInfo.push_back(renderInfo);
@@ -193,7 +194,7 @@ void WriteInterruptMsgFuzzTest()
     DfxMessage msg;
     InterruptDfxInfo interruptInfo;
     std::unique_ptr<DfxReportResult> bean = std::make_unique<DfxReportResult>();
-    msg.appUid = 1;
+    msg.appUid = GetData<int32_t>() % COUNT;
     for (int i = 0; i < COUNT; i++) {
         msg.interruptInfo.push_back(interruptInfo);
     }
@@ -206,6 +207,8 @@ void WritePlayAudioStatsEventFuzzTest()
     std::unique_ptr<DfxReportResult> result = nullptr;
     dfxMsgManager.WritePlayAudioStatsEvent(result);
     result = std::make_unique<DfxReportResult>();
+    CHECK_AND_RETURN(result != nullptr);
+    result->summary = GetData<uint64_t>() % COUNT;
     dfxMsgManager.WritePlayAudioStatsEvent(result);
 }
 
@@ -239,7 +242,7 @@ void IsMsgReadyFuzzTest()
     RenderDfxInfo renderInfo;
     InterruptDfxInfo interruptInfo;
     CapturerDfxInfo captureInfo;
-    msg.appUid = 1;
+    msg.appUid = GetData<int32_t>() % COUNT;
     for (int i = 0; i < COUNT; i++) {
         msg.interruptInfo.push_back(interruptInfo);
     }
@@ -266,10 +269,8 @@ void WriteRunningAppMsgFuzzTest()
     DfxMessage msg;
     std::unique_ptr<DfxReportResult> result = std::make_unique<DfxReportResult>();
     DfxRunningAppInfo appinfo;
-    msg.appUid = 1;
-    appinfo.appUid = 1;
-    appinfo.appName = "appName";
-    appinfo.versionName = "1.0";
+    msg.appUid = GetData<int32_t>() % COUNT;
+    appinfo.appUid = GetData<int32_t>() % COUNT;
     appinfo.appStateVec.push_back(1);
     appinfo.appStateTimeStampVec.push_back(1);
     dfxMsgManager.WriteRunningAppMsg(msg, result);

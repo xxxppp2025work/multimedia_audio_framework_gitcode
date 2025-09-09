@@ -50,6 +50,18 @@ public:
     }
 };
 
+class DataTransferStateChangeCallbackTest : public AudioRendererDataTransferStateChangeCallback {
+public:
+    void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) override
+    {
+        return;
+    }
+    void OnMuteStateChange(const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) override
+    {
+        return;
+    }
+};
+
 void SetWakeupSourceCallbackFuzzTest()
 {
     AudioManagerListenerStubImpl audioManagerListenerStubImpl;
@@ -99,7 +111,13 @@ void AddDataTransferStateChangeCallbackFuzzTest()
 {
     AudioManagerListenerStubImpl audioManagerListenerStubImpl;
     DataTransferMonitorParam param;
-    std::shared_ptr<AudioRendererDataTransferStateChangeCallback> cb;
+    param.clientUID = g_fuzzUtils.GetData<int32_t>();
+    param.badDataTransferTypeBitMap = g_fuzzUtils.GetData<int32_t>();
+    param.timeInterval = g_fuzzUtils.GetData<int64_t>();
+    param.badFramesRatio = g_fuzzUtils.GetData<int32_t>();
+    std::shared_ptr<DataTransferStateChangeCallbackTest> cb =
+        std::make_shared<DataTransferStateChangeCallbackTest>();
+    CHECK_AND_RETURN(cb != nullptr);
     audioManagerListenerStubImpl.AddDataTransferStateChangeCallback(param, cb);
 }
 
@@ -107,7 +125,13 @@ void RemoveDataTransferStateChangeCallbackFuzzTest()
 {
     AudioManagerListenerStubImpl audioManagerListenerStubImpl;
     DataTransferMonitorParam param;
-    std::shared_ptr<AudioRendererDataTransferStateChangeCallback> cb;
+    param.clientUID = g_fuzzUtils.GetData<int32_t>();
+    param.badDataTransferTypeBitMap = g_fuzzUtils.GetData<int32_t>();
+    param.timeInterval = g_fuzzUtils.GetData<int64_t>();
+    param.badFramesRatio = g_fuzzUtils.GetData<int32_t>();
+    std::shared_ptr<DataTransferStateChangeCallbackTest> cb =
+        std::make_shared<DataTransferStateChangeCallbackTest>();
+    CHECK_AND_RETURN(cb != nullptr);
     audioManagerListenerStubImpl.AddDataTransferStateChangeCallback(param, cb);
     audioManagerListenerStubImpl.RemoveDataTransferStateChangeCallback(cb);
 }

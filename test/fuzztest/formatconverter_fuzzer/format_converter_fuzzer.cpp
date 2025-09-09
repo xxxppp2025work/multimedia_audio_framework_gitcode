@@ -63,12 +63,12 @@ void S16StereoToF32StereoFuzzTest()
     BufferDesc dstDesc;
     uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
     uint8_t dstBuffer[BUFFER_SIZE_LARGE] = {0};
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_MEDIUM + 1);
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_SMALL;
+    dstDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_SMALL + 1);
     dstDesc.buffer = dstBuffer;
     FormatConverter::S16StereoToF32Stereo(srcDesc, dstDesc);
-    dstDesc.bufLength = BUFFER_SIZE_LARGE;
+    dstDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_LARGE + 1);
     FormatConverter::S16StereoToF32Stereo(srcDesc, dstDesc);
 }
 
@@ -78,12 +78,12 @@ void S16StereoToF32MonoFuzzTest()
     BufferDesc dstDesc;
     uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
     uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.bufLength = g_fuzzUtils.GetData<size_t>() % (BUFFER_SIZE_MEDIUM + 1);
+    dstDesc.bufLength = g_fuzzUtils.GetData<size_t>() % (BUFFER_SIZE_MEDIUM + 1);
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_SMALL;
     dstDesc.buffer = dstBuffer;
     FormatConverter::S16StereoToF32Mono(srcDesc, dstDesc);
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = g_fuzzUtils.GetData<size_t>() % (BUFFER_SIZE_MEDIUM + 1);
     FormatConverter::S16StereoToF32Mono(srcDesc, dstDesc);
 }
 
@@ -93,12 +93,12 @@ void F32MonoToS16StereoFuzzTest()
     BufferDesc dstDesc;
     uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
     uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.bufLength = g_fuzzUtils.GetData<size_t>() % (BUFFER_SIZE_LARGE + 1);
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_SMALL;
+    dstDesc.bufLength = g_fuzzUtils.GetData<size_t>() % (BUFFER_SIZE_MEDIUM + 1);
     dstDesc.buffer = dstBuffer;
     FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = g_fuzzUtils.GetData<size_t>() % (BUFFER_SIZE_MEDIUM + 1);
     FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
 }
 
@@ -108,12 +108,12 @@ void F32StereoToS16StereoFuzzTest()
     BufferDesc dstDesc;
     uint8_t srcBuffer[BUFFER_SIZE_LARGE] = {0};
     uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    srcDesc.bufLength = BUFFER_SIZE_LARGE;
+    srcDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_LARGE + 1);
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_SMALL;
+    dstDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_SMALL + 1);
     dstDesc.buffer = dstBuffer;
     FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_MEDIUM + 1);
     FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
 }
 
@@ -123,9 +123,9 @@ void S16MonoToS16StereoFuzzTest()
     BufferDesc dstDesc;
     uint8_t srcBuffer[BUFFER_SIZE_LARGE] = {0};
     uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    srcDesc.bufLength = BUFFER_SIZE_SMALL;
+    srcDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_SMALL + 1);
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_LARGE;
+    dstDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_LARGE + 1);
     dstDesc.buffer = dstBuffer;
     FormatConverter::S16MonoToS16Stereo(srcDesc, dstDesc);
     srcDesc.buffer = nullptr;
@@ -156,9 +156,9 @@ void FormatConverterS32MonoToS16StereoFuzzTest()
     uint8_t srcBuffer[BUFFER_SIZE_LARGE] = {0};
     uint8_t dstBuffer[BUFFER_SIZE_LARGE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_LARGE;
+    srcDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_LARGE + 1);
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_LARGE;
+    dstDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_LARGE + 1);
     dstDesc.buffer = dstBuffer;
     FormatConverter::S32MonoToS16Stereo(srcDesc, dstDesc);
 }
@@ -170,9 +170,9 @@ void FormatConverterS32StereoToS16StereoFuzzTest()
     uint8_t srcBuffer[BUFFER_SIZE_LARGE] = {0};
     uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_LARGE;
+    srcDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_LARGE + 1);
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_MEDIUM + 1);
     dstDesc.buffer = dstBuffer;
     FormatConverter::S32StereoToS16Stereo(srcDesc, dstDesc);
 }
@@ -184,9 +184,9 @@ void FormatConverterS16StereoToS32StereoFuzzTest()
     uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
     uint8_t dstBuffer[BUFFER_SIZE_LARGE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_MEDIUM + 1);
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_LARGE;
+    dstDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_LARGE + 1);
     dstDesc.buffer = dstBuffer;
     FormatConverter::S16StereoToS32Stereo(srcDesc, dstDesc);
 }
@@ -198,9 +198,9 @@ void FormatConverterS16MonoToS32StereoFuzzTest()
     uint8_t srcBuffer[BUFFER_SIZE_SMALL] = {0};
     uint8_t dstBuffer[BUFFER_SIZE_LARGE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_SMALL;
+    srcDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_SMALL + 1);
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_LARGE;
+    dstDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_LARGE + 1);
     dstDesc.buffer = dstBuffer;
     FormatConverter::S16MonoToS32Stereo(srcDesc, dstDesc);
 }
@@ -212,9 +212,9 @@ void FormatConverterS32MonoToS32StereoFuzzTest()
     uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
     uint8_t dstBuffer[BUFFER_SIZE_LARGE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_MEDIUM + 1);
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_LARGE;
+    dstDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_LARGE + 1);
     dstDesc.buffer = dstBuffer;
     FormatConverter::S32MonoToS32Stereo(srcDesc, dstDesc);
     FormatConverter::F32MonoToS32Stereo(srcDesc, dstDesc);
@@ -227,9 +227,9 @@ void FormatConverterF32StereoToS32StereoFuzzTest()
     uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
     uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_MEDIUM + 1);
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = g_fuzzUtils.GetData<uint32_t>() % (BUFFER_SIZE_MEDIUM + 1);
     dstDesc.buffer = dstBuffer;
     FormatConverter::F32StereoToS32Stereo(srcDesc, dstDesc);
 }

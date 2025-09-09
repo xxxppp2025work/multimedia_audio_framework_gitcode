@@ -42,6 +42,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
+const uint8_t MAXLEN = 9;
 
 typedef void (*TestFuncs)();
 
@@ -108,7 +109,14 @@ void OffloadStartPlayingFuzzTest()
     constexpr int32_t stateCount = static_cast<int32_t>(BluetoothOffloadState::A2DP_OFFLOAD) + 1;
     BluetoothOffloadState state = static_cast<BluetoothOffloadState>(GetData<int32_t>() % stateCount);
     manager->SetA2dpOffloadFlag(state);
-    std::vector<int32_t> sessionIds = {1, 2, 3};
+    std::vector<int32_t> sessionIds;
+    uint8_t lenSessions = GetData<uint8_t>() % MAXLEN;
+    for (uint8_t i = 0; i < lenSessions; ++i) {
+        sessionIds.push_back(GetData<int32_t>());
+    }
+    if (sessionIds.empty() && (GetData<uint8_t>() & 1)) {
+        sessionIds.push_back(GetData<int32_t>());
+    }
     constexpr int32_t a2dpOffloadConnectionStateCount =
         static_cast<int32_t>(A2dpOffloadConnectionState::CONNECTION_STATUS_TIMEOUT) + 1;
     A2dpOffloadConnectionState currentOffloadConnectionState =
@@ -124,7 +132,14 @@ void OffloadStopPlayingFuzzTest()
     constexpr int32_t stateCount = static_cast<int32_t>(BluetoothOffloadState::A2DP_OFFLOAD) + 1;
     BluetoothOffloadState state = static_cast<BluetoothOffloadState>(GetData<int32_t>() % stateCount);
     manager->SetA2dpOffloadFlag(state);
-    std::vector<int32_t> sessionIds = {1, 2, 3};
+    std::vector<int32_t> sessionIds;
+    uint8_t lenSessions = GetData<uint8_t>() % MAXLEN;
+    for (uint8_t i = 0; i < lenSessions; ++i) {
+        sessionIds.push_back(static_cast<int32_t>(GetData<uint32_t>()));
+    }
+    if (sessionIds.empty() && (GetData<uint8_t>() & 1)) {
+        sessionIds.push_back(static_cast<int32_t>(GetData<uint32_t>()));
+    }
     manager->OffloadStopPlaying(sessionIds);
 }
 
@@ -139,7 +154,14 @@ void HandleA2dpDeviceOutOffloadFuzzTest()
     BluetoothOffloadState a2dpOffloadFlag = static_cast<BluetoothOffloadState>(GetData<int32_t>() % stateCount);
     AudioDeviceDescriptor deviceDescriptor;
     deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    std::vector<int32_t> allRunningSessions = {1};
+    std::vector<int32_t> allRunningSessions;
+    uint8_t lenRun = GetData<uint8_t>() % MAXLEN;
+    for (uint8_t i = 0; i < lenRun; ++i) {
+        allRunningSessions.push_back(static_cast<int32_t>(GetData<uint32_t>()));
+    }
+    if (allRunningSessions.empty() && (GetData<uint8_t>() & 1)) {
+        allRunningSessions.push_back(static_cast<int32_t>(GetData<uint32_t>()));
+    }
     manager->HandleA2dpDeviceOutOffload(a2dpOffloadFlag, allRunningSessions);
 }
 
@@ -161,7 +183,14 @@ void HandleA2dpDeviceInOffloadFuzzTest()
     constexpr int32_t a2dpOffloadFlagCount = static_cast<int32_t>(BluetoothOffloadState::A2DP_OFFLOAD) + 1;
     BluetoothOffloadState a2dpOffloadFlag =
         static_cast<BluetoothOffloadState>(GetData<int32_t>() % a2dpOffloadFlagCount);
-    std::vector<int32_t> allRunningSessions = {1};
+    std::vector<int32_t> allRunningSessions;
+    uint8_t lenRun = GetData<uint8_t>() % MAXLEN;
+    for (uint8_t i = 0; i < lenRun; ++i) {
+        allRunningSessions.push_back(static_cast<int32_t>(GetData<uint32_t>()));
+    }
+    if (allRunningSessions.empty() && (GetData<uint8_t>() & 1)) {
+        allRunningSessions.push_back(static_cast<int32_t>(GetData<uint32_t>()));
+    }
     manager->HandleA2dpDeviceInOffload(a2dpOffloadFlag, allRunningSessions);
 }
 
@@ -193,7 +222,10 @@ void IsA2dpOffloadConnectingFuzzTest()
 {
     shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
-    manager->connectionTriggerSessionIds_ = {123};
+    uint8_t lenTrig = GetData<uint8_t>() % MAXLEN;
+    for (uint8_t i = 0; i < lenTrig; ++i) {
+        manager->connectionTriggerSessionIds_.push_back(static_cast<int32_t>(GetData<uint32_t>()));
+    }
     constexpr int32_t currentOffloadConnectionStateCount =
         static_cast<int32_t>(A2dpOffloadConnectionState::CONNECTION_STATUS_TIMEOUT) + 1;
     A2dpOffloadConnectionState currentOffloadConnectionState =

@@ -16,71 +16,15 @@
 #include "audio_stream_collector.h"
 #include "istandard_client_tracker.h"
 #include "audio_client_tracker_callback_listener.h"
+#include "../fuzz_utils.h"
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-
+FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 AudioStreamCollector audioStreamCollector_;
 const int32_t NUM_2 = 2;
-typedef void (*TestPtr)(const uint8_t *, size_t);
-
-const vector<RendererState> g_testRendererState = {
-    RENDERER_INVALID,
-    RENDERER_NEW,
-    RENDERER_PREPARED,
-    RENDERER_RUNNING,
-    RENDERER_STOPPED,
-    RENDERER_RELEASED,
-    RENDERER_PAUSED,
-};
-
-const vector<AudioPipeType> g_testPipeTypes = {
-    PIPE_TYPE_UNKNOWN,
-    PIPE_TYPE_NORMAL_OUT,
-    PIPE_TYPE_NORMAL_IN,
-    PIPE_TYPE_LOWLATENCY_OUT,
-    PIPE_TYPE_LOWLATENCY_IN,
-    PIPE_TYPE_DIRECT_OUT,
-    PIPE_TYPE_DIRECT_IN,
-    PIPE_TYPE_CALL_OUT,
-    PIPE_TYPE_CALL_IN,
-    PIPE_TYPE_OFFLOAD,
-    PIPE_TYPE_MULTICHANNEL,
-    PIPE_TYPE_HIGHRESOLUTION,
-    PIPE_TYPE_SPATIALIZATION,
-    PIPE_TYPE_DIRECT_MUSIC,
-    PIPE_TYPE_DIRECT_VOIP,
-};
-
-const vector<StreamUsage> g_testStreamUsages = {
-    STREAM_USAGE_INVALID,
-    STREAM_USAGE_UNKNOWN,
-    STREAM_USAGE_MEDIA,
-    STREAM_USAGE_MUSIC,
-    STREAM_USAGE_VOICE_COMMUNICATION,
-    STREAM_USAGE_VOICE_ASSISTANT,
-    STREAM_USAGE_ALARM,
-    STREAM_USAGE_VOICE_MESSAGE,
-    STREAM_USAGE_NOTIFICATION_RINGTONE,
-    STREAM_USAGE_RINGTONE,
-    STREAM_USAGE_NOTIFICATION,
-    STREAM_USAGE_ACCESSIBILITY,
-    STREAM_USAGE_SYSTEM,
-    STREAM_USAGE_MOVIE,
-    STREAM_USAGE_GAME,
-    STREAM_USAGE_AUDIOBOOK,
-    STREAM_USAGE_NAVIGATION,
-    STREAM_USAGE_DTMF,
-    STREAM_USAGE_ENFORCED_TONE,
-    STREAM_USAGE_ULTRASONIC,
-    STREAM_USAGE_VIDEO_COMMUNICATION,
-    STREAM_USAGE_RANGING,
-    STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
-    STREAM_USAGE_VOICE_RINGTONE,
-    STREAM_USAGE_VOICE_CALL_ASSISTANT,
-    STREAM_USAGE_MAX,
-};
+typedef void (*TestFuncs)();
 
 const vector<DeviceType> g_testDeviceTypes = {
     DEVICE_TYPE_NONE,
@@ -112,116 +56,28 @@ const vector<DeviceType> g_testDeviceTypes = {
     DEVICE_TYPE_MAX,
 };
 
-const vector<DeviceRole> g_testDeviceRoles = {
-    DEVICE_ROLE_NONE,
-    INPUT_DEVICE,
-    OUTPUT_DEVICE,
-    DEVICE_ROLE_MAX,
-};
-
-const vector<ContentType> g_testContentTypes = {
-    CONTENT_TYPE_UNKNOWN,
-    CONTENT_TYPE_SPEECH,
-    CONTENT_TYPE_MUSIC,
-    CONTENT_TYPE_MOVIE,
-    CONTENT_TYPE_SONIFICATION,
-    CONTENT_TYPE_RINGTONE,
-    CONTENT_TYPE_PROMPT,
-    CONTENT_TYPE_GAME,
-    CONTENT_TYPE_DTMF,
-    CONTENT_TYPE_ULTRASONIC,
-};
-
-const vector<AudioStreamType> g_testAudioStreamTypes = {
-    STREAM_DEFAULT,
-    STREAM_VOICE_CALL,
-    STREAM_MUSIC,
-    STREAM_RING,
-    STREAM_MEDIA,
-    STREAM_VOICE_ASSISTANT,
-    STREAM_SYSTEM,
-    STREAM_ALARM,
-    STREAM_NOTIFICATION,
-    STREAM_BLUETOOTH_SCO,
-    STREAM_ENFORCED_AUDIBLE,
-    STREAM_DTMF,
-    STREAM_TTS,
-    STREAM_ACCESSIBILITY,
-    STREAM_RECORDING,
-    STREAM_MOVIE,
-    STREAM_GAME,
-    STREAM_SPEECH,
-    STREAM_SYSTEM_ENFORCED,
-    STREAM_ULTRASONIC,
-    STREAM_WAKEUP,
-    STREAM_VOICE_MESSAGE,
-    STREAM_NAVIGATION,
-    STREAM_INTERNAL_FORCE_STOP,
-    STREAM_SOURCE_VOICE_CALL,
-    STREAM_VOICE_COMMUNICATION,
-    STREAM_VOICE_RING,
-    STREAM_VOICE_CALL_ASSISTANT,
-    STREAM_CAMCORDER,
-    STREAM_APP,
-    STREAM_TYPE_MAX,
-    STREAM_ALL,
-};
-
-const vector<SourceType> g_testSourceTypes = {
-    SOURCE_TYPE_INVALID,
-    SOURCE_TYPE_MIC,
-    SOURCE_TYPE_VOICE_RECOGNITION,
-    SOURCE_TYPE_PLAYBACK_CAPTURE,
-    SOURCE_TYPE_WAKEUP,
-    SOURCE_TYPE_VOICE_CALL,
-    SOURCE_TYPE_VOICE_COMMUNICATION,
-    SOURCE_TYPE_ULTRASONIC,
-    SOURCE_TYPE_VIRTUAL_CAPTURE, // only for voice call
-    SOURCE_TYPE_VOICE_MESSAGE,
-    SOURCE_TYPE_REMOTE_CAST,
-    SOURCE_TYPE_VOICE_TRANSCRIPTION,
-    SOURCE_TYPE_CAMCORDER,
-    SOURCE_TYPE_UNPROCESSED,
-    SOURCE_TYPE_EC,
-    SOURCE_TYPE_MIC_REF,
-    SOURCE_TYPE_LIVE,
-    SOURCE_TYPE_MAX,
-};
-
-template<class T>
-uint32_t GetArrLength(T& arr)
-{
-    if (arr == nullptr) {
-        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
-        return 0;
-    }
-    return sizeof(arr) / sizeof(arr[0]);
-}
-
-void AudioStreamCollectorAddRendererStreamFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorAddRendererStreamFuzzTest()
 {
     AudioStreamChangeInfo streamChangeInfo;
-    uint32_t randIntValue = static_cast<uint32_t>(size) % NUM_2;
+    uint32_t randIntValue = g_fuzzUtils.GetData<bool>();
     streamChangeInfo.audioRendererChangeInfo.clientUID = randIntValue;
     streamChangeInfo.audioRendererChangeInfo.sessionId = randIntValue++;
     streamChangeInfo.audioRendererChangeInfo.channelCount = randIntValue++;
     streamChangeInfo.audioRendererChangeInfo.createrUID = randIntValue--;
-    uint32_t index = static_cast<uint32_t>(size) % g_testRendererState.size();
-    streamChangeInfo.audioRendererChangeInfo.rendererState = g_testRendererState[index];
-    index = static_cast<uint32_t>(size) % g_testPipeTypes.size();
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType = g_testPipeTypes[index];
+    streamChangeInfo.audioRendererChangeInfo.rendererState = g_fuzzUtils.GetData<RendererState>();
+    streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType = g_fuzzUtils.GetData<AudioPipeType>();
     audioStreamCollector_.AddRendererStream(streamChangeInfo);
 }
 
-void AudioStreamCollectorGetRendererStreamInfoFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetRendererStreamInfoFuzzTest()
 {
     AudioStreamChangeInfo streamChangeInfo;
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     streamChangeInfo.audioCapturerChangeInfo.clientUID = randIntValue;
     streamChangeInfo.audioCapturerChangeInfo.sessionId = randIntValue + 1;
     AudioRendererChangeInfo rendererInfo;
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
     rendererChangeInfo->clientUID = randIntValue;
     rendererChangeInfo->createrUID = randIntValue;
     rendererChangeInfo->sessionId = randIntValue + 1;
@@ -230,15 +86,15 @@ void AudioStreamCollectorGetRendererStreamInfoFuzzTest(const uint8_t *rawData, s
     audioStreamCollector_.GetRendererStreamInfo(streamChangeInfo, rendererInfo);
 }
 
-void AudioStreamCollectorGetCapturerStreamInfoFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetCapturerStreamInfoFuzzTest()
 {
     AudioStreamChangeInfo streamChangeInfo;
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     streamChangeInfo.audioCapturerChangeInfo.clientUID = randIntValue;
     streamChangeInfo.audioCapturerChangeInfo.sessionId = randIntValue + 1;
     AudioCapturerChangeInfo capturerChangeInfo;
     shared_ptr<AudioCapturerChangeInfo> rendererChangeInfo = make_shared<AudioCapturerChangeInfo>();
-
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
     rendererChangeInfo->clientUID = randIntValue;
     rendererChangeInfo->createrUID = randIntValue;
     rendererChangeInfo->sessionId = randIntValue + 1;
@@ -247,13 +103,14 @@ void AudioStreamCollectorGetCapturerStreamInfoFuzzTest(const uint8_t *rawData, s
     audioStreamCollector_.GetCapturerStreamInfo(streamChangeInfo, capturerChangeInfo);
 }
 
-void AudioStreamCollectorGetPipeTypeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetPipeTypeFuzzTest()
 {
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t sessionId = randIntValue;
-    uint32_t index = static_cast<uint32_t>(size) % g_testPipeTypes.size();
-    AudioPipeType pipeType = g_testPipeTypes[index];
+    uint32_t index = g_fuzzUtils.GetData<AudioPipeType>();
+    AudioPipeType pipeType = g_fuzzUtils.GetData<AudioPipeType>();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
     rendererChangeInfo->sessionId = randIntValue;
@@ -262,19 +119,18 @@ void AudioStreamCollectorGetPipeTypeFuzzTest(const uint8_t *rawData, size_t size
     audioStreamCollector_.GetPipeType(sessionId, pipeType);
 }
 
-void AudioStreamCollectorExistStreamForPipeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorExistStreamForPipeFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size) % g_testPipeTypes.size();
-    AudioPipeType pipeType = g_testPipeTypes[index];
+    AudioPipeType pipeType = g_fuzzUtils.GetData<AudioPipeType>();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
     AudioStreamChangeInfo streamChangeInfo;
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     streamChangeInfo.audioRendererChangeInfo.clientUID = randIntValue;
     streamChangeInfo.audioRendererChangeInfo.sessionId = randIntValue + 1;
-    index = static_cast<uint32_t>(size) % g_testRendererState.size();
-    streamChangeInfo.audioRendererChangeInfo.rendererState = g_testRendererState[index];
+    streamChangeInfo.audioRendererChangeInfo.rendererState = g_fuzzUtils.GetData<RendererState>();
 
-    bool result = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    bool result = g_fuzzUtils.GetData<bool>();
     if (result) {
         rendererChangeInfo->createrUID = streamChangeInfo.audioRendererChangeInfo.createrUID;
         rendererChangeInfo->clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
@@ -285,46 +141,45 @@ void AudioStreamCollectorExistStreamForPipeFuzzTest(const uint8_t *rawData, size
     audioStreamCollector_.ExistStreamForPipe(pipeType);
 }
 
-void AudioStreamCollectorGetRendererDeviceInfoFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetRendererDeviceInfoFuzzTest()
 {
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t sessionId = randIntValue;
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-
-    bool result = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
+    bool result = g_fuzzUtils.GetData<bool>();
     if (result) {
         rendererChangeInfo->clientUID = randIntValue;
         rendererChangeInfo->createrUID = randIntValue;
         rendererChangeInfo->sessionId = randIntValue + 1;
-        uint32_t index = static_cast<uint32_t>(size) % g_testPipeTypes.size();
-        rendererChangeInfo->rendererInfo.pipeType = g_testPipeTypes[index];
+        uint32_t index = g_fuzzUtils.GetData<AudioPipeType>();
+        rendererChangeInfo->rendererInfo.pipeType = g_fuzzUtils.GetData<AudioPipeType>();
         audioStreamCollector_.audioRendererChangeInfos_.clear();
         audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
     }
     audioStreamCollector_.GetRendererDeviceInfo(sessionId, deviceInfo);
 }
 
-void AudioStreamCollectorAddCapturerStreamFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorAddCapturerStreamFuzzTest()
 {
     AudioStreamChangeInfo streamChangeInfo;
-    int32_t randIntValue = static_cast<int32_t>(size) % NUM_2;
+    int32_t randIntValue = g_fuzzUtils.GetData<bool>();
     streamChangeInfo.audioRendererChangeInfo.clientUID = randIntValue;
     streamChangeInfo.audioRendererChangeInfo.sessionId = randIntValue++;
     streamChangeInfo.audioRendererChangeInfo.channelCount = randIntValue++;
     streamChangeInfo.audioRendererChangeInfo.createrUID = randIntValue--;
-    uint32_t index = static_cast<uint32_t>(size) % g_testRendererState.size();
-    streamChangeInfo.audioRendererChangeInfo.rendererState = g_testRendererState[index];
-    index = static_cast<uint32_t>(size) % g_testPipeTypes.size();
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType = g_testPipeTypes[index];
+    streamChangeInfo.audioRendererChangeInfo.rendererState = g_fuzzUtils.GetData<RendererState>();
+    streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType = g_fuzzUtils.GetData<AudioPipeType>();
     audioStreamCollector_.AddCapturerStream(streamChangeInfo);
 }
 
-void AudioStreamCollectorSendCapturerInfoEventFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorSendCapturerInfoEventFuzzTest()
 {
     AudioDeviceDescriptor inputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = make_shared<AudioCapturerChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
+    CHECK_AND_RETURN(captureChangeInfo != nullptr);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     captureChangeInfo->clientUID = randIntValue;
     captureChangeInfo->createrUID = randIntValue / NUM_2;
     captureChangeInfo->sessionId = randIntValue / NUM_2 + 1;
@@ -337,70 +192,70 @@ void AudioStreamCollectorSendCapturerInfoEventFuzzTest(const uint8_t *rawData, s
     audioStreamCollector_.SendCapturerInfoEvent(audioCapturerChangeInfos);
 }
 
-void AudioStreamCollectorRegisterTrackerFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorRegisterTrackerFuzzTest()
 {
     AudioMode audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
     AudioStreamChangeInfo streamChangeInfo;
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     streamChangeInfo.audioRendererChangeInfo.clientUID = randIntValue / NUM_2;
     streamChangeInfo.audioRendererChangeInfo.sessionId = randIntValue;
-    uint32_t index = static_cast<uint32_t>(size) % g_testRendererState.size();
-    streamChangeInfo.audioRendererChangeInfo.rendererState = g_testRendererState[index];
+    uint32_t index = g_fuzzUtils.GetData<RendererState>();
+    streamChangeInfo.audioRendererChangeInfo.rendererState = g_fuzzUtils.GetData<RendererState>();
     sptr<IRemoteObject> clientTrackerObj = nullptr;
 
     audioStreamCollector_.RegisterTracker(audioMode, streamChangeInfo, clientTrackerObj);
     audioStreamCollector_.UpdateTracker(audioMode, streamChangeInfo);
 }
 
-void AudioStreamCollectorSetRendererStreamParamFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorSetRendererStreamParamFuzzTest()
 {
     AudioStreamChangeInfo streamChangeInfo;
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     streamChangeInfo.audioRendererChangeInfo.clientUID = randIntValue / NUM_2;
     streamChangeInfo.audioRendererChangeInfo.sessionId = randIntValue;
-    uint32_t index = static_cast<uint32_t>(size) % g_testRendererState.size();
-    streamChangeInfo.audioRendererChangeInfo.rendererState = g_testRendererState[index];
+    uint32_t index = g_fuzzUtils.GetData<RendererState>();
+    streamChangeInfo.audioRendererChangeInfo.rendererState = g_fuzzUtils.GetData<RendererState>();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
     audioStreamCollector_.SetRendererStreamParam(streamChangeInfo, rendererChangeInfo);
 }
 
-void AudioStreamCollectorSetCapturerStreamParamFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorSetCapturerStreamParamFuzzTest()
 {
     AudioStreamChangeInfo streamChangeInfo;
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     streamChangeInfo.audioRendererChangeInfo.clientUID = randIntValue / NUM_2;
     streamChangeInfo.audioRendererChangeInfo.sessionId = randIntValue;
-    uint32_t index = static_cast<uint32_t>(size) % g_testRendererState.size();
-    streamChangeInfo.audioRendererChangeInfo.rendererState = g_testRendererState[index];
+    uint32_t index = g_fuzzUtils.GetData<RendererState>();
+    streamChangeInfo.audioRendererChangeInfo.rendererState = g_fuzzUtils.GetData<RendererState>();
     shared_ptr<AudioCapturerChangeInfo> rendererChangeInfo = make_shared<AudioCapturerChangeInfo>();
-
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
     audioStreamCollector_.SetCapturerStreamParam(streamChangeInfo, rendererChangeInfo);
 }
 
-void AudioStreamCollectorResetRendererStreamDeviceInfoFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorResetRendererStreamDeviceInfoFuzzTest()
 {
     AudioDeviceDescriptor outputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-
-    int32_t randIntValue = static_cast<int32_t>(size);
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
     rendererChangeInfo->sessionId = randIntValue;
-    uint32_t index = static_cast<uint32_t>(size) % g_testPipeTypes.size();
-    rendererChangeInfo->rendererInfo.pipeType = g_testPipeTypes[index];
+    uint32_t index = g_fuzzUtils.GetData<AudioPipeType>();
+    rendererChangeInfo->rendererInfo.pipeType = g_fuzzUtils.GetData<AudioPipeType>();
     audioStreamCollector_.audioRendererChangeInfos_.clear();
     audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     audioStreamCollector_.ResetRendererStreamDeviceInfo(outputDeviceInfo);
 }
 
-void AudioStreamCollectorResetCapturerStreamDeviceInfoFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorResetCapturerStreamDeviceInfoFuzzTest()
 {
     AudioDeviceDescriptor outputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     shared_ptr<AudioCapturerChangeInfo> rendererChangeInfo = make_shared<AudioCapturerChangeInfo>();
-
-    int32_t randIntValue = static_cast<int32_t>(size);
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
     rendererChangeInfo->sessionId = randIntValue;
@@ -409,32 +264,30 @@ void AudioStreamCollectorResetCapturerStreamDeviceInfoFuzzTest(const uint8_t *ra
     audioStreamCollector_.ResetCapturerStreamDeviceInfo(outputDeviceInfo);
 }
 
-void AudioStreamCollectorCheckRendererStateInfoChangedFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorCheckRendererStateInfoChangedFuzzTest()
 {
     AudioStreamChangeInfo streamChangeInfo;
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     streamChangeInfo.audioRendererChangeInfo.clientUID = randIntValue / NUM_2;
     streamChangeInfo.audioRendererChangeInfo.sessionId = randIntValue;
-    uint32_t index = static_cast<uint32_t>(size) % g_testRendererState.size();
-    streamChangeInfo.audioRendererChangeInfo.rendererState = g_testRendererState[index];
+    uint32_t index = g_fuzzUtils.GetData<RendererState>();
+    streamChangeInfo.audioRendererChangeInfo.rendererState = g_fuzzUtils.GetData<RendererState>();
     audioStreamCollector_.CheckRendererStateInfoChanged(streamChangeInfo);
 }
 
-void AudioStreamCollectorCheckRendererInfoChangedFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorCheckRendererInfoChangedFuzzTest()
 {
     AudioStreamChangeInfo streamChangeInfo;
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     streamChangeInfo.audioRendererChangeInfo.clientUID = randIntValue / NUM_2;
     streamChangeInfo.audioRendererChangeInfo.sessionId = randIntValue;
-    uint32_t index = static_cast<uint32_t>(size) % g_testRendererState.size();
-    streamChangeInfo.audioRendererChangeInfo.rendererState = g_testRendererState[index];
+    streamChangeInfo.audioRendererChangeInfo.rendererState = g_fuzzUtils.GetData<RendererState>();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-
-    bool result = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
+    bool result = g_fuzzUtils.GetData<bool>();
     if (result) {
         rendererChangeInfo->createrUID = randIntValue / NUM_2;
-        index = static_cast<uint32_t>(size) % g_testPipeTypes.size();
-        rendererChangeInfo->rendererInfo.pipeType = g_testPipeTypes[index];
+        rendererChangeInfo->rendererInfo.pipeType = g_fuzzUtils.GetData<AudioPipeType>();
         audioStreamCollector_.audioRendererChangeInfos_.clear();
         audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
     }
@@ -442,29 +295,26 @@ void AudioStreamCollectorCheckRendererInfoChangedFuzzTest(const uint8_t *rawData
     audioStreamCollector_.CheckRendererInfoChanged(streamChangeInfo);
 }
 
-void AudioStreamCollectorResetRingerModeMuteFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorResetRingerModeMuteFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size) % g_testRendererState.size();
-    RendererState rendererState = g_testRendererState[index];
-    index = static_cast<uint32_t>(size) % g_testStreamUsages.size();
-    StreamUsage streamUsage = g_testStreamUsages[index];
+    RendererState rendererState = g_fuzzUtils.GetData<RendererState>();
+    StreamUsage streamUsage = g_fuzzUtils.GetData<StreamUsage>();
     audioStreamCollector_.ResetRingerModeMute(rendererState, streamUsage);
 }
 
-void AudioStreamCollectorUpdateRendererStreamInternalFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorUpdateRendererStreamInternalFuzzTest()
 {
     AudioStreamChangeInfo streamChangeInfo;
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     streamChangeInfo.audioRendererChangeInfo.clientUID = randIntValue / NUM_2;
     streamChangeInfo.audioRendererChangeInfo.sessionId = randIntValue;
-    uint32_t index = static_cast<uint32_t>(size) % g_testRendererState.size();
-    streamChangeInfo.audioRendererChangeInfo.rendererState = g_testRendererState[index];
+    streamChangeInfo.audioRendererChangeInfo.rendererState = g_fuzzUtils.GetData<RendererState>();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    bool result = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
+    bool result = g_fuzzUtils.GetData<bool>();
     if (result) {
         rendererChangeInfo->createrUID = randIntValue / NUM_2;
-        index = static_cast<uint32_t>(size) % g_testPipeTypes.size();
-        rendererChangeInfo->rendererInfo.pipeType = g_testPipeTypes[index];
+        rendererChangeInfo->rendererInfo.pipeType = g_fuzzUtils.GetData<AudioPipeType>();
         audioStreamCollector_.audioRendererChangeInfos_.clear();
         audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
     }
@@ -472,20 +322,20 @@ void AudioStreamCollectorUpdateRendererStreamInternalFuzzTest(const uint8_t *raw
     audioStreamCollector_.UpdateRendererStreamInternal(streamChangeInfo);
 }
 
-void AudioStreamCollectorUpdateCapturerStreamInternalFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorUpdateCapturerStreamInternalFuzzTest()
 {
     AudioStreamChangeInfo streamChangeInfo;
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     streamChangeInfo.audioCapturerChangeInfo.clientUID = randIntValue % NUM_2;
     streamChangeInfo.audioCapturerChangeInfo.sessionId = randIntValue;
-    streamChangeInfo.audioCapturerChangeInfo.prerunningState = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    streamChangeInfo.audioCapturerChangeInfo.prerunningState = g_fuzzUtils.GetData<bool>();
     shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
-
-    bool result = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    CHECK_AND_RETURN(capturerChangeInfo != nullptr);
+    bool result = g_fuzzUtils.GetData<bool>();
     if (result) {
         capturerChangeInfo->clientUID = randIntValue % NUM_2;
         capturerChangeInfo->sessionId = randIntValue;
-        capturerChangeInfo->prerunningState = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+        capturerChangeInfo->prerunningState = g_fuzzUtils.GetData<bool>();
         audioStreamCollector_.audioCapturerChangeInfos_.clear();
         audioStreamCollector_.audioCapturerChangeInfos_.push_back(move(capturerChangeInfo));
     }
@@ -493,47 +343,51 @@ void AudioStreamCollectorUpdateCapturerStreamInternalFuzzTest(const uint8_t *raw
     audioStreamCollector_.UpdateCapturerStreamInternal(streamChangeInfo);
 }
 
-void AudioStreamCollectorUpdateTrackerFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorUpdateTrackerFuzzTest()
 {
     vector<AudioMode> audioModes = {
         AUDIO_MODE_PLAYBACK,
         AUDIO_MODE_RECORD,
     };
-    uint32_t index = static_cast<uint32_t>(size) % audioModes.size();
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>() % audioModes.size();
     AudioMode audioMode = audioModes[index];
     AudioDeviceDescriptor audioDev(AudioDeviceDescriptor::DEVICE_INFO);
     audioStreamCollector_.UpdateTracker(audioMode, audioDev);
 
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     AudioStreamChangeInfo streamChangeInfo;
     streamChangeInfo.audioRendererChangeInfo.clientUID = randIntValue / NUM_2;
     streamChangeInfo.audioRendererChangeInfo.sessionId = randIntValue;
-    index = static_cast<uint32_t>(size) % g_testRendererState.size();
-    streamChangeInfo.audioRendererChangeInfo.rendererState = g_testRendererState[index];
+    index = g_fuzzUtils.GetData<RendererState>();
+    streamChangeInfo.audioRendererChangeInfo.rendererState = g_fuzzUtils.GetData<RendererState>();
     sptr<IRemoteObject> clientTrackerObj = nullptr;
 
     audioStreamCollector_.RegisterTracker(audioMode, streamChangeInfo, clientTrackerObj);
     audioStreamCollector_.UpdateTracker(audioMode, streamChangeInfo);
 }
 
-void AudioStreamCollectorUpdateRendererDeviceInfoFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorUpdateRendererDeviceInfoFuzzTest()
 {
     shared_ptr<AudioDeviceDescriptor> outputDeviceInfoPtr = make_shared<AudioDeviceDescriptor>(
         AudioDeviceDescriptor::DEVICE_INFO);
-    uint32_t index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
-    outputDeviceInfoPtr->deviceType_ = g_testDeviceTypes[index];
+    CHECK_AND_RETURN(outputDeviceInfoPtr != nullptr);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>() % g_testDeviceTypes.size();
+    outputDeviceInfoPtr->deviceType_ = g_fuzzUtils.GetData<DeviceType>();
     auto info1 = std::make_unique<AudioRendererChangeInfo>();
+    CHECK_AND_RETURN(info1 != nullptr);
     info1->outputDeviceInfo.deviceType_ = g_testDeviceTypes[index / NUM_2];
     audioStreamCollector_.audioRendererChangeInfos_.clear();
     audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(info1));
     auto info2 = std::make_unique<AudioRendererChangeInfo>();
+    CHECK_AND_RETURN(info2 != nullptr);
     info2->outputDeviceInfo.deviceType_ = g_testDeviceTypes[(index + 1) / NUM_2];
     audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(info2));
     audioStreamCollector_.UpdateRendererDeviceInfo(outputDeviceInfoPtr);
 
     AudioDeviceDescriptor outputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t clientUID = randIntValue / NUM_2;
     int32_t sessionId = randIntValue;
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
@@ -545,24 +399,28 @@ void AudioStreamCollectorUpdateRendererDeviceInfoFuzzTest(const uint8_t *rawData
     audioStreamCollector_.UpdateRendererDeviceInfo(clientUID, sessionId, outputDeviceInfo);
 }
 
-void AudioStreamCollectorUpdateCapturerDeviceInfoFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorUpdateCapturerDeviceInfoFuzzTest()
 {
     shared_ptr<AudioDeviceDescriptor> inputDeviceInfoPtr = make_shared<AudioDeviceDescriptor>(
         AudioDeviceDescriptor::DEVICE_INFO);
-    uint32_t index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
-    inputDeviceInfoPtr->deviceType_ = g_testDeviceTypes[index];
+    CHECK_AND_RETURN(inputDeviceInfoPtr != nullptr);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>() % g_testDeviceTypes.size();
+    inputDeviceInfoPtr->deviceType_ = g_fuzzUtils.GetData<DeviceType>();
     auto info1 = std::make_unique<AudioCapturerChangeInfo>();
+    CHECK_AND_RETURN(info1 != nullptr);
     info1->inputDeviceInfo.deviceType_ = g_testDeviceTypes[index / NUM_2];
     audioStreamCollector_.audioCapturerChangeInfos_.clear();
     audioStreamCollector_.audioCapturerChangeInfos_.push_back(std::move(info1));
     auto info2 = std::make_unique<AudioCapturerChangeInfo>();
+    CHECK_AND_RETURN(info2 != nullptr);
     info2->inputDeviceInfo.deviceType_ = g_testDeviceTypes[(index + 1) / NUM_2];
     audioStreamCollector_.audioCapturerChangeInfos_.push_back(std::move(info2));
     audioStreamCollector_.UpdateCapturerDeviceInfo(inputDeviceInfoPtr);
 
     AudioDeviceDescriptor inputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = make_shared<AudioCapturerChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
+    CHECK_AND_RETURN(captureChangeInfo != nullptr);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     captureChangeInfo->clientUID = randIntValue / NUM_2;
     captureChangeInfo->createrUID = randIntValue / NUM_2;
     captureChangeInfo->sessionId = randIntValue;
@@ -572,34 +430,33 @@ void AudioStreamCollectorUpdateCapturerDeviceInfoFuzzTest(const uint8_t *rawData
     int32_t clientUID = randIntValue / NUM_2;
     int32_t sessionId = randIntValue;
     AudioDeviceDescriptor outputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    index = static_cast<uint32_t>(size) % g_testDeviceRoles.size();
-    outputDeviceInfo.deviceRole_ = g_testDeviceRoles[index];
+    outputDeviceInfo.deviceRole_ = g_fuzzUtils.GetData<DeviceRole>();
 
     audioStreamCollector_.UpdateCapturerDeviceInfo(clientUID, sessionId, outputDeviceInfo);
 }
 
-void AudioStreamCollectorUpdateRendererPipeInfoFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorUpdateRendererPipeInfoFuzzTest()
 {
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t sessionId = randIntValue;
-    uint32_t index = static_cast<uint32_t>(size) % g_testPipeTypes.size();
-    AudioPipeType normalPipe = g_testPipeTypes[index];
+    AudioPipeType normalPipe = g_fuzzUtils.GetData<AudioPipeType>();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
     rendererChangeInfo->sessionId = randIntValue;
-    rendererChangeInfo->rendererInfo.pipeType = g_testPipeTypes[index / NUM_2];
+    rendererChangeInfo->rendererInfo.pipeType = g_fuzzUtils.GetData<AudioPipeType>();
     audioStreamCollector_.audioRendererChangeInfos_.clear();
     audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     audioStreamCollector_.UpdateRendererPipeInfo(sessionId, normalPipe);
 }
 
-void AudioStreamCollectorUpdateAppVolumeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorUpdateAppVolumeFuzzTest()
 {
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
     rendererChangeInfo->sessionId = randIntValue;
@@ -612,16 +469,15 @@ void AudioStreamCollectorUpdateAppVolumeFuzzTest(const uint8_t *rawData, size_t 
     audioStreamCollector_.UpdateAppVolume(appUid, volume);
 }
 
-void AudioStreamCollectorGetStreamTypeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetStreamTypeFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size) % g_testContentTypes.size();
-    ContentType contentType = g_testContentTypes[index];
-    index = static_cast<uint32_t>(size) % g_testStreamUsages.size();
-    StreamUsage streamUsage = g_testStreamUsages[index];
+    ContentType contentType = g_fuzzUtils.GetData<ContentType>();
+    StreamUsage streamUsage = g_fuzzUtils.GetData<StreamUsage>();
     audioStreamCollector_.GetStreamType(contentType, streamUsage);
 
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     rendererChangeInfo->clientUID = randIntValue;
     rendererChangeInfo->createrUID = randIntValue;
     rendererChangeInfo->sessionId = randIntValue + 1;
@@ -631,7 +487,7 @@ void AudioStreamCollectorGetStreamTypeFuzzTest(const uint8_t *rawData, size_t si
     audioStreamCollector_.GetStreamType(sessionId);
 }
 
-void AudioStreamCollectorGetSessionIdsOnRemoteDeviceByStreamUsageFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetSessionIdsOnRemoteDeviceByStreamUsageFuzzTest()
 {
     vector<InterruptHint> testInterruptHints = {
         INTERRUPT_HINT_NONE,
@@ -643,13 +499,14 @@ void AudioStreamCollectorGetSessionIdsOnRemoteDeviceByStreamUsageFuzzTest(const 
         INTERRUPT_HINT_MUTE,
         INTERRUPT_HINT_UNMUTE
     };
-    uint32_t index = static_cast<uint32_t>(size);
-    StreamUsage streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    StreamUsage streamUsage = g_fuzzUtils.GetData<StreamUsage>();
     DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
-    DeviceRole role = g_testDeviceRoles[index % g_testDeviceRoles.size()];
+    DeviceRole role = g_fuzzUtils.GetData<DeviceRole>();
     AudioDeviceDescriptor outputDeviceInfo(deviceType, role, 0, 0, "RemoteDevice");
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
     rendererChangeInfo->sessionId = randIntValue;
@@ -662,10 +519,11 @@ void AudioStreamCollectorGetSessionIdsOnRemoteDeviceByStreamUsageFuzzTest(const 
     audioStreamCollector_.GetSessionIdsOnRemoteDeviceByDeviceType(deviceType);
 }
 
-void AudioStreamCollectorIsOffloadAllowedFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorIsOffloadAllowedFuzzTest()
 {
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t sessionId = randIntValue / NUM_2;
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
@@ -676,10 +534,10 @@ void AudioStreamCollectorIsOffloadAllowedFuzzTest(const uint8_t *rawData, size_t
     audioStreamCollector_.IsOffloadAllowed(sessionId);
 }
 
-void AudioStreamCollectorGetChannelCountFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetChannelCountFuzzTest()
 {
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t sessionId = randIntValue / NUM_2;
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
@@ -690,11 +548,12 @@ void AudioStreamCollectorGetChannelCountFuzzTest(const uint8_t *rawData, size_t 
     audioStreamCollector_.GetChannelCount(sessionId);
 }
 
-void AudioStreamCollectorGetCurrentRendererChangeInfosFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetCurrentRendererChangeInfosFuzzTest()
 {
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
     std::vector<shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
     rendererChangeInfo->sessionId = randIntValue;
@@ -704,11 +563,12 @@ void AudioStreamCollectorGetCurrentRendererChangeInfosFuzzTest(const uint8_t *ra
     audioStreamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
 }
 
-void AudioStreamCollectorGetCurrentCapturerChangeInfosFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetCurrentCapturerChangeInfosFuzzTest()
 {
     shared_ptr<AudioCapturerChangeInfo> rendererChangeInfo = make_shared<AudioCapturerChangeInfo>();
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
     std::vector<shared_ptr<AudioCapturerChangeInfo>> rendererChangeInfos;
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
     rendererChangeInfo->sessionId = randIntValue;
@@ -717,14 +577,14 @@ void AudioStreamCollectorGetCurrentCapturerChangeInfosFuzzTest(const uint8_t *ra
     audioStreamCollector_.GetCurrentCapturerChangeInfos(rendererChangeInfos);
 }
 
-void AudioStreamCollectorRegisteredTrackerClientDiedFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorRegisteredTrackerClientDiedFuzzTest()
 {
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t uid = randIntValue / NUM_2;
     int32_t pid = randIntValue / NUM_2;
     audioStreamCollector_.GetLastestRunningCallStreamUsage();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
     rendererChangeInfo->clientPid = randIntValue / NUM_2;
@@ -734,20 +594,21 @@ void AudioStreamCollectorRegisteredTrackerClientDiedFuzzTest(const uint8_t *rawD
     audioStreamCollector_.RegisteredTrackerClientDied(uid, pid);
 }
 
-void AudioStreamCollectorGetAndCompareStreamTypeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetAndCompareStreamTypeFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
-    StreamUsage targetUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    StreamUsage targetUsage = g_fuzzUtils.GetData<StreamUsage>();
     AudioRendererInfo rendererInfo;
-    rendererInfo.contentType = g_testContentTypes[index % g_testContentTypes.size()];
-    rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
+    rendererInfo.contentType = g_fuzzUtils.GetData<ContentType>();
+    rendererInfo.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
     audioStreamCollector_.GetAndCompareStreamType(targetUsage, rendererInfo);
 }
 
-void AudioStreamCollectorGetUidFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetUidFuzzTest()
 {
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t sessionId = randIntValue;
 
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
@@ -758,10 +619,11 @@ void AudioStreamCollectorGetUidFuzzTest(const uint8_t *rawData, size_t size)
     audioStreamCollector_.GetUid(sessionId);
 }
 
-void AudioStreamCollectorResumeStreamStateFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorResumeStreamStateFuzzTest()
 {
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
     rendererChangeInfo->sessionId = randIntValue;
@@ -770,7 +632,7 @@ void AudioStreamCollectorResumeStreamStateFuzzTest(const uint8_t *rawData, size_
     audioStreamCollector_.ResumeStreamState();
 }
 
-void AudioStreamCollectorUpdateStreamStateFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorUpdateStreamStateFuzzTest()
 {
     vector<StreamSetState> testStreamSetState = {
         STREAM_PAUSE,
@@ -778,66 +640,66 @@ void AudioStreamCollectorUpdateStreamStateFuzzTest(const uint8_t *rawData, size_
         STREAM_MUTE,
         STREAM_UNMUTE,
     };
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t clientUid = randIntValue / NUM_2;
     StreamSetStateEventInternal event;
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     event.streamSetState = testStreamSetState[index % testStreamSetState.size()];
-    event.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
+    event.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
     auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
     changeInfo->clientUID = clientUid;
-    changeInfo->rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
+    changeInfo->rendererInfo.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
     changeInfo->sessionId = randIntValue % NUM_2;
     audioStreamCollector_.audioRendererChangeInfos_.clear();
     audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
     audioStreamCollector_.UpdateStreamState(clientUid, event);
 }
 
-void AudioStreamCollectorHandleAppStateChangeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorHandleAppStateChangeFuzzTest()
 {
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t clientUid = randIntValue / NUM_2;
-    int32_t clientPid = static_cast<int32_t>(size);
-    uint32_t index = static_cast<uint32_t>(size);
+    int32_t clientPid = g_fuzzUtils.GetData<int32_t>();
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     bool notifyMute = static_cast<bool>(index % NUM_2);
     auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
     changeInfo->clientUID = clientUid;
     changeInfo->clientPid = clientPid;
-    changeInfo->rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
+    changeInfo->rendererInfo.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
     changeInfo->sessionId = randIntValue;
     changeInfo->backMute = static_cast<bool>(index % NUM_2);
     audioStreamCollector_.audioRendererChangeInfos_.clear();
     audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
-    bool hasBackTask = static_cast<int32_t>(size) % NUM_2;
+    bool hasBackTask = g_fuzzUtils.GetData<bool>();
     bool mute = static_cast<bool>(index % NUM_2);
     audioStreamCollector_.HandleAppStateChange(clientUid, clientPid, mute, notifyMute, hasBackTask);
 }
 
-void AudioStreamCollectorHandleFreezeStateChangeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorHandleFreezeStateChangeFuzzTest()
 {
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t clientPid = randIntValue / NUM_2;
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     bool hasSession = static_cast<bool>(index % NUM_2);
     auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
     changeInfo->clientPid = clientPid;
-    changeInfo->rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
+    changeInfo->rendererInfo.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
     changeInfo->sessionId = randIntValue / NUM_2;
     audioStreamCollector_.audioRendererChangeInfos_.clear();
     audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
     audioStreamCollector_.HandleFreezeStateChange(clientPid, static_cast<bool>(index % NUM_2), hasSession);
 }
 
-void AudioStreamCollectorHandleBackTaskStateChangeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorHandleBackTaskStateChangeFuzzTest()
 {
     static uint32_t stepSize = 0;
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t clientUid = randIntValue / NUM_2;
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     bool hasSession = static_cast<bool>(index % NUM_2);
     auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
     changeInfo->clientUID = clientUid;
-    changeInfo->rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
+    changeInfo->rendererInfo.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
     changeInfo->sessionId = randIntValue / NUM_2;
 
     changeInfo->backMute = static_cast<bool>((index + stepSize++) % NUM_2);
@@ -846,148 +708,152 @@ void AudioStreamCollectorHandleBackTaskStateChangeFuzzTest(const uint8_t *rawDat
     audioStreamCollector_.HandleBackTaskStateChange(clientUid, hasSession);
 }
 
-void AudioStreamCollectorHandleStartStreamMuteStateFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorHandleStartStreamMuteStateFuzzTest()
 {
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t clientUid = randIntValue;
     int32_t createrUID = randIntValue;
     int32_t clientPid = randIntValue;
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     bool mute = static_cast<bool>(index % NUM_2);
     auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
     changeInfo->clientUID = clientUid;
     changeInfo->createrUID = createrUID;
     changeInfo->clientPid = clientPid;
-    changeInfo->rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
+    changeInfo->rendererInfo.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
     changeInfo->sessionId = randIntValue / NUM_2;
     audioStreamCollector_.audioRendererChangeInfos_.clear();
     audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
     audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, mute, mute);
 }
 
-void AudioStreamCollectorIsStreamActiveFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorIsStreamActiveFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioStreamType volumeType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioStreamType volumeType = g_fuzzUtils.GetData<AudioStreamType>();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
     rendererChangeInfo->sessionId = randIntValue;
-    rendererChangeInfo->rendererState = g_testRendererState[index % g_testRendererState.size()];
+    rendererChangeInfo->rendererState = g_fuzzUtils.GetData<RendererState>();
     audioStreamCollector_.audioRendererChangeInfos_.clear();
     audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
     audioStreamCollector_.IsStreamActive(volumeType);
 }
 
-void AudioStreamCollectorGetRunningStreamFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetRunningStreamFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     AudioRendererInfo rendererInfo;
-    rendererInfo.contentType = g_testContentTypes[index % g_testContentTypes.size()];
-    rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
+    rendererInfo.contentType = g_fuzzUtils.GetData<ContentType>();
+    rendererInfo.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
     std::unique_ptr<AudioRendererChangeInfo> info = std::make_unique<AudioRendererChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     info->sessionId = randIntValue;
-    info->rendererState = g_testRendererState[index % g_testRendererState.size()];
+    info->rendererState = g_fuzzUtils.GetData<RendererState>();
     info->rendererInfo = rendererInfo;
     info->channelCount = randIntValue % NUM_2;
 
     audioStreamCollector_.audioRendererChangeInfos_.clear();
     audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(info));
-    audioStreamCollector_.GetRunningStream(g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()], 0);
+    audioStreamCollector_.GetRunningStream(g_fuzzUtils.GetData<AudioStreamType>(), 0);
 }
 
-void AudioStreamCollectorGetStreamTypeFromSourceTypeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetStreamTypeFromSourceTypeFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
-    audioStreamCollector_.GetStreamTypeFromSourceType(g_testSourceTypes[index % g_testSourceTypes.size()]);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    audioStreamCollector_.GetStreamTypeFromSourceType(g_fuzzUtils.GetData<SourceType>());
 }
 
-void AudioStreamCollectorSetGetLowPowerVolumeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorSetGetLowPowerVolumeFuzzTest()
 {
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t streamId = randIntValue / NUM_2;
 
-    audioStreamCollector_.SetLowPowerVolume(streamId, static_cast<float>(size));
+    audioStreamCollector_.SetLowPowerVolume(streamId, g_fuzzUtils.GetData<float>());
     audioStreamCollector_.GetLowPowerVolume(streamId);
 }
 
-void AudioStreamCollectorSetOffloadModeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorSetOffloadModeFuzzTest()
 {
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t streamId = randIntValue / NUM_2;
     int32_t state = randIntValue / NUM_2 - 1;
-    bool isAppBack = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    bool isAppBack = g_fuzzUtils.GetData<bool>();
 
     audioStreamCollector_.SetOffloadMode(streamId, state, isAppBack);
 }
 
-void AudioStreamCollectorUnsetOffloadModeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorUnsetOffloadModeFuzzTest()
 {
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t streamId = randIntValue % NUM_2;
     AudioStreamChangeInfo streamChangeInfo;
     streamChangeInfo.audioRendererChangeInfo.clientUID = randIntValue / NUM_2;
     streamChangeInfo.audioRendererChangeInfo.sessionId = randIntValue;
-    uint32_t index = static_cast<uint32_t>(size);
-    streamChangeInfo.audioRendererChangeInfo.rendererState = g_testRendererState[index % g_testRendererState.size()];
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    streamChangeInfo.audioRendererChangeInfo.rendererState = g_fuzzUtils.GetData<RendererState>();
     sptr<IRemoteObject> object;
     sptr<IStandardClientTracker> listener = iface_cast<IStandardClientTracker>(object);
     std::shared_ptr<AudioClientTracker> callback = std::make_shared<ClientTrackerCallbackListener>(listener);
+    CHECK_AND_RETURN(callback != nullptr);
     int32_t clientId = streamChangeInfo.audioRendererChangeInfo.sessionId;
     audioStreamCollector_.clientTracker_[clientId] = callback;
     audioStreamCollector_.UnsetOffloadMode(streamId);
 }
 
-void AudioStreamCollectorGetSingleStreamVolumeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetSingleStreamVolumeFuzzTest()
 {
-    int32_t streamId = static_cast<int32_t>(size);
+    int32_t streamId = g_fuzzUtils.GetData<int32_t>();
     audioStreamCollector_.GetSingleStreamVolume(streamId);
 }
 
-void AudioStreamCollectorUpdateCapturerInfoMuteStatusFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorUpdateCapturerInfoMuteStatusFuzzTest()
 {
     auto changeInfo = std::make_unique<AudioCapturerChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
-    uint32_t index = static_cast<uint32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     changeInfo->clientUID = randIntValue;
     changeInfo->muted = static_cast<bool>(index % NUM_2);
     changeInfo->sessionId = randIntValue / NUM_2;
-    changeInfo->capturerInfo.sourceType = g_testSourceTypes[index % g_testSourceTypes.size()];
+    changeInfo->capturerInfo.sourceType = g_fuzzUtils.GetData<SourceType>();
     changeInfo->inputDeviceInfo.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
     audioStreamCollector_.audioCapturerChangeInfos_.clear();
     audioStreamCollector_.audioCapturerChangeInfos_.push_back(std::move(changeInfo));
     audioStreamCollector_.audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    CHECK_AND_RETURN(audioStreamCollector_.audioPolicyServerHandler_ != nullptr);
     audioStreamCollector_.UpdateCapturerInfoMuteStatus(randIntValue, true);
 }
 
-void AudioStreamCollectorIsCallStreamUsageFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorIsCallStreamUsageFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size) % g_testStreamUsages.size();
-    StreamUsage usage = g_testStreamUsages[index];
+    uint32_t index = g_fuzzUtils.GetData<StreamUsage>();
+    StreamUsage usage = g_fuzzUtils.GetData<StreamUsage>();
 
     audioStreamCollector_.IsCallStreamUsage(usage);
 }
 
-void AudioStreamCollectorGetRunningStreamUsageNoUltrasonicFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetRunningStreamUsageNoUltrasonicFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
 
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
     rendererChangeInfo->sessionId = randIntValue;
-    rendererChangeInfo->rendererState = g_testRendererState[index % g_testRendererState.size()];
-    rendererChangeInfo->rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
+    rendererChangeInfo->rendererState = g_fuzzUtils.GetData<RendererState>();
+    rendererChangeInfo->rendererInfo.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
     audioStreamCollector_.audioRendererChangeInfos_.clear();
     audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     audioStreamCollector_.GetRunningStreamUsageNoUltrasonic();
 }
 
-void AudioStreamCollectorGetRunningSourceTypeNoUltrasonicFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetRunningSourceTypeNoUltrasonicFuzzTest()
 {
     const vector<CapturerState> testCapturerStates = {
         CAPTURER_INVALID,
@@ -998,43 +864,44 @@ void AudioStreamCollectorGetRunningSourceTypeNoUltrasonicFuzzTest(const uint8_t 
         CAPTURER_RELEASED,
         CAPTURER_PAUSED,
     };
-    uint32_t index = static_cast<uint32_t>(size);
-    int32_t randIntValue = static_cast<int32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
 
     auto changeInfo = std::make_unique<AudioCapturerChangeInfo>();
     changeInfo->clientUID = randIntValue;
     changeInfo->sessionId = randIntValue / NUM_2;
     changeInfo->capturerState = testCapturerStates[index % testCapturerStates.size()];
-    changeInfo->capturerInfo.sourceType = g_testSourceTypes[index % g_testSourceTypes.size()];
+    changeInfo->capturerInfo.sourceType = g_fuzzUtils.GetData<SourceType>();
     audioStreamCollector_.audioCapturerChangeInfos_.clear();
     audioStreamCollector_.audioCapturerChangeInfos_.push_back(move(changeInfo));
 
     audioStreamCollector_.GetRunningSourceTypeNoUltrasonic();
 }
 
-void AudioStreamCollectorGetLastestRunningCallStreamUsageFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetLastestRunningCallStreamUsageFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
 
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
     rendererChangeInfo->sessionId = randIntValue;
-    rendererChangeInfo->rendererState = g_testRendererState[index % g_testRendererState.size()];
-    rendererChangeInfo->rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
+    rendererChangeInfo->rendererState = g_fuzzUtils.GetData<RendererState>();
+    rendererChangeInfo->rendererInfo.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
     audioStreamCollector_.audioRendererChangeInfos_.clear();
     audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     audioStreamCollector_.GetLastestRunningCallStreamUsage();
 }
 
-void AudioStreamCollectorGetAllRendererSessionIDForUIDFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetAllRendererSessionIDForUIDFuzzTest()
 {
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t uid = randIntValue / NUM_2;
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
     rendererChangeInfo->clientUID = randIntValue /NUM_2;
     rendererChangeInfo->createrUID = randIntValue /NUM_2;
     rendererChangeInfo->sessionId = randIntValue;
@@ -1044,12 +911,12 @@ void AudioStreamCollectorGetAllRendererSessionIDForUIDFuzzTest(const uint8_t *ra
     audioStreamCollector_.GetAllRendererSessionIDForUID(uid);
 }
 
-void AudioStreamCollectorGetAllCapturerSessionIDForUIDFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetAllCapturerSessionIDForUIDFuzzTest()
 {
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t uid = randIntValue / NUM_2;
     shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
-
+    CHECK_AND_RETURN(capturerChangeInfo != nullptr);
     capturerChangeInfo->clientUID = randIntValue /NUM_2;
     capturerChangeInfo->createrUID = randIntValue /NUM_2;
     capturerChangeInfo->sessionId = randIntValue;
@@ -1059,27 +926,28 @@ void AudioStreamCollectorGetAllCapturerSessionIDForUIDFuzzTest(const uint8_t *ra
     audioStreamCollector_.GetAllCapturerSessionIDForUID(uid);
 }
 
-void AudioStreamCollectorChangeVoipCapturerStreamToNormalFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorChangeVoipCapturerStreamToNormalFuzzTest()
 {
     shared_ptr<AudioCapturerChangeInfo> rendererChangeInfo = make_shared<AudioCapturerChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
-    uint32_t index = static_cast<uint32_t>(size);
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
     rendererChangeInfo->sessionId = randIntValue;
-    rendererChangeInfo->capturerInfo.sourceType = g_testSourceTypes[index % g_testSourceTypes.size()];
+    rendererChangeInfo->capturerInfo.sourceType = g_fuzzUtils.GetData<SourceType>();
     audioStreamCollector_.audioCapturerChangeInfos_.clear();
     audioStreamCollector_.audioCapturerChangeInfos_.push_back(move(rendererChangeInfo));
 
     audioStreamCollector_.ChangeVoipCapturerStreamToNormal();
 }
 
-void AudioStreamCollectorHasVoipRendererStreamFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorHasVoipRendererStreamFuzzTest()
 {
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t uid = randIntValue / NUM_2;
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-
+    CHECK_AND_RETURN(rendererChangeInfo != nullptr);
     rendererChangeInfo->clientUID = randIntValue / NUM_2;
     rendererChangeInfo->createrUID = randIntValue / NUM_2;
     rendererChangeInfo->sessionId = randIntValue;
@@ -1090,16 +958,16 @@ void AudioStreamCollectorHasVoipRendererStreamFuzzTest(const uint8_t *rawData, s
     audioStreamCollector_.HasVoipRendererStream();
 }
 
-void AudioStreamCollectorIsMediaPlayingFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorIsMediaPlayingFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     AudioRendererInfo rendererInfo;
-    rendererInfo.contentType = g_testContentTypes[index % g_testContentTypes.size()];
-    rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
+    rendererInfo.contentType = g_fuzzUtils.GetData<ContentType>();
+    rendererInfo.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
     std::unique_ptr<AudioRendererChangeInfo> info = std::make_unique<AudioRendererChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     info->sessionId = randIntValue % NUM_2;
-    info->rendererState = g_testRendererState[index % g_testRendererState.size()];
+    info->rendererState = g_fuzzUtils.GetData<RendererState>();
     info->rendererInfo = rendererInfo;
     info->channelCount = randIntValue % NUM_2;
     audioStreamCollector_.audioRendererChangeInfos_.clear();
@@ -1107,15 +975,15 @@ void AudioStreamCollectorIsMediaPlayingFuzzTest(const uint8_t *rawData, size_t s
     audioStreamCollector_.IsMediaPlaying();
 }
 
-void AudioStreamCollectorIsVoipStreamActiveFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorIsVoipStreamActiveFuzzTest()
 {
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     AudioRendererInfo rendererInfo;
-    rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
+    rendererInfo.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
     std::unique_ptr<AudioRendererChangeInfo> info = std::make_unique<AudioRendererChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     info->sessionId = randIntValue % NUM_2;
-    info->rendererState = g_testRendererState[index % g_testRendererState.size()];
+    info->rendererState = g_fuzzUtils.GetData<RendererState>();
     info->rendererInfo = rendererInfo;
     info->channelCount = randIntValue % NUM_2;
     audioStreamCollector_.audioRendererChangeInfos_.clear();
@@ -1123,131 +991,86 @@ void AudioStreamCollectorIsVoipStreamActiveFuzzTest(const uint8_t *rawData, size
     audioStreamCollector_.IsVoipStreamActive();
 }
 
-void AudioStreamCollectorCheckVoiceCallActiveFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorCheckVoiceCallActiveFuzzTest()
 {
-    int32_t randIntValue = static_cast<int32_t>(size);
+    int32_t randIntValue = g_fuzzUtils.GetData<int32_t>();
     int32_t clientPid = randIntValue / NUM_2;
-    uint32_t index = static_cast<uint32_t>(size);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
     changeInfo->clientPid = clientPid;
-    changeInfo->rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
+    changeInfo->rendererInfo.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
     changeInfo->sessionId = randIntValue / NUM_2;
     audioStreamCollector_.audioRendererChangeInfos_.clear();
     audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
     audioStreamCollector_.CheckVoiceCallActive(clientPid);
 }
 
-void AudioStreamCollectorPostReclaimMemoryTaskFuzzTest(const uint8_t *rawData, size_t size)
-{
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioStreamType volumeType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
-    rendererChangeInfo->createrUID = randIntValue / NUM_2;
-    rendererChangeInfo->clientUID = randIntValue / NUM_2;
-    rendererChangeInfo->sessionId = randIntValue;
-    rendererChangeInfo->rendererState = g_testRendererState[index % g_testRendererState.size()];
-    audioStreamCollector_.audioRendererChangeInfos_.clear();
-    audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
-    audioStreamCollector_.PostReclaimMemoryTask();
-    audioStreamCollector_.ReclaimMem();
-}
+vector<TestFuncs> g_testFuncs = {
+    AudioStreamCollectorAddRendererStreamFuzzTest,
+    AudioStreamCollectorGetRendererStreamInfoFuzzTest,
+    AudioStreamCollectorGetCapturerStreamInfoFuzzTest,
+    AudioStreamCollectorGetPipeTypeFuzzTest,
+    AudioStreamCollectorExistStreamForPipeFuzzTest,
+    AudioStreamCollectorGetRendererDeviceInfoFuzzTest,
+    AudioStreamCollectorAddCapturerStreamFuzzTest,
+    AudioStreamCollectorSendCapturerInfoEventFuzzTest,
+    AudioStreamCollectorRegisterTrackerFuzzTest,
+    AudioStreamCollectorSetRendererStreamParamFuzzTest,
+    AudioStreamCollectorSetCapturerStreamParamFuzzTest,
+    AudioStreamCollectorResetRendererStreamDeviceInfoFuzzTest,
+    AudioStreamCollectorResetCapturerStreamDeviceInfoFuzzTest,
+    AudioStreamCollectorCheckRendererStateInfoChangedFuzzTest,
+    AudioStreamCollectorCheckRendererInfoChangedFuzzTest,
+    AudioStreamCollectorResetRingerModeMuteFuzzTest,
+    AudioStreamCollectorUpdateRendererStreamInternalFuzzTest,
+    AudioStreamCollectorUpdateCapturerStreamInternalFuzzTest,
+    AudioStreamCollectorUpdateTrackerFuzzTest,
+    AudioStreamCollectorUpdateRendererDeviceInfoFuzzTest,
+    AudioStreamCollectorUpdateCapturerDeviceInfoFuzzTest,
+    AudioStreamCollectorUpdateRendererPipeInfoFuzzTest,
+    AudioStreamCollectorUpdateAppVolumeFuzzTest,
+    AudioStreamCollectorGetStreamTypeFuzzTest,
+    AudioStreamCollectorGetSessionIdsOnRemoteDeviceByStreamUsageFuzzTest,
+    AudioStreamCollectorIsOffloadAllowedFuzzTest,
+    AudioStreamCollectorGetChannelCountFuzzTest,
+    AudioStreamCollectorGetCurrentRendererChangeInfosFuzzTest,
+    AudioStreamCollectorGetCurrentCapturerChangeInfosFuzzTest,
+    AudioStreamCollectorRegisteredTrackerClientDiedFuzzTest,
+    AudioStreamCollectorGetAndCompareStreamTypeFuzzTest,
+    AudioStreamCollectorGetUidFuzzTest,
+    AudioStreamCollectorResumeStreamStateFuzzTest,
+    AudioStreamCollectorUpdateStreamStateFuzzTest,
+    AudioStreamCollectorHandleAppStateChangeFuzzTest,
+    AudioStreamCollectorHandleFreezeStateChangeFuzzTest,
+    AudioStreamCollectorHandleBackTaskStateChangeFuzzTest,
+    AudioStreamCollectorHandleStartStreamMuteStateFuzzTest,
+    AudioStreamCollectorIsStreamActiveFuzzTest,
+    AudioStreamCollectorGetRunningStreamFuzzTest,
+    AudioStreamCollectorGetStreamTypeFromSourceTypeFuzzTest,
+    AudioStreamCollectorSetGetLowPowerVolumeFuzzTest,
+    AudioStreamCollectorSetOffloadModeFuzzTest,
+    AudioStreamCollectorUnsetOffloadModeFuzzTest,
+    AudioStreamCollectorGetSingleStreamVolumeFuzzTest,
+    AudioStreamCollectorUpdateCapturerInfoMuteStatusFuzzTest,
+    AudioStreamCollectorIsCallStreamUsageFuzzTest,
+    AudioStreamCollectorGetRunningStreamUsageNoUltrasonicFuzzTest,
+    AudioStreamCollectorGetRunningSourceTypeNoUltrasonicFuzzTest,
+    AudioStreamCollectorGetLastestRunningCallStreamUsageFuzzTest,
+    AudioStreamCollectorGetAllRendererSessionIDForUIDFuzzTest,
+    AudioStreamCollectorGetAllCapturerSessionIDForUIDFuzzTest,
+    AudioStreamCollectorChangeVoipCapturerStreamToNormalFuzzTest,
+    AudioStreamCollectorHasVoipRendererStreamFuzzTest,
+    AudioStreamCollectorIsMediaPlayingFuzzTest,
+    AudioStreamCollectorIsVoipStreamActiveFuzzTest,
+    AudioStreamCollectorCheckVoiceCallActiveFuzzTest,
+};
 
-void AudioStreamCollectorCheckAudioStateIdleFuzzTest(const uint8_t *rawData, size_t size)
-{
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioStreamType volumeType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
-    rendererChangeInfo->createrUID = randIntValue / NUM_2;
-    rendererChangeInfo->clientUID = randIntValue / NUM_2;
-    rendererChangeInfo->sessionId = randIntValue;
-    rendererChangeInfo->rendererState = g_testRendererState[index % g_testRendererState.size()];
-    audioStreamCollector_.audioRendererChangeInfos_.clear();
-    audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
-    audioStreamCollector_.CheckAudioStateIdle();
-}
 } // namespace AudioStandard
 } // namesapce OHOS
-
-OHOS::AudioStandard::TestPtr g_testPtrs[] = {
-    OHOS::AudioStandard::AudioStreamCollectorAddRendererStreamFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetRendererStreamInfoFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetCapturerStreamInfoFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetPipeTypeFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorExistStreamForPipeFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetRendererDeviceInfoFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorAddCapturerStreamFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorSendCapturerInfoEventFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorRegisterTrackerFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorSetRendererStreamParamFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorSetCapturerStreamParamFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorResetRendererStreamDeviceInfoFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorResetCapturerStreamDeviceInfoFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorCheckRendererStateInfoChangedFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorCheckRendererInfoChangedFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorResetRingerModeMuteFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorUpdateRendererStreamInternalFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorUpdateCapturerStreamInternalFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorUpdateTrackerFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorUpdateRendererDeviceInfoFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorUpdateCapturerDeviceInfoFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorUpdateRendererPipeInfoFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorUpdateAppVolumeFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetStreamTypeFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetSessionIdsOnRemoteDeviceByStreamUsageFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorIsOffloadAllowedFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetChannelCountFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetCurrentRendererChangeInfosFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetCurrentCapturerChangeInfosFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorRegisteredTrackerClientDiedFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetAndCompareStreamTypeFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetUidFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorResumeStreamStateFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorUpdateStreamStateFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorHandleAppStateChangeFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorHandleFreezeStateChangeFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorHandleBackTaskStateChangeFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorHandleStartStreamMuteStateFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorIsStreamActiveFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetRunningStreamFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetStreamTypeFromSourceTypeFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorSetGetLowPowerVolumeFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorSetOffloadModeFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorUnsetOffloadModeFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetSingleStreamVolumeFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorUpdateCapturerInfoMuteStatusFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorIsCallStreamUsageFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetRunningStreamUsageNoUltrasonicFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetRunningSourceTypeNoUltrasonicFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetLastestRunningCallStreamUsageFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetAllRendererSessionIDForUIDFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetAllCapturerSessionIDForUIDFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorChangeVoipCapturerStreamToNormalFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorHasVoipRendererStreamFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorIsMediaPlayingFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorIsVoipStreamActiveFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorCheckVoiceCallActiveFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorPostReclaimMemoryTaskFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorCheckAudioStateIdleFuzzTest,
-};
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    /* Run your code on data */
-    if (data == nullptr || size <= 1) {
-        return 0;
-    }
-    uint32_t len = OHOS::AudioStandard::GetArrLength(g_testPtrs);
-    if (len > 0) {
-        uint8_t firstByte = *data % len;
-        if (firstByte >= len) {
-            return 0;
-        }
-        data = data + 1;
-        size = size - 1;
-        g_testPtrs[firstByte](data, size);
-    }
+    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
     return 0;
 }

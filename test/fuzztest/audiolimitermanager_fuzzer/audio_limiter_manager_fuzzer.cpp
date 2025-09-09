@@ -76,7 +76,7 @@ uint32_t GetArrLength(T& arr)
 void SetLimiterConfigFuzzTest()
 {
     AudioLmtManager *limiterManager = AudioLmtManager::GetInstance();
-    int32_t sinkIndex = GetData<uint32_t>();
+    int32_t sinkIndex = GetData<int32_t>() % NUM_2;
     limiterManager->CreateLimiter(sinkIndex);
     int32_t audioChannel = static_cast<int32_t>(AudioChannel::CHANNEL_16) + 1;
     int32_t channels = static_cast<AudioChannel>(GetData<uint8_t>() % audioChannel);
@@ -86,7 +86,7 @@ void SetLimiterConfigFuzzTest()
 void ProcessLimiterFuzzTest()
 {
     AudioLmtManager *limiterManager = AudioLmtManager::GetInstance();
-    int32_t sinkIndex = GetData<uint32_t>();
+    int32_t sinkIndex = GetData<uint32_t>() % NUM_2;
     limiterManager->CreateLimiter(sinkIndex);
     limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     int32_t frameLen = TEST_MAX_REQUEST / SAMPLE_F32LE;
@@ -101,7 +101,7 @@ void ProcessLimiterFuzzTest()
 void ReleaseLimiterFuzzTest()
 {
     AudioLmtManager *limiterManager = AudioLmtManager::GetInstance();
-    int32_t sinkIndex = GetData<uint32_t>();
+    int32_t sinkIndex = GetData<uint32_t>() % NUM_2;
     limiterManager->CreateLimiter(sinkIndex);
     limiterManager->ReleaseLimiter(sinkIndex);
     limiterManager->ReleaseLimiter(sinkIndex);
@@ -110,7 +110,7 @@ void ReleaseLimiterFuzzTest()
 void GetLatencyFuzzTest()
 {
     AudioLmtManager *limiterManager = AudioLmtManager::GetInstance();
-    int32_t sinkIndex = GetData<uint32_t>();
+    int32_t sinkIndex = GetData<uint32_t>() % NUM_2;
     limiterManager->CreateLimiter(sinkIndex);
     limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     limiterManager->GetLatency(sinkIndex);
@@ -119,7 +119,7 @@ void GetLatencyFuzzTest()
 void CreateLimiterFuzzTest()
 {
     AudioLmtManager *limiterManager = AudioLmtManager::GetInstance();
-    int32_t sinkIndex = GetData<int32_t>();
+    int32_t sinkIndex = GetData<int32_t>() % NUM_2;
     limiterManager->CreateLimiter(sinkIndex);
     limiterManager->CreateLimiter(sinkIndex);
 }

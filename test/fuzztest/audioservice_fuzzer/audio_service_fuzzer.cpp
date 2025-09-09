@@ -514,21 +514,13 @@ void AudioServiceUpdateForegroundStateFuzzTest()
     if (audioService == nullptr) {
         return;
     }
-    uint32_t appTokenId = GetData<uint32_t>();
-    bool isActive = GetData<bool>();
-
-    audioService->UpdateForegroundState(appTokenId, isActive);
-}
-
-void AudioServiceDumpForegroundListFuzzTest()
-{
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    if (audioService == nullptr) {
-        return;
-    }
     std::string dumpString = "test_dump_string";
     audioService->foregroundSet_.insert("_success");
     audioService->DumpForegroundList(dumpString);
+
+    uint32_t appTokenId = GetData<uint32_t>();
+    bool isActive = GetData<bool>();
+    audioService->UpdateForegroundState(appTokenId, isActive);
 }
 
 void AudioServiceRemoveRendererFuzzTest()
@@ -814,7 +806,6 @@ TestPtr g_testPtrs[] = {
     AudioServiceSaveForegroundListFuzzTest,
     AudioServiceMatchForegroundListFuzzTest,
     AudioServiceUpdateForegroundStateFuzzTest,
-    AudioServiceDumpForegroundListFuzzTest,
     AudioServiceRemoveRendererFuzzTest,
     AudioServiceInsertCapturerFuzzTest,
     AudioServiceAddFilteredRenderFuzzTest,
