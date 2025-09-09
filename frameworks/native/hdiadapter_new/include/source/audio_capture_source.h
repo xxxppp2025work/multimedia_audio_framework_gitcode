@@ -26,6 +26,7 @@
 #include "util/audio_running_lock.h"
 #include "util/ring_buffer_handler.h"
 #include "util/callback_wrapper.h"
+#include "util/hdi_dfx_utils.h"
 #include "audio_primary_source_clock.h"
 
 namespace OHOS {
@@ -109,7 +110,6 @@ private:
     void CaptureThreadLoop(void);
     int32_t UpdateActiveDeviceWithoutLock(DeviceType inputDevice);
     int32_t DoStop(void);
-    void DumpData(char *frame, uint64_t &replyBytes);
     void InitRunningLock(void);
     void CheckAcousticEchoCancelerSupported(int32_t sourcetype, int32_t &hdiAudioInputType);
     bool IsCaptureInvalid(void) override;
@@ -160,8 +160,7 @@ private:
     int captureFrameNum_ = 0;
     // for dfx log
     int32_t logMode_ = 0;
-    std::string logUtilsTag_ = "";
-    mutable int64_t volumeDataCount_ = 0;
+    DfxAttr dfxAttr_ = {};
     // for ec and mic_ref
     std::unique_ptr<std::thread> captureThread_ = nullptr;
     bool isCaptureThreadRunning_ = false;
@@ -169,8 +168,6 @@ private:
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLock> runningLock_;
 #endif
-    FILE *dumpFile_ = nullptr;
-    std::string dumpFileName_ = "";
     DeviceType currentActiveDevice_ = DEVICE_TYPE_INVALID;
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
     std::atomic<bool> muteState_ = false;
