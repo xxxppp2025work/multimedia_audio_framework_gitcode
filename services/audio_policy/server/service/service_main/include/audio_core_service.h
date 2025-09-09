@@ -323,7 +323,6 @@ private:
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     int32_t SetRendererTarget(RendererTarget target, RendererTarget lastTarget, uint32_t sessionId);
     int32_t StartInjection(uint32_t sessionId);
-
 private:
     static std::string GetEncryptAddr(const std::string &addr);
     int32_t FetchRendererPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
