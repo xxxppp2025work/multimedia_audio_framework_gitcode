@@ -793,7 +793,6 @@ bool AudioPolicyUtils::IsWirelessDevice(DeviceType deviceType)
     }
 }
 
-<<<<<<< HEAD
 void AudioPolicyUtils::UpdateMultiChannelModuleInfo(AudioPipeInfo &info, AudioChannelLayout channelLayout)
 {
     if (!AudioPolicyManagerFactory::GetAudioPolicyManager()->IsChannelLayoutSupportForDspEffect(channelLayout)) {
@@ -802,11 +801,6 @@ void AudioPolicyUtils::UpdateMultiChannelModuleInfo(AudioPipeInfo &info, AudioCh
         info.moduleInfo_.channelLayout_ = AUDIO_CHANNEL_LAYOUT_5_1;
     }
     info.moduleInfo_.channelLayout_ = channelLayout;
-=======
-AudioChannelLayout UpdateMultiChannelModuleInfo(AudioChannelLayout channelLayout)
-{
-    if (AudioPolicyManagerFactory::GetAudioPolicyManager()->)
->>>>>>> 3056ad0cda97ac9939ec693e134749fd88b5da6c
 }
 } // namespace AudioStandard
 } // namespace OHOS

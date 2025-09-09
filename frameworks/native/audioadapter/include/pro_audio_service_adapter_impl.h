@@ -79,11 +79,7 @@ public:
     virtual void OnGetAudioEnhancePropertyCbV3(int32_t result) override;
     virtual void OnGetAudioEnhancePropertyCb(int32_t result) override;
     virtual void HandleSourceAudioStreamRemoved(uint32_t sessionId) override;
-<<<<<<< HEAD
     virtual bool IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout) override;
-=======
-    virtual bool IsChannelLayoutSupportForMultiChannel(AudioChannelLayout channelLayout) override;
->>>>>>> 3056ad0cda97ac9939ec693e134749fd88b5da6c
 private:
     std::mutex lock_;
     // for status operation wait and notify

@@ -375,8 +375,8 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_005, TestSize
 }
 
 /**
- * @tc.name: Pro_Audio_IsChannelLayoutSupportForMultiChannel_001
- * @tc.desc: test check if channel layout support for multi channel
+ * @tc.name: Pro_Audio_IsChannelLayoutSupportForDspEffect_001
+ * @tc.desc: test check if channel layout support for dsp
  * @tc.type: FUNC
  */
 HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_IsChannelLayoutSupportForMultiChannel_001, TestSize.Level1)
