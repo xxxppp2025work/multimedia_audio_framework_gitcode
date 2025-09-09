@@ -1031,13 +1031,10 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid, pid_t pid)
     audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
     streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid), static_cast<int32_t>(pid));
     CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager is nullptr");
-    std::vector<uint32_t> sessionIds = pipeManager_->GetStreamIdsByUid(uid,
-        (AUDIO_OUTPUT_FLAG_FAST | AUDIO_INPUT_FLAG_FAST));
+
+    auto sessionIds = pipeManager_->GetStreamIdsByUid(uid, pid);
     for (auto sessionId : sessionIds) {
         ReleaseClient(sessionId);
-    }
-    sessionIds = pipeManager_->GetStreamIdsByUid(uid);
-    for (auto sessionId : sessionIds) {
         UnsetAudioRouteCallback(sessionId);
     }
     FetchOutputDeviceAndRoute("RegisteredTrackerClientDied");
