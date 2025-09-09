@@ -482,8 +482,10 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
             &dspVolumeMax, sizeof(int32_t));
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "memcpy volume failed");
         AUDIO_INFO_LOG("set hdi volume: %{public}u", *(reinterpret_cast<uint32_t *>(&effectHdiInput_[1])));
-        ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set hdi volume failed");
+        if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
+            AUDIO_WARNING_LOG("set hdi volume failed");
+            return ERROR;
+        }
     }
     return SUCCESS;
 }
@@ -615,9 +617,10 @@ int32_t AudioEffectChainManager::EffectDspRotationUpdate(std::shared_ptr<AudioEf
     effectHdiInput_[0] = HDI_ROTATION;
     effectHdiInput_[1] = rotationState;
     AUDIO_INFO_LOG("set hdi rotation: %{public}d", effectHdiInput_[1]);
-    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set hdi rotation failed");
-
+    if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
+        AUDIO_WARNING_LOG("set hdi rotation failed");
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -814,58 +817,12 @@ int32_t AudioEffectChainManager::SetHdiParam(const AudioEffectScene &sceneType)
     effectHdiInput_[0] = HDI_ROOM_MODE;
     effectHdiInput_[1] = sceneType;
     AUDIO_PRERELEASE_LOGI("set hdi room mode sceneType: %{public}d", effectHdiInput_[1]);
-    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "set hdi room mode failed, ret is %{public}d", ret);
-    return SUCCESS;
-}
-
-// LCOV_EXCL_START
-int32_t AudioEffectChainManager::QueryHdiSupportedChannelInfo(uint32_t &channels, uint64_t &channelLayout)
-{
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
-    uint32_t tmpChannelCount = DEFAULT_NUM_CHANNEL;
-    uint64_t tmpChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-    if (sceneTypeToSessionIDMap_.size() == 0) {
-        return SUCCESS;
-    }
-    for (auto it = sceneTypeToSessionIDMap_.begin(); it != sceneTypeToSessionIDMap_.end(); it++) {
-        std::set<std::string> sessions = sceneTypeToSessionIDMap_[it->first];
-        for (auto s = sessions.begin(); s != sessions.end(); ++s) {
-            SessionEffectInfo info = sessionIDToEffectInfoMap_[*s];
-            if (info.channels > tmpChannelCount &&
-                info.channels <= DSP_MAX_NUM_CHANNEL &&
-                !ExistAudioEffectChainInner(it->first, info.sceneMode)) {
-                tmpChannelCount = info.channels;
-                tmpChannelLayout = info.channelLayout;
-            }
-        }
-    }
-    if (tmpChannelLayout != channelLayout) {
-        if (!isInitialized_) {
-            if (initializedLogFlag_) {
-                AUDIO_ERR_LOG("audioEffectChainManager has not been initialized");
-                initializedLogFlag_ = false;
-            }
-            return ERROR;
-        }
-        memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
-
-        effectHdiInput_[0] = HDI_QUERY_CHANNELLAYOUT;
-        uint64_t* tempChannelLayout = (uint64_t *)(effectHdiInput_ + 1);
-        *tempChannelLayout = tmpChannelLayout;
-        AUDIO_PRERELEASE_LOGI("set hdi channel: %{public}d", channels);
-        int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
-        if (ret != SUCCESS) {
-            channels = DEFAULT_MCH_NUM_CHANNEL;
-            channelLayout = DEFAULT_MCH_NUM_CHANNELLAYOUT;
-        } else {
-            channels = tmpChannelCount;
-            channelLayout = tmpChannelLayout;
-        }
+    if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
+        AUDIO_WARNING_LOG("set hdi room mode failed");
+        return ERROR;
     }
     return SUCCESS;
 }
-// LCOV_EXCL_STOP
 
 // LCOV_EXCL_START
 void AudioEffectChainManager::UpdateSensorState()
@@ -1374,7 +1331,7 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         effectHdiInput_[0] = HDI_INIT;
         int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
         if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("set hdi init failed, enter route of escape in ARM");
+            AUDIO_WARNING_LOG("set hdi init failed, enter route of escape in ARM");
             btOffloadEnabled_ = false;
         } else {
             AUDIO_INFO_LOG("set hdi init succeeded, normal spatialization entered");
@@ -1385,7 +1342,7 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         AUDIO_INFO_LOG("set hdi destroy.");
         int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
         if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("set hdi destroy failed");
+            AUDIO_WARNING_LOG("set hdi destroy failed");
         }
         if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             AUDIO_INFO_LOG("delete all chains if device type is bt.");
@@ -2014,6 +1971,18 @@ int32_t AudioEffectChainManager::EffectApAbsVolumeStateUpdate(const bool absVolu
     }
 
     return SUCCESS;
+}
+
+bool AudioEffectChainManager::IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout)
+{
+    effectHdiInput_[0] = HDI_QUERY_CHANNELLAYOUT;
+    uint64_t* tempChannelLayout = reinterpret_cast<uint64_t *>(effectHdiInput_ + 1);
+    *tempChannelLayout = channelLayout;
+    if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
+        AUDIO_WARNING_LOG("query channel layout support failed :%{public}u", channelLayout);
+        return false;
+    }
+    return true;
 }
 } // namespace AudioStandard
 } // namespace OHOS

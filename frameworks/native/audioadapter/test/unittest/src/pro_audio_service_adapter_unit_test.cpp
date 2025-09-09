@@ -373,5 +373,20 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_005, TestSize
     portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);
     EXPECT_GE(0, portId);
 }
+
+/**
+ * @tc.name: Pro_Audio_IsChannelLayoutSupportForMultiChannel_001
+ * @tc.desc: test check if channel layout support for multi channel
+ * @tc.type: FUNC
+ */
+HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_IsChannelLayoutSupportForMultiChannel_001, TestSize.Level1)
+{
+    AudioChannelLayout channelLayout = CH_LAYOUT_5POINT1;
+    int32_t ret = impl_->IsChannelLayoutSupportForMultiChannel(moduleInfo.lib, moduleInfo);
+    EXPECT_GE(SUCCESS, ret);
+    channelLayout = CH_LAYOUT_4POINT0;
+    ret = impl_->IsChannelLayoutSupportForMultiChannel(moduleInfo.lib, moduleInfo);
+    EXPECT_GE(ERROR, ret);
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

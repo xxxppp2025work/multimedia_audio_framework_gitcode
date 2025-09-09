@@ -468,6 +468,8 @@ static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipe
         info.moduleInfo_.bufferSize =
             std::to_string(((streamPropInfo->bufferSize_ / std::stoul(info.moduleInfo_.channels)) * STEREO));
         AUDIO_INFO_LOG("Buffer size: %{public}s", info.moduleInfo_.bufferSize.c_str());
+        info.moduleInfo_.channelLayout =
+            AudioPolicyUtils::GetInstance().UpdateMultiChannelModuleInfo(info, streamPropInfo->channelLayout_);
     } else if (pipeInfoPtr->name_ == "offload_output") {
         info.moduleInfo_.className = "offload";
         info.moduleInfo_.offloadEnable = "1";

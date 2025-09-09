@@ -77,7 +77,7 @@ public:
     void DumpInfo(std::string &dumpString) override;
 
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
-
+    int32_t SetSinkMuteForSwitchDevice(bool mute) override;
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
@@ -147,6 +147,10 @@ private:
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     AudioScene currentAudioScene_ = AUDIO_SCENE_DEFAULT;
     std::mutex sinkMutex_;
+    // for device switch
+    std::mutex switchDeviceMutex_;
+    int32_t muteCount_ = 0;
+    std::atomic<bool> switchDeviceMute_ = false;
 };
 
 } // namespace AudioStandard

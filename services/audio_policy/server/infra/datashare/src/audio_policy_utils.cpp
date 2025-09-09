@@ -793,5 +793,14 @@ bool AudioPolicyUtils::IsWirelessDevice(DeviceType deviceType)
     }
 }
 
+void AudioPolicyUtils::UpdateMultiChannelModuleInfo(AudioPipeInfo &info, AudioChannelLayout channelLayout)
+{
+    if (!AudioPolicyManagerFactory::GetAudioPolicyManager()->IsChannelLayoutSupportForDspEffect(channelLayout)) {
+        AUDIO_INFO_LOG("not support channelLayout:%{public}u, use default 5.1", channelLayout);
+        info.moduleInfo_.channels = "6"; // default 5.1
+        info.moduleInfo_.channelLayout_ = AUDIO_CHANNEL_LAYOUT_5_1;
+    }
+    info.moduleInfo_.channelLayout_ = channelLayout;
+}
 } // namespace AudioStandard
 } // namespace OHOS
