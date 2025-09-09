@@ -257,6 +257,8 @@ public:
 
     virtual float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType,
         int32_t volumeLevel) = 0;
+
+    virtual bool IsChannelLayoutSupportForMultiChannel(AudioChannelLayout channelLayout) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

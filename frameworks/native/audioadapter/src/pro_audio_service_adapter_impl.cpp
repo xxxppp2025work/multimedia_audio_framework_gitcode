@@ -569,6 +569,12 @@ int32_t ProAudioServiceAdapterImpl::SetSystemVolumeToEffect(AudioStreamType stre
     IHpaeManager::GetHpaeManager().SetEffectSystemVolume(streamType, volume);
     return SUCCESS;
 }
+
+bool ProAudioServiceAdapterImpl::IsChannelLayoutSupportForMultiChannel(AudioChannelLayout channelLayout)
+{
+    lock_guard<mutex> lock(lock_);
+    return AudioEffectChainManager::GetInstance().IsChannelLayoutSupportForMultiChannel(channelLayout);
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
 

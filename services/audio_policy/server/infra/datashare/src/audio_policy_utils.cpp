@@ -793,5 +793,9 @@ bool AudioPolicyUtils::IsWirelessDevice(DeviceType deviceType)
     }
 }
 
+AudioChannelLayout UpdateMultiChannelModuleInfo(AudioChannelLayout channelLayout)
+{
+    if (AudioPolicyManagerFactory::GetAudioPolicyManager()->)
+}
 } // namespace AudioStandard
 } // namespace OHOS
