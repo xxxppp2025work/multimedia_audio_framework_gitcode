@@ -587,7 +587,7 @@ public:
      * @since 8
      */
     virtual AudioRendererRate GetRenderRate() const = 0;
-
+    
     /**
      * @brief Set the render sampling rate
      *
@@ -1119,6 +1119,22 @@ public:
      * @since 20
      */
     static bool CheckSupportedSamplingRates(uint32_t rates);
+
+    /**
+     * @brief Sef the render target
+     * @param target The target at which the stream needs to be rendered.
+     * @return Returns {@link SUCCESS} if render target is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 22
+     */
+    virtual int32_t SetTarget(RenderTarget target) const { return 0; };
+
+    /**
+     * @brief Obtains the current render target
+     * @return Returns current render target
+     * @since 22
+     */
+    virtual RenderTarget GetTarget() const { return PLAY_BACK; }
 
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,

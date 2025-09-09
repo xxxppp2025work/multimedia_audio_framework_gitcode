@@ -180,6 +180,12 @@ const int32_t ERR_PRO_STREAM_NOT_SUPPORTED = BASE_AUDIO_ERR_OFFSET - 39;
 /** failed to set volume because isVolumeControlDisabled is true */
 const int32_t ERR_SET_VOL_FAILED_BY_VOLUME_CONTROL_DISABLED = BASE_AUDIO_ERR_OFFSET - 40;
 
+/** failed to inject because state is not illegal */
+const int32_t ERR_INJECT_TO_VOICE_COMMUNICATION_CAPTURE_BY_ILLEGAL_STATE = BASE_AUDIO_ERR_OFFSET - 41;
+
+/** failed to inject because stream is not normal */
+const int32_t ERR_INJECT_TO_VOICE_COMMUNICATION_CAPTURE_BY_ILLEGAL_STREAM = BASE_AUDIO_ERR_OFFSET - 42;
+
 /** Unknown error */
 const int32_t  ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
 
