@@ -229,7 +229,7 @@ int32_t MultichannelAudioRenderSink::RenderFrame(char &data, uint64_t len, uint6
         }
         --emptyFrameCount_;
         if (emptyFrameCount_ == 0) {
-            switchDeviceCV_.notify_all();
+            updateActiveDeviceCV_.notify_all();
         }
     }
 
@@ -411,7 +411,7 @@ int32_t MultichannelAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> 
 
     emptyFrameCount_ = 5; // 5: frame count before update route
     std::unique_lock<std::mutex> lock(switchDeviceMutex_);
-    switchDeviceCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_FOR_EMPTY_FRAME), [this] {
+    updateActiveDeviceCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_FOR_EMPTY_FRAME), [this] {
         if (emptyFrameCount_ == 0) {
             AUDIO_INFO_LOG("wait for empty frame end");
             return true;
