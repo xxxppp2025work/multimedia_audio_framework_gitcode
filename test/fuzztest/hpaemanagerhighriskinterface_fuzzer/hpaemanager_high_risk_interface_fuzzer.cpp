@@ -266,7 +266,7 @@ void HpaeManagerFuzzTest::HpaeCaptureStreamManagerMoveFuzzTest()
     StreamSetUp();
     uint32_t sessionId = sourceOutputIdList_[GetData<uint32_t>() % sourceOutputIdList_.size()];
     uint32_t sourceIndex = GetData<uint32_t>();
-    std::string sourceName = sourceNameList_[GetData<uint32_t>() % sourceOutputIdList_.size()];
+    std::string sourceName = sourceNameList_[GetData<uint32_t>() % sourceNameList_.size()];
     hpaeManager_->MoveSourceOutputByIndexOrName(sessionId, sourceIndex, sourceName);
     TearDown();
 }
@@ -276,7 +276,7 @@ void HpaeManagerFuzzTest::HpaeRenderStreamManagerMoveFuzzTest()
     StreamSetUp();
     uint32_t sessionId = sinkInputIdList_[GetData<uint32_t>() % sinkInputIdList_.size()];
     uint32_t sinkIndex = GetData<uint32_t>();
-    std::string sinkName = sinkNameList_[GetData<uint32_t>() % sinkInputIdList_.size()];
+    std::string sinkName = sinkNameList_[GetData<uint32_t>() % sinkNameList_.size()];
     hpaeManager_->MoveSinkInputByIndexOrName(sessionId, sinkIndex, sinkName);
     TearDown();
 }
@@ -287,7 +287,7 @@ void HpaeManagerFuzzTest::OpenAudioPortFuzzTest()
     AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
     hpaeManager_->OpenAudioPort(audioModuleInfo);
     audioModuleInfo.lib = libList_[GetData<uint32_t>() % libList_.size()];
-    audioModuleInfo.name = audioPortNameList_[GetData<uint32_t>() % libList_.size()];
+    audioModuleInfo.name = audioPortNameList_[GetData<uint32_t>() % audioPortNameList_.size()];
     audioModuleInfo.className = DeviceClassList[GetData<uint32_t>() % DeviceClassList.size()];
     hpaeManager_->OpenAudioPort(audioModuleInfo);
     TearDown();
@@ -298,7 +298,7 @@ void HpaeManagerFuzzTest::ReloadAudioPortFuzzTest()
     AudioPortSetUp();
     AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
     audioModuleInfo.lib = libList_[GetData<uint32_t>() % libList_.size()];
-    audioModuleInfo.name = audioPortNameList_[GetData<uint32_t>() % libList_.size()];
+    audioModuleInfo.name = audioPortNameList_[GetData<uint32_t>() % audioPortNameList_.size()];
     audioModuleInfo.className = DeviceClassList[GetData<uint32_t>() % DeviceClassList.size()];
     hpaeManager_->ReloadAudioPort(audioModuleInfo);
     TearDown();
