@@ -158,7 +158,11 @@ public:
     ProcessClusterOperation CheckProcessClusterInstances(const std::string &sceneType);
     int32_t GetOutputChannelInfo(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
     int32_t DeleteStreamVolume(const std::string StringSessionID);
+<<<<<<< HEAD
     bool IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout);
+=======
+    bool IsChannelLayoutSupportForMultiChannel(AudioChannelLayout channelLayout);
+>>>>>>> 3056ad0cda97ac9939ec693e134749fd88b5da6c
 private:
     int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();

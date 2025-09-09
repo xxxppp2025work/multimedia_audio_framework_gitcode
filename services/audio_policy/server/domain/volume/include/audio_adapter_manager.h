@@ -306,7 +306,11 @@ public:
     void SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
     int32_t GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType);
     int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume);
+<<<<<<< HEAD
     bool IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout);
+=======
+    bool IsChannelLayoutSupportForMultiChannel(AudioChannelLayout channelLayout);
+>>>>>>> 3056ad0cda97ac9939ec693e134749fd88b5da6c
 private:
     friend class PolicyCallbackImpl;
 

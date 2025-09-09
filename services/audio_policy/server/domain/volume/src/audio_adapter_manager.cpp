@@ -3405,10 +3405,17 @@ int32_t AudioAdapterManager::SetSystemVolumeToEffect(AudioStreamType streamType,
     return audioServiceAdapter_->SetSystemVolumeToEffect(streamType, volume);
 }
 
+<<<<<<< HEAD
 bool AudioAdapterManager::IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "audioServiceAdapter is null");
     return audioServiceAdapter_->IsChannelLayoutSupportForDspEffect(channelLayout);
+=======
+bool AudioAdapterManager::IsChannelLayoutSupportForMultiChannel(AudioChannelLayout channelLayout)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "audioServiceAdapter is null");
+    return audioServiceAdapter_->IsChannelLayoutSupportForMultiChannel(channelLayout);
+>>>>>>> 3056ad0cda97ac9939ec693e134749fd88b5da6c
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

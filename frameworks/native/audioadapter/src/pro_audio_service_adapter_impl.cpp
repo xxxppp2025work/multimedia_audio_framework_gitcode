@@ -570,10 +570,17 @@ int32_t ProAudioServiceAdapterImpl::SetSystemVolumeToEffect(AudioStreamType stre
     return SUCCESS;
 }
 
+<<<<<<< HEAD
 bool ProAudioServiceAdapterImpl::IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout)
 {
     lock_guard<mutex> lock(lock_);
     return AudioEffectChainManager::GetInstance().IsChannelLayoutSupportForDspEffect(channelLayout);
+=======
+bool ProAudioServiceAdapterImpl::IsChannelLayoutSupportForMultiChannel(AudioChannelLayout channelLayout)
+{
+    lock_guard<mutex> lock(lock_);
+    return AudioEffectChainManager::GetInstance().IsChannelLayoutSupportForMultiChannel(channelLayout);
+>>>>>>> 3056ad0cda97ac9939ec693e134749fd88b5da6c
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -820,6 +820,56 @@ int32_t AudioEffectChainManager::SetHdiParam(const AudioEffectScene &sceneType)
     if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
         AUDIO_WARNING_LOG("set hdi room mode failed");
         return ERROR;
+<<<<<<< HEAD
+=======
+    }
+    return SUCCESS;
+}
+
+// LCOV_EXCL_START
+int32_t AudioEffectChainManager::QueryHdiSupportedChannelInfo(uint32_t &channels, uint64_t &channelLayout)
+{
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    uint32_t tmpChannelCount = DEFAULT_NUM_CHANNEL;
+    uint64_t tmpChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+    if (sceneTypeToSessionIDMap_.size() == 0) {
+        return SUCCESS;
+    }
+    for (auto it = sceneTypeToSessionIDMap_.begin(); it != sceneTypeToSessionIDMap_.end(); it++) {
+        std::set<std::string> sessions = sceneTypeToSessionIDMap_[it->first];
+        for (auto s = sessions.begin(); s != sessions.end(); ++s) {
+            SessionEffectInfo info = sessionIDToEffectInfoMap_[*s];
+            if (info.channels > tmpChannelCount &&
+                info.channels <= DSP_MAX_NUM_CHANNEL &&
+                !ExistAudioEffectChainInner(it->first, info.sceneMode)) {
+                tmpChannelCount = info.channels;
+                tmpChannelLayout = info.channelLayout;
+            }
+        }
+    }
+    if (tmpChannelLayout != channelLayout) {
+        if (!isInitialized_) {
+            if (initializedLogFlag_) {
+                AUDIO_ERR_LOG("audioEffectChainManager has not been initialized");
+                initializedLogFlag_ = false;
+            }
+            return ERROR;
+        }
+        memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
+
+        effectHdiInput_[0] = HDI_QUERY_CHANNELLAYOUT;
+        uint64_t* tempChannelLayout = (uint64_t *)(effectHdiInput_ + 1);
+        *tempChannelLayout = tmpChannelLayout;
+        AUDIO_PRERELEASE_LOGI("set hdi channel: %{public}d", channels);
+        int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
+        if (ret != SUCCESS) {
+            channels = DEFAULT_MCH_NUM_CHANNEL;
+            channelLayout = DEFAULT_MCH_NUM_CHANNELLAYOUT;
+        } else {
+            channels = tmpChannelCount;
+            channelLayout = tmpChannelLayout;
+        }
+>>>>>>> 3056ad0cda97ac9939ec693e134749fd88b5da6c
     }
     return SUCCESS;
 }
@@ -1973,7 +2023,11 @@ int32_t AudioEffectChainManager::EffectApAbsVolumeStateUpdate(const bool absVolu
     return SUCCESS;
 }
 
+<<<<<<< HEAD
 bool AudioEffectChainManager::IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout)
+=======
+bool AudioEffectChainManager::IsChannelLayoutSupportForMultiChannel(AudioChannelLayout channelLayout)
+>>>>>>> 3056ad0cda97ac9939ec693e134749fd88b5da6c
 {
     effectHdiInput_[0] = HDI_QUERY_CHANNELLAYOUT;
     uint64_t* tempChannelLayout = reinterpret_cast<uint64_t *>(effectHdiInput_ + 1);
