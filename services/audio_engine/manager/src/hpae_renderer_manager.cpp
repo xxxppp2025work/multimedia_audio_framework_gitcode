@@ -652,14 +652,16 @@ void HpaeRendererManager::DisConnectOutputCluster(uint32_t sessionId, HpaeProces
 {       
     if (SafeGetMap(sceneClusterMap_, sceneType) && sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
         sceneClusterMap_[sceneType]->DisConnectMixerNode();
-        outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
+        if (outputCluster_ != nullptr) {
+            outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
+        }
         sceneClusterMap_[sceneType]->SetConnectedFlag(false);
     }
 }
 
 void HpaeRendererManager::DereferenceInputCluster(uint32_t sessionId)
 {
-    HpaeProcessCluster sceneType = sinkInputNodeMap_[sessionId]->connectedProcessorType_;
+    HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->connectedProcessorType_;
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
         sceneClusterMap_[sceneType]->DisConnect(sinkInputNodeMap_[sessionId]);
         sinkInputNodeMap_[sessionId]->connectedProcessorType_ = HPAE_SCENE_UNCONNECTED;
@@ -667,6 +669,8 @@ void HpaeRendererManager::DereferenceInputCluster(uint32_t sessionId)
 
     CHECK_AND_RETURN_LOG(!sessionNodeMap_[sessionId].bypass, "none processCluster has no effectNode");
     HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
+    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
+        "could not find processorType %{public}d", nodeInfo.sceneType);
     sceneClusterMap_[nodeInfo.sceneType]->AudioRendererRelease(nodeInfo);
     sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]--;
     AUDIO_INFO_LOG("sessionId %{public}u is disconnected from sceneType %{public}d, current count is %{public}d",
