@@ -133,6 +133,11 @@ public:
     virtual void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) {}
 
     virtual void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback) {}
+
+    virtual std::string GetAdapterName(void)
+    {
+        return "";
+    }
 };
 
 } // namespace AudioStandard
