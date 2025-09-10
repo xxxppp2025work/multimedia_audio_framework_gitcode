@@ -104,6 +104,8 @@ public:
 
     virtual ~AudioEndpoint() = default;
 
+    virtual int32_t UpdateDeviceType(DeviceType type) = 0;
+
 protected:
     // SamplingRate EncodingType SampleFormat Channel
     AudioStreamInfo dstStreamInfo_;

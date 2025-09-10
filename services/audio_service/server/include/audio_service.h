@@ -83,6 +83,7 @@ public:
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume);
 
 #ifdef SUPPORT_LOW_LATENCY
+    void UpdateDeviceType(DeviceType type);
     sptr<AudioProcessInServer> GetAudioProcess(const AudioProcessConfig &config);
     // override for ProcessReleaseCallback, do release process work.
     int32_t OnProcessRelease(IAudioProcessStream *process, bool isSwitchStream = false) override;

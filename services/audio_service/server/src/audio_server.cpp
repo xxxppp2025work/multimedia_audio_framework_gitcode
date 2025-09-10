@@ -1417,10 +1417,16 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
         sink->UpdateActiveDevice(deviceTypes);
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
+#ifdef SUPPORT_LOW_LATENCY
+        AudioService::GetInstance()->UpdateDeviceType(type);
+#endif
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
         UpdateDeviceForAllSource(source, type);
         sink->UpdateActiveDevice(deviceTypes);
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
+#ifdef SUPPORT_LOW_LATENCY
+        AudioService::GetInstance()->UpdateDeviceType(type);
+#endif
     } else {
         AUDIO_ERR_LOG("SetIORoutes invalid device flag");
         return ERR_INVALID_PARAM;
