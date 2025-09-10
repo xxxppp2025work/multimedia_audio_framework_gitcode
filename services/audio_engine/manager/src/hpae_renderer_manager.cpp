@@ -648,7 +648,7 @@ void HpaeRendererManager::DisConnectInputCluster(uint32_t sessionId, HpaeProcess
     }
 }
 
-void HpaeRendererManager::DisConnectOutputCluster(uint32_t sessionId, HpaeProcessorType sceneType)
+void HpaeRendererManager::DisConnectOutputCluster(HpaeProcessorType sceneType)
 {       
     if (SafeGetMap(sceneClusterMap_, sceneType) && sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
         sceneClusterMap_[sceneType]->DisConnectMixerNode();
