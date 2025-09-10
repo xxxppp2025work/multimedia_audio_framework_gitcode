@@ -30,6 +30,7 @@
 #include <set>
 #include <unordered_map>
 #include "i_hpae_manager.h"
+#include "audio_effect_chain_manager.h"
 
 using namespace std;
 using namespace OHOS::AudioStandard::HPAE;
@@ -573,7 +574,7 @@ int32_t ProAudioServiceAdapterImpl::SetSystemVolumeToEffect(AudioStreamType stre
 bool ProAudioServiceAdapterImpl::IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout)
 {
     lock_guard<mutex> lock(lock_);
-    return AudioEffectChainManager::GetInstance().IsChannelLayoutSupportForDspEffect(channelLayout);
+    return IHpaeManager::GetHpaeManager().IsChannelLayoutSupportForDspEffect(channelLayout);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

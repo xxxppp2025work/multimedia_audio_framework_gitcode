@@ -25,8 +25,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 static constexpr uint64_t TIME_US_PER_S = 1000000;
-static constexpr uint32_t DEFAULT_MULTICHANNEL_NUM = 6;
-static constexpr uint32_t DEFAULT_MULTICHANNEL_CHANNELLAYOUT = 1551;
 static constexpr float MAX_SINK_VOLUME_LEVEL = 1.0;
 static constexpr uint32_t DEFAULT_MULTICHANNEL_FRAME_LEN_MS = 20;
 static constexpr uint32_t MS_PER_SECOND = 1000;

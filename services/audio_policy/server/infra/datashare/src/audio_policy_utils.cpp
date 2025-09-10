@@ -795,12 +795,12 @@ bool AudioPolicyUtils::IsWirelessDevice(DeviceType deviceType)
 
 void AudioPolicyUtils::UpdateMultiChannelModuleInfo(AudioPipeInfo &info, AudioChannelLayout channelLayout)
 {
-    if (!AudioPolicyManagerFactory::GetAudioPolicyManager()->IsChannelLayoutSupportForDspEffect(channelLayout)) {
-        AUDIO_INFO_LOG("not support channelLayout:%{public}u, use default 5.1", channelLayout);
+    if (!AudioPolicyManagerFactory::GetAudioPolicyManager().IsChannelLayoutSupportForDspEffect(channelLayout)) {
+        AUDIO_INFO_LOG("not support channelLayout:%{public}lu, use default 5.1", channelLayout);
         info.moduleInfo_.channels = std::to_string(static_cast<int>(CHANNEL_6)); // default 5.1
-        info.moduleInfo_.channelLayout_ = std::to_string(static_cast<int>(CH_LAYOUT_5POINT1));
+        info.moduleInfo_.channelLayout = std::to_string(static_cast<int>(CH_LAYOUT_5POINT1));
     }
-    info.moduleInfo_.channelLayout_ = std::to_string(static_cast<int>(channelLayout));
+    info.moduleInfo_.channelLayout = std::to_string(static_cast<int>(channelLayout));
 }
 } // namespace AudioStandard
 } // namespace OHOS

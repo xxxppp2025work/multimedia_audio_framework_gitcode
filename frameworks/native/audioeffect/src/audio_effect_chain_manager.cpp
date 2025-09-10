@@ -1979,7 +1979,7 @@ bool AudioEffectChainManager::IsChannelLayoutSupportForDspEffect(AudioChannelLay
     uint64_t* tempChannelLayout = reinterpret_cast<uint64_t *>(effectHdiInput_ + 1);
     *tempChannelLayout = channelLayout;
     if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
-        AUDIO_WARNING_LOG("query channel layout support failed :%{public}u", channelLayout);
+        AUDIO_WARNING_LOG("query channel layout support failed :%{public}lu", channelLayout);
         return false;
     }
     return true;
