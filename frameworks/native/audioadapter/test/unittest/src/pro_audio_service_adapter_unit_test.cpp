@@ -423,13 +423,13 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_007, TestSize
  * @tc.desc: test check if channel layout support for dsp
  * @tc.type: FUNC
  */
-HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_IsChannelLayoutSupportForMultiChannel_001, TestSize.Level1)
+HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_IsChannelLayoutSupportForDspEffect_001, TestSize.Level1)
 {
     AudioChannelLayout channelLayout = CH_LAYOUT_5POINT1;
-    int32_t ret = impl_->IsChannelLayoutSupportForMultiChannel(moduleInfo.lib, moduleInfo);
+    int32_t ret = impl_->IsChannelLayoutSupportForDspEffect(moduleInfo.lib, moduleInfo);
     EXPECT_GE(SUCCESS, ret);
     channelLayout = CH_LAYOUT_4POINT0;
-    ret = impl_->IsChannelLayoutSupportForMultiChannel(moduleInfo.lib, moduleInfo);
+    ret = impl_->IsChannelLayoutSupportForDspEffect(moduleInfo.lib, moduleInfo);
     EXPECT_GE(ERROR, ret);
 }
 }  // namespace AudioStandard
