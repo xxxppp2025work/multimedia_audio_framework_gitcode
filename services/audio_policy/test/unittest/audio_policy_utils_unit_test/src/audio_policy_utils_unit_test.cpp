@@ -424,7 +424,7 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_020, TestSize.Level1)
  * @tc.number: AudioPolicyUtilsUnitTest_021
  * @tc.desc  : Test UpdateMultiChannelModuleInfo.
  */
-HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_020, TestSize.Level1)
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_021, TestSize.Level1)
 {
     AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
     audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
@@ -432,10 +432,11 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_020, TestSize.Level1)
 
     AudioPipeInfo info;
     info.moduleInfo_.channels = "4";
-    streamPropInfo->channelLayout_ = CH_LAYOUT_6POINT0_FRONT;
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
-    int32_t ret = audioPolicyUtilsTest_->UpdateMultiChannelModuleInfo(info, streamPropInfo);
-    EXPECT_EQ(ret, false);
+    streamPropInfo->channelLayout_ = CH_LAYOUT_6POINT0_FRONT;
+    audioPolicyUtilsTest_->UpdateMultiChannelModuleInfo(info, streamPropInfo);
+    EXPECT_EQ(info.moduleInfo_.channels, std::to_string(static_cast<uint8_t>(CHANNEL_6)));
+    EXPECT_EQ(info.moduleInfo_.channelLayout, std::to_string(static_cast<uint64_t>(CH_LAYOUT_5POINT1)));
 }
 } // namespace AudioStandard
 } // namespace OHOS
