@@ -304,7 +304,7 @@ void AudioA2dpOffloadManager::UpdateA2dpOffloadFlagInternal(
     }
 
     if (oldA2dpOffloadFlag != newA2dpOffloadFlag && oldA2dpOffloadFlag == A2DP_OFFLOAD) {
-        OffloadStartPlaying(allRunningSessions);
+        OffloadStopPlaying(allRunningSessions);
         SetA2dpOffloadFlag(newA2dpOffloadFlag);
     } else if (newA2dpOffloadFlag == A2DP_OFFLOAD) {
         SetA2dpOffloadFlag(newA2dpOffloadFlag);
