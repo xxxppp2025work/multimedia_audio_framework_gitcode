@@ -118,35 +118,15 @@ void MoreFuzzTest()
     interruptService->HandleSessionTimeOutEvent(pid);
 }
 
-void AddAudioSessionFuzzTest()
-{
-    int32_t sessionStrategy = 0;
-
-    AudioInterrupt incomingInterrupt;
-    incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
-    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    AudioInterrupt activeInterrupt;
-    activeInterrupt.audioFocusType.streamType = STREAM_MUSIC;
-    AudioFocusEntry focusEntry;
-    focusEntry.isReject = false;
-
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    interruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
-    interruptService->CanMixForIncomingSession(incomingInterrupt, activeInterrupt, focusEntry);
-    interruptService->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry);
-    interruptService->IsIncomingStreamLowPriority(focusEntry);
-    interruptService->IsActiveStreamLowPriority(focusEntry);
-}
-
 void AddSetAudioManagerInterruptCallbackFuzzTest()
 {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    interruptService->GetAudioServerProxy();
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     data.WriteBuffer(RAW_DATA, g_dataSize);
     data.RewindRead(0);
     sptr<IRemoteObject> object = data.ReadRemoteObject();
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    interruptService->GetAudioServerProxy();
     if (object == nullptr) {
         return;
     }
@@ -157,22 +137,6 @@ void AddSetAudioManagerInterruptCallbackFuzzTest()
     uint32_t uid = GetData<uint32_t>();
     interruptService->SetAudioInterruptCallback(zoneId, sessionId, object, uid);
 }
-
-void ClearAudioFocusInfoListOnAccountsChangedFuzzTest()
-{
-    int id = GetData<int>();
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    interruptService->ClearAudioFocusInfoListOnAccountsChanged(id);
-}
-
-typedef void (*TestFuncs[4])();
-
-TestFuncs g_testFuncs = {
-    MoreFuzzTest,
-    AddAudioSessionFuzzTest,
-    AddSetAudioManagerInterruptCallbackFuzzTest,
-    ClearAudioFocusInfoListOnAccountsChangedFuzzTest,
-};
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
 {
@@ -195,6 +159,42 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
 
     return true;
 }
+
+void AddAudioSessionFuzzTest()
+{
+    int32_t sessionStrategy = 0;
+
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    AudioInterrupt activeInterrupt;
+    activeInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    AudioFocusEntry focusEntry;
+    focusEntry.isReject = false;
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    interruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
+    interruptService->CanMixForIncomingSession(incomingInterrupt, activeInterrupt, focusEntry);
+    interruptService->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry);
+    interruptService->IsIncomingStreamLowPriority(focusEntry);
+    interruptService->IsActiveStreamLowPriority(focusEntry);
+}
+
+void ClearAudioFocusInfoListOnAccountsChangedFuzzTest()
+{
+    int id = GetData<int>();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    interruptService->ClearAudioFocusInfoListOnAccountsChanged(id);
+}
+
+typedef void (*TestFuncs[4])();
+
+TestFuncs g_testFuncs = {
+    MoreFuzzTest,
+    AddAudioSessionFuzzTest,
+    AddSetAudioManagerInterruptCallbackFuzzTest,
+    ClearAudioFocusInfoListOnAccountsChangedFuzzTest,
+};
 } // namespace AudioStandard
 } // namesapce OHOS
 
