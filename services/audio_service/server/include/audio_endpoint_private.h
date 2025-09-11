@@ -122,6 +122,7 @@ public:
     void BindCore();
     
     void CheckWakeUpTime(int64_t &wakeUpTime);
+    int32_t UpdateDeviceType(DeviceType type) override;
 private:
     AudioProcessConfig GetInnerCapConfig();
     void StartThread(const IAudioSinkAttr &attr);
@@ -339,6 +340,7 @@ private:
     std::string dumpHdiName_ = "";
     mutable int64_t volumeDataCount_ = 0;
     std::string logUtilsTag_ = "";
+    std::string endpointKey_ = "";
 
     // for get amplitude
     float maxAmplitude_ = 0;

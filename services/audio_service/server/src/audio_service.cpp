@@ -83,6 +83,16 @@ AudioService::~AudioService()
 }
 
 #ifdef SUPPORT_LOW_LATENCY
+void AudioService::UpdateDeviceType(DeviceType type)
+{
+    std::lock_guard<std::mutex> lock(processListMutex_);
+
+    for (const auto &pair : endpointList_) {
+        CHECK_AND_CONTINUE_LOG(pair.second != nullptr, "pair.second is nullptr");
+        pair.second->UpdateDeviceType(type);
+    }
+}
+
 int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwitchStream)
 {
     std::lock_guard<std::mutex> processListLock(processListMutex_);

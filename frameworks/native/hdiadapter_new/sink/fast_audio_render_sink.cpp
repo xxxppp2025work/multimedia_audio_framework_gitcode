@@ -713,5 +713,10 @@ void FastAudioRenderSink::PreparePosition(void)
 #endif
 }
 
+std::string FastAudioRenderSink::GetAdapterName(void)
+{
+    return attr_.adapterName;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
