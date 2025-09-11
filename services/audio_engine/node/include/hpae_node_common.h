@@ -69,5 +69,4 @@ void TransStreamInfoToStreamDumpInfo(const std::unordered_map<uint32_t, HpaeSess
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
-
 #endif
