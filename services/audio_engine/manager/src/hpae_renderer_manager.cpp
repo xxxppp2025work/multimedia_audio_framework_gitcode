@@ -342,7 +342,10 @@ int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId)
 
 int32_t HpaeRendererManager::DeleteProcessClusterInner(uint32_t sessionId, HpaeProcessorType sceneType)
 {
-    CHECK_AND_RETURN_RET_LOG(!sessionNodeMap_[sessionId].bypass, ERROR, "no need to delete processCluster");
+    if (sessionNodeMap_[sessionId].bypass) {
+        AUDIO_INFO_LOG("none processCluster no need to delete processCluster");
+        return ERROR;
+    }
     if (sceneTypeToProcessClusterCountMap_.count(sceneType) && sceneTypeToProcessClusterCountMap_[sceneType] == 0) {
         if (sceneClusterMap_[sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT] || IsClusterConnected(sceneType)) {
             sceneClusterMap_.erase(sceneType);
@@ -635,7 +638,11 @@ void HpaeRendererManager::DisConnectInputCluster(uint32_t sessionId, HpaeProcess
     sceneClusterMap_[sceneType]->DisConnect(sinkInputNodeMap_[sessionId]);
     sinkInputNodeMap_[sessionId]->connectedProcessorType_ = HPAE_SCENE_UNCONNECTED;
 
-    CHECK_AND_RETURN_LOG(!sessionNodeMap_[sessionId].bypass, "none processCluster has no effectNode");
+    if (sessionNodeMap_[sessionId].bypass) {
+        AUDIO_INFO_LOG("none processCluster has no effectNode");
+        return;
+    }
+
     if (sceneClusterMap_[sceneType]->GetPreOutNum() > 0) {
         sceneClusterMap_[sceneType]->AudioRendererStop(sinkInputNodeMap_[sessionId]->GetNodeInfo());
     } else {
@@ -667,7 +674,10 @@ void HpaeRendererManager::DereferenceInputCluster(uint32_t sessionId)
         sinkInputNodeMap_[sessionId]->connectedProcessorType_ = HPAE_SCENE_UNCONNECTED;
     }
 
-    CHECK_AND_RETURN_LOG(!sessionNodeMap_[sessionId].bypass, "none processCluster has no effectNode");
+    if (sessionNodeMap_[sessionId].bypass) {
+        AUDIO_INFO_LOG("none processCluster has no effectNode");
+        return;
+    }
     HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
     CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
         "could not find processorType %{public}d", nodeInfo.sceneType);
