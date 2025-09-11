@@ -33,6 +33,7 @@ namespace HPAE {
 
 static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm";
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
+const uint32_t DEFAULT_FRAME_LENGTH_2 = 480;
 const uint32_t OVERSIZED_FRAME_LENGTH = 38500;
 const uint32_t DEFAULT_SESSION_ID = 123456;
 const uint32_t DEFAULT_NODE_ID = 1243;
@@ -311,6 +312,8 @@ HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerReloadTest, TestSize.Level1
     TestCheckSourceOutputInfo(sourceOutputInfo, streamInfo);
     EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_PREPARED);
     EXPECT_EQ(capturerManager->ReloadCaptureManager(newSourceInfo) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->ReloadCaptureManager(newSourceInfo, true) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
     EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
@@ -662,6 +665,7 @@ HWTEST_F(HpaeCapturerManagerTest, ReloadCaptureManager_002, TestSize.Level0)
 
     capturerManager->isInit_ = true;
     EXPECT_EQ(capturerManager->ReloadCaptureManager(sourceInfo), SUCCESS);
+    EXPECT_EQ(capturerManager->ReloadCaptureManager(sourceInfo, true), SUCCESS);
 }
 
 /*
@@ -1057,6 +1061,27 @@ HWTEST_F(HpaeCapturerManagerTest, CreateStream_003, TestSize.Level1)
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
     streamInfo.frameLen = OVERSIZED_FRAME_LENGTH;
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), ERROR);
+}
+
+/**
+ * @tc.name  : Test InitCapturerManager_004
+ * @tc.type  : FUNC
+ * @tc.number: InitCapturerManager_004
+ * @tc.desc  : Test InitCapturerManager when frameLen is not proportional.
+ */
+HWTEST_F(HpaeCapturerManagerTest, CreateStream_004, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH_2;
     std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     EXPECT_EQ(capturerManager->Init(), SUCCESS);
     WaitForMsgProcessing(capturerManager);

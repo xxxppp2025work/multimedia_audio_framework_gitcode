@@ -35,7 +35,7 @@ namespace AudioStandard {
 static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_OVERFLOW_NUM = 100;
 static constexpr int32_t AUDIO_SOURCE_TYPE_INVALID_5 = 5;
-static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 300; // 300ms
+static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 1000; // 1000ms
 static constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
 static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 static constexpr uint32_t DECIMAL_BASE = 10;
@@ -153,10 +153,12 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
 {
     Trace trace("KeyAction AudioCapturer::Create");
     auto sourceType = capturerOptions.capturerInfo.sourceType;
-
-    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_MAX || sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE ||
+    if (sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE) {
+        AUDIO_ERR_LOG("Invalid sourceType %{public}d!", sourceType);
+        return nullptr;
+    }
+    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_MAX ||
         sourceType == AUDIO_SOURCE_TYPE_INVALID_5) {
-        CHECK_AND_RETURN_RET(sourceType != SOURCE_TYPE_VIRTUAL_CAPTURE, nullptr);
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("Invalid sourceType %{public}d!", sourceType);
         return nullptr;

@@ -135,7 +135,6 @@ interface IAudioPolicy {
     void GetMinStreamVolume([out] float retVolume);
     void GetMaxStreamVolume([out] float retVolume);
     void GetMaxRendererInstances([out] int ret);
-    void IsSupportInnerCaptureOffload([out] boolean ret);
     void IsVolumeUnadjustable([out] boolean retIsUnadjustable);
     void AdjustVolumeByStep([in] int adjustType);
     void AdjustSystemVolumeByStep([in] int volumeType, [in] int adjustType);
@@ -303,8 +302,10 @@ interface IAudioPolicy {
     void SelectInputDevice([in] sharedptr<AudioDeviceDescriptor> audioDeviceDescriptor);
     void GetSelectedInputDevice([out] sharedptr<AudioDeviceDescriptor> audioDeviceDescriptor);
     void ClearSelectedInputDevice();
-    void PreferBluetoothAndNearlinkRecord([in] boolean isPreferred);
-    void GetPreferBluetoothAndNearlinkRecord([out] boolean isPreferred);
+    void PreferBluetoothAndNearlinkRecord([in] unsigned int category);
+    void GetPreferBluetoothAndNearlinkRecord([out] unsigned int category);
     void RestoreOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter);
+    void ReloadLoudVolumeMode([in] int streamInFocus, [in] int setVolMode, [out] boolean ret);
+    void IsSupportInnerCaptureOffload([out] boolean ret);
 }
 
