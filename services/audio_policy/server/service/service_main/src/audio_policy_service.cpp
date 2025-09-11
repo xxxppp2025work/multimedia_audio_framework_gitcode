@@ -278,7 +278,8 @@ AudioStreamInfo AudioPolicyService::GetFastStreamInfo()
     // change to SAMPLE_S16LE for bluetooth
     if (streamInfo.format == SAMPLE_S32LE) {
         DeviceType deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-        streamInfo.format = deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ? SAMPLE_S16LE : SAMPLE_S32LE;
+        bool flag = audioActiveDevice_.IsA2dpOffload();
+        streamInfo.format = (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && !flag) ? SAMPLE_S16LE : SAMPLE_S32LE;
     }
     AUDIO_INFO_LOG("Fast format is %{public}d", streamInfo.format);
     return streamInfo;
