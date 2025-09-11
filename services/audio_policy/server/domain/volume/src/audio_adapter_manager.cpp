@@ -687,6 +687,7 @@ int32_t AudioAdapterManager::SetAppVolumeDb(int32_t appUid)
     AUDIO_INFO_LOG("volumeDb:%{public}f volume:%{public}d devicetype:%{public}d",
         volumeDb, volumeLevel, currentActiveDevice_.deviceType_);
     SetAppAudioVolume(appUid, volumeDb);
+    SetOffloadVolume(STREAM_MUSIC, volumeDb, OFFLOAD_CLASS);
     return SUCCESS;
 }
 
@@ -694,10 +695,12 @@ int32_t AudioAdapterManager::SetAppVolumeMutedDB(int32_t appUid, bool muted)
 {
     std::lock_guard<std::mutex> lock(audioVolumeMutex_);
     auto audioVolume = AudioVolume::GetInstance();
+    float volumeDb = AudioVolume::GetVolume();
     CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
-    AUDIO_INFO_LOG("appUid:%{public}d muted:%{public}d devicetype:%{public}d",
+    AUDIO_INFO_LOG("appUid:%{public}d muted:%{public}d devicetype:%{public}d volumeDb:%{public}d",
         appUid, muted, currentActiveDevice_.deviceType_);
     audioVolume->SetAppVolumeMute(appUid, muted);
+    SetOffloadVolume(STREAM_MUSIC, volumeDb, OFFLOAD_CLASS);
     return SUCCESS;
 }
 
