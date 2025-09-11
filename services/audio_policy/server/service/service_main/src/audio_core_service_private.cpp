@@ -555,7 +555,7 @@ int32_t AudioCoreService::BluetoothDeviceFetchOutputHandle(shared_ptr<AudioStrea
     std::shared_ptr<AudioDeviceDescriptor> desc = streamDesc->newDeviceDescs_.front();
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, BLUETOOTH_FETCH_RESULT_CONTINUE, "Device desc is nullptr");
 
-    ResetNearlinkDeviceState(desc);
+    ResetNearlinkDeviceState(desc, streamDesc->streamStatus_ == STREAM_STATUS_STARTED);
 
     if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         std::string sinkPort = AudioPolicyUtils::GetInstance().GetSinkPortName(DEVICE_TYPE_BLUETOOTH_A2DP);
@@ -2894,8 +2894,11 @@ bool AudioCoreService::IsFastAllowed(std::string &bundleName)
     return true;
 }
 
-void AudioCoreService::ResetNearlinkDeviceState(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+void AudioCoreService::ResetNearlinkDeviceState(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+    bool isRunning)
 {
+    CHECK_AND_RETURN(isRunning);
+
     CHECK_AND_RETURN_LOG(deviceDesc != nullptr, "deviceDesc is nullptr");
 
     auto currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
@@ -2945,10 +2948,11 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
             AudioServerProxy::GetInstance().SetDmDeviceTypeProxy(DM_DEVICE_TYPE_NEARLINK_SCO, DEVICE_TYPE_NEARLINK_IN);
         }
 
-        ResetNearlinkDeviceState(deviceDesc);
+        ResetNearlinkDeviceState(deviceDesc, isRunning);
 
         std::string sinkPort = AudioPolicyUtils::GetInstance().GetSinkPortName(DEVICE_TYPE_BLUETOOTH_A2DP);
         audioPolicyManager_.SuspendAudioDevice(sinkPort, true);
+        Bluetooth::AudioHfpManager::SetActiveHfpDevice("");
 
         int32_t result = std::visit(runDeviceActivationFlow, audioStreamConfig);
         if (result != SUCCESS) {
