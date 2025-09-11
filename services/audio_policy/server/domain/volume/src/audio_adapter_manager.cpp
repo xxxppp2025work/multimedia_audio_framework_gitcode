@@ -687,6 +687,17 @@ int32_t AudioAdapterManager::SetAppVolumeDb(int32_t appUid)
     AUDIO_INFO_LOG("volumeDb:%{public}f volume:%{public}d devicetype:%{public}d",
         volumeDb, volumeLevel, currentActiveDevice_.deviceType_);
     SetAppAudioVolume(appUid, volumeDb);
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    float totalVolume = 0.0f;
+    auto audioVolume = AudioVolume::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
+    if (currentActiveDevice_.IsDistributedSpeaker()) {
+        totalVolume = audioVolume->GetVolume(offloadSessionID_.value(), STREAM_MUSIC, REMOTE_CLASS, &volumes);
+        SetOffloadVolume(STREAM_MUSIC, totalVolume, REMOTE_CLASS, currentActiveDevice_.networkId_);
+    } else {
+        totalVolume = audioVolume->GetVolume(offloadSessionID_.value(), STREAM_MUSIC, OFFLOAD_CLASS, &volumes);
+        SetOffloadVolume(STREAM_MUSIC, totalVolume, OFFLOAD_CLASS);
+    }
     return SUCCESS;
 }
 
@@ -695,8 +706,17 @@ int32_t AudioAdapterManager::SetAppVolumeMutedDB(int32_t appUid, bool muted)
     std::lock_guard<std::mutex> lock(audioVolumeMutex_);
     auto audioVolume = AudioVolume::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
-    AUDIO_INFO_LOG("appUid:%{public}d muted:%{public}d devicetype:%{public}d",
-        appUid, muted, currentActiveDevice_.deviceType_);
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    float volumeDb = 0.0f;
+    if (currentActiveDevice_.IsDistributedSpeaker()) {
+        volumeDb = audioVolume->GetVolume(offloadSessionID_.value(), STREAM_MUSIC, REMOTE_CLASS, &volumes);
+        SetOffloadVolume(STREAM_MUSIC, volumeDb, REMOTE_CLASS, currentActiveDevice_.networkId_);
+    } else {
+        volumeDb = audioVolume->GetVolume(offloadSessionID_.value(), STREAM_MUSIC, OFFLOAD_CLASS, &volumes);
+        SetOffloadVolume(STREAM_MUSIC, volumeDb, OFFLOAD_CLASS);
+    }
+    AUDIO_INFO_LOG("appUid:%{public}d muted:%{public}d devicetype:%{public}d volumeDb:%{public}f isDs:%{public}d",
+        appUid, muted, currentActiveDevice_.deviceType_, volumeDb, currentActiveDevice_.IsDistributedSpeaker());
     audioVolume->SetAppVolumeMute(appUid, muted);
     return SUCCESS;
 }
