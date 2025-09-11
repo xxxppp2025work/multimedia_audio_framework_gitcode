@@ -630,7 +630,7 @@ public:
 
     int32_t SetCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled) override;
-    
+
     int32_t IsCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &enabled) override;
 
@@ -893,6 +893,8 @@ private:
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
     std::mutex subscribeVolumeKey_;
+    std::mutex mtxSetAudioClientInfoMgrCallback_;
+    std::mutex mtxSetAudioVKBInfoMgrCallback_;
 
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     bool volumeApplyToAll_ = false;
