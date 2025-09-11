@@ -793,12 +793,13 @@ bool AudioPolicyUtils::IsWirelessDevice(DeviceType deviceType)
     }
 }
 
-void AudioPolicyUtils::UpdateMultiChannelModuleInfo(AudioPipeInfo &info, std::shared_ptr<PipeStreamPropInfo> streamPropInfo)
+void AudioPolicyUtils::UpdateMultiChannelModuleInfo(AudioPipeInfo &info,
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo)
 {
     if (!AudioPolicyManagerFactory::GetAudioPolicyManager().
         IsChannelLayoutSupportForDspEffect(streamPropInfo->channelLayout)) {
         AUDIO_INFO_LOG("not support channelLayout:%{public}" PRIu64 ", use default 5.1", channelLayout);
-        info.moduleInfo_.bufferSize = 
+        info.moduleInfo_.bufferSize =
             std::to_string(((streamPropInfo->bufferSize_ * static_cast<uint8_t>(CHANNEL_6)) /
             std::stoul(info.moduleInfo_.channels)));
         info.moduleInfo_.channels = std::to_string(static_cast<uint8_t>(CHANNEL_6));
