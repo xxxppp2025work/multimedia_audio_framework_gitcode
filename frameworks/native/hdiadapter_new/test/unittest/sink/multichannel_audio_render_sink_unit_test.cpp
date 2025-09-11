@@ -666,5 +666,21 @@ HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_033, Test
     multichannelAudioRenderSink->GetAudioParameter(key, condition);
     EXPECT_EQ(multichannelAudioRenderSink->adapterNameCase_, "");
 }
+
+/**
+ * @tc.name   : Test MultichannelSink API
+ * @tc.number : MultichannelSinkUnitTest_034
+ * @tc.desc   : Test MultichannelAudioRenderSink
+ */
+HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_034, TestSize.Level1)
+{
+    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>(HDI_ID_INFO_DP);
+    EXPECT_NE(multichannelAudioRenderSink, nullptr);
+
+    multichannelAudioRenderSink->SetSinkMuteForSwitchDevice(true);
+    EXPECT_EQ(multichannelAudioRenderSink->switchDeviceMute_, true);
+    multichannelAudioRenderSink->SetSinkMuteForSwitchDevice(false);
+    EXPECT_EQ(multichannelAudioRenderSink->switchDeviceMute_, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS

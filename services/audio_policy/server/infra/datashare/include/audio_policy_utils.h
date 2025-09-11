@@ -95,7 +95,7 @@ public:
     bool IsSupportedNearlink(const std::string &bundleName, int32_t apiVersion, bool hasSystemPermission);
 
     bool IsWirelessDevice(DeviceType deviceType);
-    void UpdateMultiChannelModuleInfo(AudioPipeInfo &info, AudioChannelLayout channelLayout);
+    void UpdateMultiChannelModuleInfo(AudioPipeInfo &info, std::shared_ptr<PipeStreamPropInfo> streamPropInfo);
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),

@@ -418,5 +418,24 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_020, TestSize.Level1)
     EXPECT_EQ(ret, false);
 }
 
+/**
+ * @tc.name  : Test UpdateMultiChannelModuleInfo API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_021
+ * @tc.desc  : Test UpdateMultiChannelModuleInfo.
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_020, TestSize.Level1)
+{
+    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
+    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
+    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
+
+    AudioPipeInfo info;
+    info.moduleInfo_.channels = "4";
+    streamPropInfo->channelLayout_ = CH_LAYOUT_6POINT0_FRONT;
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    int32_t ret = audioPolicyUtilsTest_->UpdateMultiChannelModuleInfo(info, streamPropInfo);
+    EXPECT_EQ(ret, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS

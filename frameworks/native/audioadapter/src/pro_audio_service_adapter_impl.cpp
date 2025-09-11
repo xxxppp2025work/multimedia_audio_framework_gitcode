@@ -30,7 +30,6 @@
 #include <set>
 #include <unordered_map>
 #include "i_hpae_manager.h"
-#include "audio_effect_chain_manager.h"
 
 using namespace std;
 using namespace OHOS::AudioStandard::HPAE;
