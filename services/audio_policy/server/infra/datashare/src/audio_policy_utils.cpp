@@ -798,7 +798,7 @@ void AudioPolicyUtils::UpdateMultiChannelModuleInfo(AudioPipeInfo &info,
 {
     if (!AudioPolicyManagerFactory::GetAudioPolicyManager().
         IsChannelLayoutSupportForDspEffect(streamPropInfo->channelLayout_)) {
-        AUDIO_INFO_LOG("not support channelLayout:%{public}" PRIu64 , streamPropInfo->channelLayout_);
+        AUDIO_INFO_LOG("not support channelLayout:%{public}" PRIu64, streamPropInfo->channelLayout_);
         info.moduleInfo_.bufferSize =
             std::to_string(((streamPropInfo->bufferSize_ * static_cast<uint8_t>(CHANNEL_6)) /
             std::stoul(info.moduleInfo_.channels)));
