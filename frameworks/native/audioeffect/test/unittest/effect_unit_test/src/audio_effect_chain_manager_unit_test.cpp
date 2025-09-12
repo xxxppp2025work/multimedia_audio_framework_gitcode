@@ -3897,9 +3897,11 @@ HWTEST(AudioEffectChainManagerUnitTest, SetAbsVolumeStateToEffect_001, TestSize.
 */
 HWTEST(AudioEffectChainManagerUnitTest, IsChannelLayoutSupportForDspEffect_001, TestSize.Level1)
 {
+    std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam = std::make_shared<AudioEffectHdiParam>();
+    AudioEffectChainManager::GetInstance()->audioEffectHdiParam_ = audioEffectHdiParam;
     AudioEffectChainManager::GetInstance()->InitHdiState();
-    int32_t ret = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportForDspEffect(CH_LAYOUT_6POINT0_FRONT);
-    EXPECT_EQ(ret, ERROR);
+    bool ret = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportForDspEffect(CH_LAYOUT_6POINT0_FRONT);
+    EXPECT_EQ(ret, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

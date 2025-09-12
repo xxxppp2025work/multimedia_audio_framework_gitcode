@@ -467,7 +467,7 @@ static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipe
         info.moduleInfo_.fixedLatency = "1"; // for fix max request
         AudioPolicyUtils::GetInstance().UpdateMultiChannelModuleInfo(info, streamPropInfo);
         AUDIO_INFO_LOG("Buffer size: %{public}s channels: %{public}s channelLayout:%{public}s",
-            info.moduleInfo_.bufferSize.c_str(), info.moduleInfo_.channel.c_str(),
+            info.moduleInfo_.bufferSize.c_str(), info.moduleInfo_.channels.c_str(),
             info.moduleInfo_.channelLayout.c_str());
     } else if (pipeInfoPtr->name_ == "offload_output") {
         info.moduleInfo_.className = "offload";
