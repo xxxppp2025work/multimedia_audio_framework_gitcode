@@ -417,5 +417,6 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_020, TestSize.Level1)
     ret = audioPolicyUtilsTest_->IsWirelessDevice(type);
     EXPECT_EQ(ret, false);
 }
+
 } // namespace AudioStandard
 } // namespace OHOS
