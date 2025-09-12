@@ -227,7 +227,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
     Trace trace("IAudioStream::GetPlaybackStream");
     if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
 #ifdef SUPPORT_LOW_LATENCY
-        AUDIO_INFO_LOG("Create fast playback stream");
+        HILOG_COMM_INFO("Create fast playback stream");
         return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
 #else
         (void)params;
@@ -258,7 +258,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
 #endif
     }
     if (streamClass == PA_STREAM) {
-        AUDIO_INFO_LOG("Create ipc record stream");
+        HILOG_COMM_INFO("Create ipc record stream");
         return CapturerInClient::GetInstance(eStreamType, appUid);
     }
     return nullptr;
@@ -377,7 +377,7 @@ bool IAudioStream::IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t ch
         AUDIO_ERR_LOG("AudioStream: not matched source channel and channel layout");
         return false;
     }
-    return true; 
+    return true;
 }
 } // namespace AudioStandard
 } // namespace OHOS
