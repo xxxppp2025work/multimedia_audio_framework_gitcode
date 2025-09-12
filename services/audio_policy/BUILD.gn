@@ -584,7 +584,7 @@ audio_ohos_library("audio_policy_client") {
   deps = [
     "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioutils:audio_utils",
-    "../../services/audio_service/idl:audio_framework_interface",
+    "../../services/audio_service/idl:idl_audio_policy_client_source",
   ]
 
   public_configs = [ ":audio_policy_client_config" ]
