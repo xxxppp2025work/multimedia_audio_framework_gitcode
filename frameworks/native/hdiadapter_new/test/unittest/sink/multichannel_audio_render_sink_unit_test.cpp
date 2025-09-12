@@ -678,9 +678,9 @@ HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_034, Test
     EXPECT_NE(multichannelAudioRenderSink, nullptr);
 
     multichannelAudioRenderSink->SetSinkMuteForSwitchDevice(true);
-    EXPECT_EQ(multichannelAudioRenderSink->switchDeviceMute_, true);
+    EXPECT_EQ(multichannelAudioRenderSink->switchDeviceMute_.load(), true);
     multichannelAudioRenderSink->SetSinkMuteForSwitchDevice(false);
-    EXPECT_EQ(multichannelAudioRenderSink->switchDeviceMute_, false);
+    EXPECT_EQ(multichannelAudioRenderSink->switchDeviceMute_.load(), false);
 }
 } // namespace AudioStandard
 } // namespace OHOS
