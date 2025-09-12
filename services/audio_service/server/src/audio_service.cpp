@@ -1018,6 +1018,11 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     AudioStreamInfo audioStreamInfo;
     AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config, audioStreamInfo);
+    
+    AUDIO_INFO_LOG("Get device fast format: %{public}d", audioStreamInfo.format);
+    audioStreamInfo.format = config.streamInfo.format == audioStreamInfo.format
+        ? audioStreamInfo.format : config.streamInfo.format;
+    
     std::lock_guard<std::mutex> lock(processListMutex_);
     std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
         audioStreamInfo, IsEndpointTypeVoip(config, deviceInfo));
