@@ -303,12 +303,13 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_013, TestSize.Level1)
 
     EXPECT_FALSE(audioSession->IsRecommendToStopAudio(nullptr));
 
-    std::shared_ptr<AudioPolicyServerHandler::EventContextObj> eventContextObj =
-        std::make_shared<AudioPolicyServerHandler::EventContextObj>();
-    eventContextObj->reason_ = AudioStreamDeviceChangeReason::OVERRODE;
-    eventContextObj->reason_ = AudioStreamDeviceChangeReason::UNKNOWN;
-    eventContextObj->descriptor = nullptr;
-    EXPECT_FALSE(audioSession->IsRecommendToStopAudio(eventContextObj));
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    EXPECT_FALSE(audioSession->IsRecommendToStopAudio(desc));
+
+    audioSession->deviceDescriptor_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioSession->deviceDescriptor_.deviceUsage_ = ALL_USAGE;
+    audioSession->deviceDescriptor_.deviceCategory_ = BT_HEADPHONE;
+    EXPECT_TRUE(audioSession->IsRecommendToStopAudio(desc));
 }
 
 /**
@@ -331,6 +332,11 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_014, TestSize.Level1)
     int32_t ret = audioSession->Activate(strategy);
     EXPECT_EQ(ret, SUCCESS);
     audioSession->SetSessionDefaultOutputDevice(DEVICE_TYPE_DEFAULT);
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    bool res = audioSession->IsSessionOutputDeviceChanged(desc);
+    EXPECT_FALSE(res);
+
     ret = audioSession->Deactivate();
     EXPECT_EQ(ret, SUCCESS);
 }

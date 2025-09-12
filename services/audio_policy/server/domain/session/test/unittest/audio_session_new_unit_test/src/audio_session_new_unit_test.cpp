@@ -270,19 +270,7 @@ HWTEST_F(AudioSessionNewUnitTest, IsRecommendToStopAudio_001, TestSize.Level1)
 
     EXPECT_FALSE(audioSession->IsRecommendToStopAudio(nullptr));
 
-    auto eventContextObj = std::make_shared<AudioPolicyServerHandler::EventContextObj>();
-
-    eventContextObj->reason_ = AudioStreamDeviceChangeReason::OVERRODE;
-    eventContextObj->descriptor = validDescriptor;
-    EXPECT_FALSE(audioSession->IsRecommendToStopAudio(eventContextObj));
-
-    eventContextObj->reason_ = AudioStreamDeviceChangeReason::UNKNOWN;
-    eventContextObj->descriptor = nullptr;
-    EXPECT_FALSE(audioSession->IsRecommendToStopAudio(eventContextObj));
-
-    eventContextObj->reason_ = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
-    eventContextObj->descriptor = validDescriptor;
-    EXPECT_FALSE(audioSession->IsRecommendToStopAudio(eventContextObj));
+    EXPECT_FALSE(audioSession->IsRecommendToStopAudio(validDescriptor));
 }
 
 } // namespace AudioStandard

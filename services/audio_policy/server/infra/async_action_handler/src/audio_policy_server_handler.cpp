@@ -1192,12 +1192,12 @@ void AudioPolicyServerHandler::HandleAudioSessionDeviceChangeEvent(const AppExec
 
             CHECK_AND_CONTINUE_LOG((deviceChangedEvent.devices.size() > 0) &&
                 (deviceChangedEvent.devices[0] != nullptr), "get invalid preferred output devices list");
-            CHECK_AND_CONTINUE_LOG((!audioSession->IsSessionOutputDeviceChanged(deviceChangedEvent.devices[0]) ||
+            CHECK_AND_CONTINUE_LOG((audioSession->IsSessionOutputDeviceChanged(deviceChangedEvent.devices[0]) ||
                 (eventContextObj->reason_ == AudioStreamDeviceChangeReason::AUDIO_SESSION_ACTIVATE)),
                 "device of session %{public}d is not changed", it->first);
 
             deviceChangedEvent.changeReason = eventContextObj->reason_;
-            deviceChangedEvent.recommendedAction = audioSession->IsRecommendToStopAudio(eventContextObj) ?
+            deviceChangedEvent.recommendedAction = audioSession->IsRecommendToStopAudio(deviceChangedEvent.devices[0]) ?
                 OutputDeviceChangeRecommendedAction::RECOMMEND_TO_STOP :
                 OutputDeviceChangeRecommendedAction::RECOMMEND_TO_CONTINUE;
 
