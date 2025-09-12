@@ -97,6 +97,7 @@
     *ResetInfo*;
     *SetAbsVolumeStateToEffect*;
     *DeleteStreamVolume*;
+    *IsChannelLayoutSupportForDspEffect*;
   local:
     *;
 };
