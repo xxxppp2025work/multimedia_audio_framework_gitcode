@@ -377,7 +377,7 @@ bool IAudioStream::IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t ch
         AUDIO_ERR_LOG("AudioStream: not matched source channel and channel layout");
         return false;
     }
-    return true;
+    return true; 
 }
 } // namespace AudioStandard
 } // namespace OHOS
