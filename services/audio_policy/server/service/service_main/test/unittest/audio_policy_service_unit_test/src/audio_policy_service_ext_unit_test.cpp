@@ -216,7 +216,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_006, TestSize.Lev
 */
 HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_007, TestSize.Level1)
 {
-    auto ret = AudioPolicyService::GetAudioPolicyService().GetFastStreamInfo();
+    auto ret = AudioPolicyService::GetAudioPolicyService().GetFastStreamInfo(0);
     EXPECT_EQ(SAMPLE_RATE_48000, ret.samplingRate);
 }
 
