@@ -238,29 +238,11 @@ void GetSessionDefaultOutputDeviceFuzzTest()
     audioSession->GetSessionDefaultOutputDevice(deviceType);
 }
 
-void IsStreamContainedInCurrentSessionFuzzTest()
-{
-    auto audioSession = CreateAudioSession();
-    CHECK_AND_RETURN(audioSession != nullptr);
-    AudioInterrupt audioInterrupt;
-    audioInterrupt.streamId = g_fuzzUtils.GetData<uint32_t>();
-    audioSession->AddStreamInfo(audioInterrupt);
-    audioSession->IsStreamContainedInCurrentSession(g_fuzzUtils.GetData<uint32_t>());
-    audioSession->ClearStreamInfo();
-}
-
-void IsCurrentDevicePrivateDeviceFuzzTest()
-{
-    auto audioSession = CreateAudioSession();
-    CHECK_AND_RETURN(audioSession != nullptr);
-    audioSession->IsCurrentDevicePrivateDevice(std::make_shared<AudioDeviceDescriptor>());
-}
-
 void IsRecommendToStopAudioFuzzTest()
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
-    audioSession->IsRecommendToStopAudio(std::make_shared<AudioPolicyServerHandler::EventContextObj>());
+    audioSession->IsRecommendToStopAudio(std::make_shared<AudioDeviceDescriptor>());
 }
 
 void IsSessionOutputDeviceChangedFuzzTest()
@@ -307,8 +289,6 @@ vector<TestFuncs> g_testFuncs = {
     ShouldExcludeStreamTypeFuzzTest,
     IsAudioRendererEmptyFuzzTest,
     GetSessionDefaultOutputDeviceFuzzTest,
-    IsStreamContainedInCurrentSessionFuzzTest,
-    IsCurrentDevicePrivateDeviceFuzzTest,
     IsRecommendToStopAudioFuzzTest,
     IsSessionOutputDeviceChangedFuzzTest,
     GetSessionStreamUsageFuzzTest,
