@@ -3889,5 +3889,17 @@ HWTEST(AudioEffectChainManagerUnitTest, SetAbsVolumeStateToEffect_001, TestSize.
     EXPECT_EQ(ret, SUCCESS);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
+
+/**
+* @tc.name   : Test IsChannelLayoutSupportForDspEffect API
+* @tc.number : IsChannelLayoutSupportForDspEffect_004
+* @tc.desc   : Test IsChannelLayoutSupportForDspEffect interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, IsChannelLayoutSupportForDspEffect_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitHdiState();
+    int32_t ret = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportForDspEffect(CH_LAYOUT_6POINT0_FRONT);
+    EXPECT_EQ(ret, ERROR);
+}
 } // namespace AudioStandard
 } // namespace OHOS

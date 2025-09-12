@@ -417,26 +417,5 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_020, TestSize.Level1)
     ret = audioPolicyUtilsTest_->IsWirelessDevice(type);
     EXPECT_EQ(ret, false);
 }
-
-/**
- * @tc.name  : Test UpdateMultiChannelModuleInfo API
- * @tc.type  : FUNC
- * @tc.number: AudioPolicyUtilsUnitTest_021
- * @tc.desc  : Test UpdateMultiChannelModuleInfo.
- */
-HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_021, TestSize.Level1)
-{
-    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
-    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
-    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
-
-    AudioPipeInfo info;
-    info.moduleInfo_.channels = "4";
-    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
-    streamPropInfo->channelLayout_ = CH_LAYOUT_6POINT0_FRONT;
-    audioPolicyUtilsTest_->UpdateMultiChannelModuleInfo(info, streamPropInfo);
-    EXPECT_EQ(info.moduleInfo_.channels, std::to_string(static_cast<uint8_t>(CHANNEL_6)));
-    EXPECT_EQ(info.moduleInfo_.channelLayout, std::to_string(static_cast<uint64_t>(CH_LAYOUT_5POINT1)));
-}
 } // namespace AudioStandard
 } // namespace OHOS
