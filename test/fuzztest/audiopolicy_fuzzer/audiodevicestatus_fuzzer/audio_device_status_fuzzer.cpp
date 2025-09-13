@@ -164,10 +164,10 @@ void HandleArmUsbDeviceFuzzTest()
     audioA2dpOffloadManager->Init();
     audioDeviceStatus.Init(audioA2dpOffloadManager, audioPolicyServerHandler);
 
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
     uint32_t roleCount = GetData<uint32_t>() % DeviceRoleVec.size();
     DeviceRole deviceRole = DeviceRoleVec[roleCount];
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
     std::string address = "00:11:22:33:44:55";
     audioDeviceStatus.HandleArmUsbDevice(deviceType, deviceRole, address);
 
@@ -183,27 +183,12 @@ void RehandlePnpDeviceFuzzTest()
     audioA2dpOffloadManager->Init();
     audioDeviceStatus.Init(audioA2dpOffloadManager, audioPolicyServerHandler);
 
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
     uint32_t roleCount = GetData<uint32_t>() % DeviceRoleVec.size();
     DeviceRole deviceRole = DeviceRoleVec[roleCount];
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
     std::string address = "00:11:22:33:44:55";
     audioDeviceStatus.RehandlePnpDevice(deviceType, deviceRole, address);
-
-    audioDeviceStatus.DeInit();
-}
-
-void NoNeedChangeUsbDeviceFuzzTest()
-{
-    std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager = std::make_shared<AudioA2dpOffloadManager>();
-    std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler =
-        DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
-    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-    audioA2dpOffloadManager->Init();
-    audioDeviceStatus.Init(audioA2dpOffloadManager, audioPolicyServerHandler);
-
-    std::string address = "00:11:22:33:44:55";
-    audioDeviceStatus.NoNeedChangeUsbDevice(address);
 
     audioDeviceStatus.DeInit();
 }
@@ -221,6 +206,21 @@ void TriggerMicrophoneBlockedCallbackFuzzTest()
     int32_t statusCount = static_cast<int32_t>(DeviceBlockStatus::DEVICE_BLOCKED) + 1;
     DeviceBlockStatus status = static_cast<DeviceBlockStatus>(GetData<uint8_t>() % statusCount);
     audioDeviceStatus.TriggerMicrophoneBlockedCallback(desc, status);
+
+    audioDeviceStatus.DeInit();
+}
+
+void NoNeedChangeUsbDeviceFuzzTest()
+{
+    std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager = std::make_shared<AudioA2dpOffloadManager>();
+    std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler =
+        DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioA2dpOffloadManager->Init();
+    audioDeviceStatus.Init(audioA2dpOffloadManager, audioPolicyServerHandler);
+
+    std::string address = "00:11:22:33:44:55";
+    audioDeviceStatus.NoNeedChangeUsbDevice(address);
 
     audioDeviceStatus.DeInit();
 }
@@ -293,6 +293,21 @@ void HandleDistributedDeviceUpdateFuzzTest()
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     audioDeviceStatus.HandleDistributedDeviceUpdate(statusInfo, descForCb, reason);
 }
+void OnPreferredStateUpdatedFuzzTest()
+{
+    AudioDeviceDescriptor desc;
+    int32_t updateCommandCount = static_cast<int32_t>(DeviceInfoUpdateCommand::EXCEPTION_FLAG_UPDATE -
+        DeviceInfoUpdateCommand::CATEGORY_UPDATE) + 1;
+    DeviceInfoUpdateCommand updateCommand =
+        static_cast<DeviceInfoUpdateCommand>(GetData<uint8_t>() % updateCommandCount + 1);
+    AudioStreamDeviceChangeReasonExt::ExtEnum oldDevice =
+        AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE;
+    AudioStreamDeviceChangeReasonExt reason(oldDevice);
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    uint32_t deviceCategoryCount = GetData<uint32_t>() % DeviceCategoryVec.size();
+    desc.deviceCategory_ = DeviceCategoryVec[deviceCategoryCount];
+    audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
+}
 
 void UpdateDeviceListFuzzTest()
 {
@@ -309,22 +324,6 @@ void UpdateDeviceListFuzzTest()
     uint32_t roleCount = GetData<uint32_t>() % DeviceRoleVec.size();
     updatedDesc.deviceRole_ = DeviceRoleVec[roleCount];
     audioDeviceStatus.UpdateDeviceList(updatedDesc, isConnected, descForCb, reason);
-}
-
-void OnPreferredStateUpdatedFuzzTest()
-{
-    AudioDeviceDescriptor desc;
-    int32_t updateCommandCount = static_cast<int32_t>(DeviceInfoUpdateCommand::EXCEPTION_FLAG_UPDATE -
-        DeviceInfoUpdateCommand::CATEGORY_UPDATE) + 1;
-    DeviceInfoUpdateCommand updateCommand =
-        static_cast<DeviceInfoUpdateCommand>(GetData<uint8_t>() % updateCommandCount + 1);
-    AudioStreamDeviceChangeReasonExt::ExtEnum oldDevice =
-        AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE;
-    AudioStreamDeviceChangeReasonExt reason(oldDevice);
-    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-    uint32_t deviceCategoryCount = GetData<uint32_t>() % DeviceCategoryVec.size();
-    desc.deviceCategory_ = DeviceCategoryVec[deviceCategoryCount];
-    audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
 }
 
 void CheckAndActiveHfpDeviceFuzzTest()
@@ -347,6 +346,15 @@ void TriggerAvailableDeviceChangedCallbackFuzzTest()
     audioDeviceStatus.TriggerAvailableDeviceChangedCallback(audioDeviceDescriptorSptrVector, isConnected);
 }
 
+void HandleDpDeviceFuzzTest()
+{
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
+    std::string address = "00:11:22:33:44:55";
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.HandleDpDevice(deviceType, address);
+}
+
 void TriggerDeviceChangedCallbackFuzzTest()
 {
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
@@ -355,15 +363,6 @@ void TriggerDeviceChangedCallbackFuzzTest()
     bool isConnected = GetData<uint32_t>() % NUM_2;
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
     audioDeviceStatus.TriggerDeviceChangedCallback(audioDeviceDescriptorSptrVector, isConnected);
-}
-
-void HandleDpDeviceFuzzTest()
-{
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-    std::string address = "00:11:22:33:44:55";
-    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-    audioDeviceStatus.HandleDpDevice(deviceType, address);
 }
 
 void HandleLocalDeviceConnectedFuzzTest()
@@ -386,10 +385,10 @@ void HandleLocalDeviceDisconnectedFuzzTest()
 
 void HandleSpecialDeviceTypeFuzzTest()
 {
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
     uint32_t roleCount = GetData<uint32_t>() % DeviceRoleVec.size();
     DeviceRole deviceRole = DeviceRoleVec[roleCount];
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
     std::string address = "00:11:22:33:44:55";
     bool isConnected = GetData<uint32_t>() % NUM_2;
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
@@ -410,6 +409,15 @@ void OnPnpDeviceStatusUpdatedFuzzTest()
     audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, isConnected);
 }
 
+void IsConfigurationUpdatedFuzzTest()
+{
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
+    AudioStreamInfo streamInfo;
+    AudioDeviceStatus audioDeviceStatus;
+    audioDeviceStatus.IsConfigurationUpdated(deviceType, streamInfo);
+}
+
 void UpdateActiveA2dpDeviceWhenDisconnectingFuzzTest()
 {
     std::string address = "00:11:22:33:44:55";
@@ -418,15 +426,6 @@ void UpdateActiveA2dpDeviceWhenDisconnectingFuzzTest()
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
     audioDeviceStatus.audioA2dpDevice_.AddA2dpInDevice(device, config);
     audioDeviceStatus.UpdateActiveA2dpDeviceWhenDisconnecting(address);
-}
-
-void IsConfigurationUpdatedFuzzTest()
-{
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-    AudioStreamInfo streamInfo;
-    AudioDeviceStatus audioDeviceStatus;
-    audioDeviceStatus.IsConfigurationUpdated(deviceType, streamInfo);
 }
 
 void OpenPortAndAddDeviceOnServiceConnectedFuzzTest()
