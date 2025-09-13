@@ -1416,9 +1416,15 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
     if (flag == DeviceFlag::INPUT_DEVICES_FLAG) {
         UpdateDeviceForAllSource(source, type);
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
+#ifdef SUPPORT_LOW_LATENCY
+        AudioService::GetInstance()->UpdateDeviceType(type);
+#endif
         sink->UpdateActiveDevice(deviceTypes);
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
+#ifdef SUPPORT_LOW_LATENCY
+        AudioService::GetInstance()->UpdateDeviceType(type);
+#endif
         UpdateDeviceForAllSource(source, type);
         sink->UpdateActiveDevice(deviceTypes);
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);

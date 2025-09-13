@@ -60,6 +60,18 @@ namespace {
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
 }
 
+int32_t AudioEndpointInner::UpdateDeviceType(DeviceType type)
+{
+    CHECK_AND_RETURN_RET_LOG(fastRenderId_ != HDI_INVALID_ID, ERROR, "fastRenderId_ is HDI_INVALID_ID");
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "sink is nullptr");
+    std::string adapterName = sink->GetAdapterName();
+    CHECK_AND_RETURN_RET(adapterName == "primary", ERROR);
+    deviceInfo_.deviceType_ = type;
+    AUDIO_INFO_LOG("update deviceType to: %{public}d", type);
+    return SUCCESS;
+}
+
 std::string AudioEndpoint::GenerateEndpointKey(AudioDeviceDescriptor &deviceInfo, int32_t endpointFlag)
 {
     // All primary sinks share one endpoint
@@ -114,7 +126,7 @@ AudioEndpointInner::AudioEndpointInner(EndpointType type, uint64_t id,
 
 std::string AudioEndpointInner::GetEndpointName()
 {
-    return GenerateEndpointKey(deviceInfo_, id_);
+    return endpointKey_;
 }
 
 int32_t AudioEndpointInner::SetVolume(AudioStreamType streamType, float volume)
@@ -592,6 +604,7 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo, AudioSt
     bool ret = readTimeModel_.ConfigSampleRate(dstStreamInfo_.samplingRate);
     CHECK_AND_RETURN_RET_LOG(ret != false, false, "Config LinearPosTimeModel failed.");
     StartThread(attr);
+    endpointKey_ = GenerateEndpointKey(deviceInfo_, id_);
     return true;
 }
 
