@@ -3169,6 +3169,18 @@ int32_t AudioServer::GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &priv
     privacyType = static_cast<int32_t>(type);
     return SUCCESS;
 }
+
+int32_t AudioServer::AddCaptureInjector(uint32_t sinkPortidx, std::string &rate, std::string &format, std::string &channels)
+{
+    //endpoint::AddCaptureInjector
+    return SUCCESS;
+}
+
+int32_t AudioServer::RemoveCaptureInjector(uint32_t sinkPortidx)
+{
+    //endpoint::RemoveCaptureInjector
+    return SUCCESS;
+}
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

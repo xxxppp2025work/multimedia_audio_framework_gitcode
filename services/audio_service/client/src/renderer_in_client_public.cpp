@@ -1466,6 +1466,7 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.defaultOutputDevice = defaultOutputDevice_;
     info.lastFramePosAndTimePair = lastFramePosAndTimePair_;
     info.lastFramePosAndTimePairWithSpeed = lastFramePosAndTimePairWithSpeed_;
+    info.target = target_;
     GetStreamSwitchInfo(info);
 
     {

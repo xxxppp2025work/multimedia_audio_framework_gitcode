@@ -112,6 +112,7 @@ public:
         std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed = {
             Timestamp::Timestampbase::BASESIZE, {0, 0}
         };
+        uint32_t target = 0;
     };
 
     virtual ~IAudioStream() = default;

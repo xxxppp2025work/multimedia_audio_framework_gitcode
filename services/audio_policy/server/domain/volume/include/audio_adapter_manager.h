@@ -306,6 +306,11 @@ public:
     void SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
     int32_t GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType);
     int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume);
+
+    int32_t AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType);
+    int32_t RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType);
+    int32_t AddCaptureInjector();
+    int32_t RemoveCaptureInjector();
 private:
     friend class PolicyCallbackImpl;
 

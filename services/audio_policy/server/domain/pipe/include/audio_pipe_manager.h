@@ -88,6 +88,11 @@ public:
         uint32_t sessionId);
     bool IsStreamUsageActive(const StreamUsage &usage);
 
+    int32_t IsVoIPCall();
+    bool IsPipeAlive(std::shared_ptr<AudioPipeInfo> pipe);
+    std::shared_ptr<AudioPipeInfo> GetPipeBySessionId(uint32_t sessionId);
+    uint32_t GetPaIndexByName(std::string portName);
+
 private:
     bool IsSpecialPipe(uint32_t routeFlag);
     bool IsNormalRecordPipe(std::shared_ptr<AudioPipeInfo> pipeInfo);
