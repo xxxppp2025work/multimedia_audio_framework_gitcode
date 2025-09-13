@@ -306,6 +306,10 @@ public:
     void SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
     int32_t GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType);
     int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume);
+
+    void SetVolumeLimit(AudioStreamType streamType);
+    void ResetVolumeLimit();
+    void UpdateOtherStreamVolume(AudioStreamType streamType);
 private:
     friend class PolicyCallbackImpl;
 
@@ -484,6 +488,7 @@ private:
         std::make_shared<FixedSizeList<RingerModeAdjustInfo>>(MAX_CACHE_AMOUNT);
     bool isDpReConnect_ = false;
     sptr<IStandardAudioPolicyManagerListener> deviceVolumeBehaviorListener_;
+    std::atomic<float> volumeLimit_ = 1.0f;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

@@ -237,6 +237,13 @@ int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor devic
     const std::string &newSinkName, bool enableSetVoiceCallVolume)
 {
     Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceDescriptor.deviceType_));
+
+    AudioScene lastScene = audioSceneManager_.GetLastAudioScene();
+    if (audioSceneManager_.IsInPhoneCallScene()) {
+        audioPolicyManager_.SetVolumeLimit(STREAM_VOICE_CALL);
+    } else if (lastScene == AUDIO_SCENE_PHONE_CALL) {
+        audioPolicyManager_.ResetVolumeLimit();
+    }
     // Load volume from KvStore and set volume for each stream type
     audioPolicyManager_.SetVolumeForSwitchDevice(deviceDescriptor);
 
@@ -464,6 +471,8 @@ int32_t AudioVolumeManager::HandleNearlinkDeviceAbsVolume(AudioStreamType stream
 int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
     int32_t zoneId)
 {
+    CheckReduceOtherActiveVolume(streamType);
+
     if (zoneId > 0) {
         return audioPolicyManager_.SetZoneVolumeLevel(zoneId,
             VolumeUtils::GetVolumeTypeFromStreamType(streamType), volumeLevel);
@@ -557,6 +566,15 @@ int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int
         isBtFirstBoot_ = false;
     }
     return sVolumeLevel;
+}
+
+void AudioVolumeManager::CheckReduceOtherActiveVolume(AudioStreamType streamType)
+{
+    if (audioSceneManager_.IsInPhoneCallScene() && streamType == STREAM_VOICE_CALL) {
+        audioPolicyManager_.SetVolumeLimit(streamType);
+        audioPolicyManager_.UpdateOtherStreamVolume(streamType);
+        AUDIO_WARNING_LOG("streamType:%{public}d begin reduce other stream volume", streamType);
+    }
 }
 
 int32_t AudioVolumeManager::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volumeLevel,

@@ -179,6 +179,7 @@ private:
     int32_t HandleA2dpAbsVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType curDeviceType);
     int32_t HandleNearlinkDeviceAbsVolume(AudioStreamType streamType, int32_t volumeLevel,
         DeviceType curDeviceType);
+    void CheckReduceOtherActiveVolume(AudioStreamType streamType);
 private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
