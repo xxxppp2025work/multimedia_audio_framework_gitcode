@@ -241,7 +241,8 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, int32_
             break;
         case UpdateType::STOP_CLIENT:
             if (index >= 0) {
-                if (recordDeviceInfoList_[index].appPreferredDevices_.size() > 0 || recordDeviceInfoList_[index].selectedDevice_->deviceType_ != DEVICE_TYPE_NONE) {
+                if (recordDeviceInfoList_[index].appPreferredDevices_.size() > 0 ||
+                    recordDeviceInfoList_[index].selectedDevice_->deviceType_ != DEVICE_TYPE_NONE) {
                     recordDeviceInfoList_[index].sourceType_ = SourceType::SOURCE_TYPE_INVALID;
                     std::rotate(recordDeviceInfoList_.begin() + index, recordDeviceInfoList_.begin() + index + 1,
                         recordDeviceInfoList_.end());
