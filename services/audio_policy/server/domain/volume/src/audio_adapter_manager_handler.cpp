@@ -68,7 +68,7 @@ bool AudioAdapterManagerHandler::SendStreamMuteStatusUpdate(const AudioStreamTyp
 {
     bool ret = true;
 #ifndef TEST_COVERAGE
-    auto eventContextObj = std::make_shared<StreamMuteStatusEvent>(streamType, mute, streamUsage,
+    auto eventContextObj = std::make_shared<StreamMuteStatusEvent>(streamType, mute,
         deviceType, networkId);
     lock_guard<mutex> runnerlock(runnerMutex_);
     ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAdapterManagerServerCmd::STREAM_MUTE_STATUS_UPDATE,
