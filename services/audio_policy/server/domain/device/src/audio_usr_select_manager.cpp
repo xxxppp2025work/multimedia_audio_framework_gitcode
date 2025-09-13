@@ -185,8 +185,8 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, int32_
                 };
                 recordDeviceInfoList_.emplace(recordDeviceInfoList_.begin(), recordDeviceInfo);
             } else {
-                for (auto& recordInfo : recordDeviceInfoList_) {
-                    if (recordInfo.uid == uid) {
+                for (auto &recordInfo : recordDeviceInfoList_) {
+                    if (recordInfo.uid_ == uid) {
                         recordInfo.sourceType_ = sourceType;
                     }
                 }
@@ -213,12 +213,12 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, int32_
             }
             break;
         case UpdateType::SYSTEM_SELECT:
-            if (desc->deviceType != DEVICE_TYPE_NONE) {
-                for (auto& recordDeviceInfo : recordDeviceInfoList_) {
+            if (desc->deviceType_ != DEVICE_TYPE_NONE) {
+                for (auto &recordDeviceInfo : recordDeviceInfoList_) {
                     recordDeviceInfo.activeSelectedDevice_ = desc;
                 }
             } else {
-                for (auto& recordDeviceInfo : recordDeviceInfoList_) {
+                for (auto &recordDeviceInfo : recordDeviceInfoList_) {
                     recordDeviceInfo.activeSelectedDevice_ = recordDeviceInfo.selectedDevice_;
                 }
             }
@@ -231,7 +231,7 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, int32_
                 };
                 recordDeviceInfoList_.push_back(recordDeviceInfo);
             } else {
-                for (auto& appPreferredDevices : recordDeviceInfoList_[index].appPreferredDevices_) {
+                for (auto &appPreferredDevices : recordDeviceInfoList_[index].appPreferredDevices_) {
                     auto it = appPreferredDevices.find(sessionId);
                     if (it != appPreferredDevices.end()) {
                         it->second = desc;

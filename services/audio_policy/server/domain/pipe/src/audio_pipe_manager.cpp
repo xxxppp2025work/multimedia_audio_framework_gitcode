@@ -22,7 +22,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 const uint32_t FIRST_SESSIONID = 100000;
-const uint32_t MEDIA_SERVICE_UID = 1013;
+const int32_t MEDIA_SERVICE_UID = 1013;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 AudioPipeManager::AudioPipeManager()
 {

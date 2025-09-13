@@ -45,7 +45,8 @@ struct RecordDeviceInfo {
     SourceType sourceType_{SourceType::SOURCE_TYPE_INVALID};
     AudioDevicePtr selectedDevice_{std::make_shared<AudioDeviceDescriptor>()};
     AudioDevicePtr activeSelectedDevice_{std::make_shared<AudioDeviceDescriptor>()};
-    std::list<std::map<int32_t, std::make_shared<AudioDeviceDescriptor>>> appPreferredDevices_{};
+    std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> appPreferredDevices_{};
+}
 
 class AudioUsrSelectManager {
 public:
