@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,13 +30,12 @@ void LoadInnerCapturerSinkFuzzTest()
     std::string moduleName = "moduleName";
     AudioStreamInfo streamInfo;
     session.LoadInnerCapturerSink(moduleName, streamInfo);
-}
-
-void UnloadInnerCapturerSinkFuzzTest()
-{
-    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    std::string moduleName = "moduleName";
     session.UnloadInnerCapturerSink(moduleName);
+    AudioModuleInfo audioModuleInfo;
+    session.ConstructWakeupAudioModuleInfo(streamInfo, audioModuleInfo);
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = std::make_shared<AdapterPipeInfo>();
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    session.FillWakeupStreamPropInfo(streamInfo, pipeInfo, audioModuleInfo);
 }
 
 void HandleRemoteCastDeviceFuzzTest()
@@ -55,24 +54,11 @@ void FindRunningNormalSessionFuzzTest()
     session.FindRunningNormalSession(sessionId, runningSessionInfo);
 }
 
-void ConstructWakeupAudioModuleInfoFuzzTest()
-{
-    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    AudioStreamInfo streamInfo;
-    AudioModuleInfo audioModuleInfo;
-    session.ConstructWakeupAudioModuleInfo(streamInfo, audioModuleInfo);
-}
-
 void SetWakeUpAudioCapturerFuzzTest()
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     InternalAudioCapturerOptions options;
     session.SetWakeUpAudioCapturer(options);
-}
-
-void SetWakeUpAudioCapturerFromAudioServerFuzzTest()
-{
-    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     AudioProcessConfig config;
     session.SetWakeUpAudioCapturerFromAudioServer(config);
 }
@@ -80,16 +66,8 @@ void SetWakeUpAudioCapturerFromAudioServerFuzzTest()
 void CloseWakeUpAudioCapturerFuzzTest()
 {
     AudioCapturerSession& session = AudioCapturerSession::GetInstance();
+    session.GetInputDeviceTypeForReload();
     session.CloseWakeUpAudioCapturer();
-}
-
-void FillWakeupStreamPropInfoFuzzTest()
-{
-    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    AudioStreamInfo streamInfo;
-    AudioModuleInfo audioModuleInfo;
-    std::shared_ptr<AdapterPipeInfo> pipeInfo;
-    session.FillWakeupStreamPropInfo(streamInfo, pipeInfo, audioModuleInfo);
 }
 
 void IsVoipDeviceChangedFuzzTest()
@@ -98,19 +76,7 @@ void IsVoipDeviceChangedFuzzTest()
     AudioDeviceDescriptor inputDevice;
     AudioDeviceDescriptor outputDevice;
     session.IsVoipDeviceChanged(inputDevice, outputDevice);
-}
-
-void SetInputDeviceTypeForReloadFuzzTest()
-{
-    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    AudioDeviceDescriptor inputDevice;
     session.SetInputDeviceTypeForReload(inputDevice);
-}
-
-void GetInputDeviceTypeForReloadFuzzTest()
-{
-    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    session.GetInputDeviceTypeForReload();
 }
 
 void GetEnhancePropByNameV3FuzzTest()
@@ -119,12 +85,6 @@ void GetEnhancePropByNameV3FuzzTest()
     AudioEffectPropertyArrayV3 propertyArray;
     std::string propName = "propName";
     session.GetEnhancePropByNameV3(propertyArray, propName);
-}
-
-void ReloadSourceForEffectFuzzTest()
-{
-    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
-    AudioEffectPropertyArrayV3 propertyArray;
     AudioEffectPropertyArrayV3 newPropertyArray;
     session.ReloadSourceForEffect(propertyArray, newPropertyArray);
 }
@@ -135,11 +95,6 @@ void GetEnhancePropByNameFuzzTest()
     AudioEnhancePropertyArray propertyArray;
     std::string propName = "propName";
     session.GetEnhancePropByName(propertyArray, propName);
-}
-
-void ReloadSourceForEffectDifferentArgsFuzzTest()
-{
-    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
     AudioEnhancePropertyArray oldPropertyArray;
     AudioEnhancePropertyArray newPropertyArray;
     session.ReloadSourceForEffect(oldPropertyArray, newPropertyArray);
@@ -147,21 +102,13 @@ void ReloadSourceForEffectDifferentArgsFuzzTest()
 
 vector<TestFuncs> g_testFuncs = {
     LoadInnerCapturerSinkFuzzTest,
-    UnloadInnerCapturerSinkFuzzTest,
     HandleRemoteCastDeviceFuzzTest,
     FindRunningNormalSessionFuzzTest,
-    ConstructWakeupAudioModuleInfoFuzzTest,
     SetWakeUpAudioCapturerFuzzTest,
-    SetWakeUpAudioCapturerFromAudioServerFuzzTest,
     CloseWakeUpAudioCapturerFuzzTest,
-    FillWakeupStreamPropInfoFuzzTest,
     IsVoipDeviceChangedFuzzTest,
-    SetInputDeviceTypeForReloadFuzzTest,
-    GetInputDeviceTypeForReloadFuzzTest,
     GetEnhancePropByNameV3FuzzTest,
-    ReloadSourceForEffectFuzzTest,
     GetEnhancePropByNameFuzzTest,
-    ReloadSourceForEffectDifferentArgsFuzzTest,
 };
 } // namespace AudioStandard
 } // namesapce OHOS

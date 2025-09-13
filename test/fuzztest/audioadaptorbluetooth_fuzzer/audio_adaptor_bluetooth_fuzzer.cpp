@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -133,7 +133,6 @@ void InitFuzzTest()
     attr.channel = CHANNEL;
     attr.format = SAMPLE_S16LE;
     attr.sampleRate = GetData<uint32_t>();
-    attr.channel = GetData<uint32_t>();
     attr.format = GetData<AudioSampleFormat>();
     attr.channelLayout = COMMON_UINT64_NUM;
     attr.deviceType = GetData<DeviceType>();
@@ -149,11 +148,6 @@ void RenderFrameFuzzTest()
     uint64_t len = GetData<uint64_t>();
     uint64_t writeLen = GetData<uint64_t>();
     GetAdaptorBlueToothSink()->RenderFrame(data, len, writeLen);
-}
-
-void StartFuzzTest()
-{
-    GetAdaptorBlueToothSink()->Start();
 }
 
 void SetVolumeFuzzTest()
@@ -189,37 +183,16 @@ void GetTransactionIdFuzzTest()
 
 void StopFuzzTest()
 {
-    GetAdaptorBlueToothSink()->Stop();
-}
-
-void PauseFuzzTest()
-{
+    GetAdaptorBlueToothSink()->Start();
     GetAdaptorBlueToothSink()->Pause();
-}
-
-void ResumeFuzzTest()
-{
     GetAdaptorBlueToothSink()->Resume();
-}
-
-void ResetFuzzTest()
-{
     GetAdaptorBlueToothSink()->Reset();
-}
-
-void FlushFuzzTest()
-{
     GetAdaptorBlueToothSink()->Flush();
-}
-
-void SuspendRenderSinkFuzzTest()
-{
     GetAdaptorBlueToothSink()->SuspendRenderSink();
-}
-
-void RestoreRenderSinkFuzzTest()
-{
     GetAdaptorBlueToothSink()->RestoreRenderSink();
+    g_renderId = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_MMAP,
+        GetData<bool>());
+    GetAdaptorBlueToothSink()->Stop();
 }
 
 void GetPresentationPositionFuzzTest()
@@ -242,18 +215,11 @@ void SetPaPowerFuzzTest()
     GetAdaptorBlueToothSink()->SetPaPower(flag);
 }
 
-void ReleaseRenderIdFuzzTest()
-{
-    g_renderId = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_MMAP,
-        true);
-}
-
-typedef void (*TestFuncs[22])();
+typedef void (*TestFuncs[15])();
 
 TestFuncs g_testFuncs = {
     InitFuzzTest,
     RenderFrameFuzzTest,
-    StartFuzzTest,
     IsInitedFuzzTest,
     SetAudioSceneFuzzTest,
     SetOutputRoutesFuzzTest,
@@ -263,15 +229,9 @@ TestFuncs g_testFuncs = {
     SetVolumeFuzzTest,
     GetVolumeFuzzTest,
     GetTransactionIdFuzzTest,
-    SuspendRenderSinkFuzzTest,
-    RestoreRenderSinkFuzzTest,
     GetPresentationPositionFuzzTest,
     ResetOutputRouteForDisconnectFuzzTest,
     SetPaPowerFuzzTest,
-    PauseFuzzTest,
-    ResumeFuzzTest,
-    ResetFuzzTest,
-    FlushFuzzTest,
     StopFuzzTest,
 };
 
