@@ -953,8 +953,6 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
 void AudioInterruptService::PrintLogsOfFocusStrategyBaseMusic(const AudioInterrupt &audioInterrupt)
 {
     // The log printed by this function is critical, so please do not modify it.
-    std::string bundleName = (AudioBundleManager::GetBundleInfoFromUid(audioInterrupt.uid)).name;
-
     AudioFocusType audioFocusType;
     audioFocusType.streamType = AudioStreamType::STREAM_MUSIC;
     std::pair<AudioFocusType, AudioFocusType> focusPair = std::make_pair(audioFocusType, audioInterrupt.audioFocusType);
@@ -964,7 +962,7 @@ void AudioInterruptService::PrintLogsOfFocusStrategyBaseMusic(const AudioInterru
         AUDIO_WARNING_LOG("The audio focus strategy based on music: forceType: %{public}d, hintType: %{public}d, " \
             "actionOn: %{public}d. Caller info: pid [%{public}d], uid [%{public}d], bundleName [%{public}s].",
             focusEntry.forceType, focusEntry.hintType, focusEntry.actionOn,
-            audioInterrupt.pid, audioInterrupt.uid, bundleName.c_str());
+            audioInterrupt.pid, audioInterrupt.uid, audioInterrupt.bundleName.c_str());
         return;
     }
     // Update focus strategy by audio session.
@@ -1603,8 +1601,7 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
             ++iterActive;
         }
         uint8_t appstate = GetAppState(currentInterrupt.pid);
-        auto info = AudioBundleManager::GetBundleInfoFromUid(currentInterrupt.uid);
-        dfxBuilder.WriteEffectMsg(appstate, info.name, currentInterrupt, interruptEvent.hintType);
+        dfxBuilder.WriteEffectMsg(appstate, currentInterrupt.bundleName, currentInterrupt, interruptEvent.hintType);
         SendActiveInterruptEvent(activeStreamId, interruptEvent, incomingInterrupt, currentInterrupt);
     }
 
@@ -1805,8 +1802,8 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     int32_t incomingPid = incomingInterrupt.pid;
     AudioFocusType incomingAudioFocusType = incomingInterrupt.audioFocusType;
     AudioFocusType existAudioFocusType = currentInterrupt.audioFocusType;
-    std::string bundleName = GetAudioInterruptBundleName(incomingInterrupt);
-    std::string currentBundleName = GetCurrentBundleName(static_cast<int32_t>(currentUid));
+    std::string bundleName = incomingInterrupt.bundleName;
+    std::string currentBundleName = currentInterrupt.bundleName;
     CHECK_AND_RETURN_LOG(!bundleName.empty(), "bundleName is empty");
     AudioStreamType existStreamType = existAudioFocusType.streamType;
     AudioStreamType incomingStreamType = incomingAudioFocusType.streamType;
