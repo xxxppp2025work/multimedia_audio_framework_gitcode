@@ -526,6 +526,20 @@ int32_t CheckSourceInfoFramelen(const HpaeSourceInfo &sourceInfo)
     }
     return SUCCESS;
 }
+
+void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<INodeCallback> &statusCallback,
+    HpaeNodeInfo &nodeInfo)
+{
+    nodeInfo.channels = sinkInfo_.channels;
+    nodeInfo.format = sinkInfo_.format;
+    nodeInfo.frameLen = sinkInfo_.frameLen;
+    nodeInfo.nodeId = 0;
+    nodeInfo.samplingRate = sinkInfo_.samplingRate;
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
+    nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
+    nodeInfo.deviceClass = sinkInfo_.deviceClass;
+    nodeInfo.statusCallback = statusCallback;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
