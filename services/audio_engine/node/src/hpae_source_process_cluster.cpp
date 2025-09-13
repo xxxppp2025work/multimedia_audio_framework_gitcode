@@ -25,8 +25,9 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-HpaeSourceProcessCluster::HpaeSourceProcessCluster(HpaeNodeInfo& nodeInfo)
-    : HpaeNode(nodeInfo), captureEffectNode_(std::make_shared<HpaeCaptureEffectNode>(nodeInfo))
+HpaeSourceProcessCluster::HpaeSourceProcessCluster(HpaeNodeInfo& nodeInfo) // nodeInfo maybe sourceinputnode info
+    : HpaeNode(nodeInfo), captureEffectNode_(std::make_shared<HpaeCaptureEffectNode>(nodeInfo))，
+      mixerNode_(std::make_shared<HpaeMixerNode>(nodeInfo))
 {
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("HpaeSourceProcessCluster");
@@ -49,8 +50,14 @@ void HpaeSourceProcessCluster::DoProcess()
 
 bool HpaeSourceProcessCluster::Reset()
 {
-    captureEffectNode_->Reset();
+    if (captureEffectNode != nullptr) {
+        captureEffectNode_->Reset();
+    }
+    mixerNode_->Reset();
     for (auto fmtConverterNode : fmtConverterNodeMap_) {
+        fmtConverterNode.second->Reset();
+    }
+    for (auto fmtConverterNode : injectorFmtConverterNodeMap_) {
         fmtConverterNode.second->Reset();
     }
     return true;
@@ -58,37 +65,45 @@ bool HpaeSourceProcessCluster::Reset()
 
 bool HpaeSourceProcessCluster::ResetAll()
 {
-    return captureEffectNode_->ResetAll();
+    return captureEffectNode_ != nullptr ? captureEffectNode_->ResetAll() : mixerNode_->ResetAll();
 }
 
 std::shared_ptr<HpaeNode> HpaeSourceProcessCluster::GetSharedInstance()
 {
+    if (captureEffectNode_ == nullptr) {
+        return mixerNode_;
+    }
     return captureEffectNode_;
 }
 
 OutputPort<HpaePcmBuffer *> *HpaeSourceProcessCluster::GetOutputPort()
 {
-    return captureEffectNode_->GetOutputPort();
+    return captureEffectNode_ != nullptr ? captureEffectNode_->GetOutputPort() : mixerNode_->GetOutputPort();
 }
 
 std::shared_ptr<HpaeNode> HpaeSourceProcessCluster::GetSharedInstance(HpaeNodeInfo &nodeInfo)
 {
     std::string sourceOutputNodeKey = TransNodeInfoToStringKey(nodeInfo);
-    HpaeNodeInfo effectNodeInfo;
-    captureEffectNode_->GetCapturerEffectConfig(effectNodeInfo);
+    HpaeNodeInfo effectNodeInfo = mixerNode_->GetNodeInfo();
+    if (captureEffectNode_ != nullptr) {
+        captureEffectNode_->GetCapturerEffectConfig(effectNodeInfo);
+    }
     std::string effectNodeKey = TransNodeInfoToStringKey(effectNodeInfo);
     AUDIO_INFO_LOG("sourceOutput:[%{public}s] effectNode:[%{public}s]",
         sourceOutputNodeKey.c_str(), effectNodeKey.c_str());
     if (CheckHpaeNodeInfoIsSame(nodeInfo, effectNodeInfo)) {
         AUDIO_INFO_LOG("Specification of sourceOutputNode is same with capture effect");
-        return captureEffectNode_;
+        if (captureEffectNode_ != nullptr) {
+            return captureEffectNode_;
+        }
+        return mixerNode;
     }
     if (!SafeGetMap(fmtConverterNodeMap_, sourceOutputNodeKey)) {
         fmtConverterNodeMap_[sourceOutputNodeKey] =
             std::make_shared<HpaeAudioFormatConverterNode>(effectNodeInfo, nodeInfo);
         fmtConverterNodeMap_[sourceOutputNodeKey]->SetSourceNode(true);
     }
-    fmtConverterNodeMap_[sourceOutputNodeKey]->Connect(captureEffectNode_);
+    fmtConverterNodeMap_[sourceOutputNodeKey]->Connect(mixerNode_);
     return fmtConverterNodeMap_[sourceOutputNodeKey];
 }
 
@@ -102,7 +117,7 @@ OutputPort<HpaePcmBuffer *> *HpaeSourceProcessCluster::GetOutputPort(HpaeNodeInf
         sourceOutputNodeKey.c_str(), effectNodeKey.c_str());
     if (CheckHpaeNodeInfoIsSame(nodeInfo, effectNodeInfo)) {
         AUDIO_INFO_LOG("Specification of sourceOutputNode is same with capture effect");
-        return captureEffectNode_->GetOutputPort();
+        return captureEffectNode_ != nullptr ? captureEffectNode_->GetOutputPort() : mixerNode_->GetOutputPort();
     }
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(fmtConverterNodeMap_, sourceOutputNodeKey),
         captureEffectNode_->GetOutputPort(),
@@ -111,7 +126,7 @@ OutputPort<HpaePcmBuffer *> *HpaeSourceProcessCluster::GetOutputPort(HpaeNodeInf
         // disconnect fmtConverterNode->upEffectNode
         AUDIO_INFO_LOG("disconnect fmtConverterNode between effectnode[[%{public}s] and sourceoutputnode[%{public}s]",
             effectNodeKey.c_str(), sourceOutputNodeKey.c_str());
-        fmtConverterNodeMap_[sourceOutputNodeKey]->DisConnect(captureEffectNode_);
+        fmtConverterNodeMap_[sourceOutputNodeKey]->DisConnect(mixerNode_);
     }
     return fmtConverterNodeMap_[sourceOutputNodeKey]->GetOutputPort();
 }
@@ -133,35 +148,95 @@ void HpaeSourceProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaeP
 void HpaeSourceProcessCluster::ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode,
     HpaeNodeInfo &nodeInfo)
 {
-    captureEffectNode_->ConnectWithInfo(preNode, nodeInfo);
+    if (captureEffectNode_) {
+        captureEffectNode_->ConnectWithInfo(preNode, nodeInfo);
+    } else {
+        mixerNode_->ConnectWithInfo(preNode, nodeInfo);
+    }
 }
 
 void HpaeSourceProcessCluster::DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode,
     HpaeNodeInfo &nodeInfo)
 {
-    captureEffectNode_->DisConnectWithInfo(preNode, nodeInfo);
+    if (captureEffectNode_) {
+        captureEffectNode_->DisConnectWithInfo(preNode, nodeInfo);
+    } else {
+        mixerNode_->DisConnectWithInfo(preNode, nodeInfo);
+    }
+}
+
+void HpaeSourceProcessCluster::ConnectInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
+{
+    AUDIO_INFO_LOG("connect injector sinkOutputNode in processcluster");
+    CHECK_AND_RETURN_(preNode != nullptr, "pre sinkOutputNode is nullptr");
+    HpaeNodeInfo sinkNodeInfo = preNode->GetNodeInfo();
+    HpaeNodeInfo mixerNodeInfo = mixerNode_->GetNodeInfo();
+    if (CheckHpaeNodeInfoIsSame(sinkNodeInfo, mixerNodeInfo)) {
+        AUDIO_INFO_LOG("Specification of sinkOutputNode is same with mixerNode");
+        mixerNode_->Connect(preNode);
+    } else {
+        injectorFmtConverterNodeMap_[preNode] =
+            std::make_shared(HpaeAudioFormatConverterNode)(sinkNodeInfo, mixerNodeInfo);
+        mixerNode_->Connect(injectorFmtConverterNodeMap_[preNode]);
+        injectorFmtConverterNodeMap_[preNode]->Connect(preNode);
+    }
+}
+
+void HpaeSourceProcessCluster::DisConnectInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
+{
+    AUDIO_INFO_LOG("disconnect injector sinkOutputNode in processcluster");
+    CHECK_AND_RETURN_(preNode != nullptr, "pre sinkOutputNode is nullptr");
+    HpaeNodeInfo sinkNodeInfo = preNode->GetNodeInfo();
+    HpaeNodeInfo mixerNodeInfo = mixerNode_->GetNodeInfo();
+    if (CheckHpaeNodeInfoIsSame(sinkNodeInfo, mixerNodeInfo)) {
+        AUDIO_INFO_LOG("Specification of sinkOutputNode is same with mixerNode");
+        mixerNode_->DisConnect(preNode);
+    } else {
+        injectorFmtConverterNodeMap_[preNode]->Connect(preNode);
+        mixerNode_->DisConnect(injectorFmtConverterNodeMap_[preNode]);
+        injectorFmtConverterNodeMap_.erase(preNode);
+    }
 }
 
 bool HpaeSourceProcessCluster::GetCapturerEffectConfig(HpaeNodeInfo &nodeInfo, HpaeSourceBufferType type)
 {
-    return captureEffectNode_->GetCapturerEffectConfig(nodeInfo, type);
+    if (captureEffectNode_ != nullptr) {
+        return captureEffectNode_->GetCapturerEffectConfig(nodeInfo, type);
+    }
+    nodeInfo = mixerNode_->GetNodeInfo();
+    return true;
 }
 
 size_t HpaeSourceProcessCluster::GetOutputPortNum()
 {
+    CHECK_AND_RETURN_RET(captureEffectNode_ != nullptr, mixerNode_->GetOutputPortNum());
     return captureEffectNode_->GetOutputPortNum();
 }
 
 int32_t HpaeSourceProcessCluster::CaptureEffectCreate(uint64_t sceneKeyCode, CaptureEffectAttr attr)
 {
     CHECK_AND_RETURN_RET_LOG(captureEffectNode_, ERROR_ILLEGAL_STATE, "captureEffectNode_ is nullptr");
-    return captureEffectNode_->CaptureEffectCreate(sceneKeyCode, attr);
+    HpaeNodeInfo nodeInfo;
+    if (captureEffectNode_->CaptureEffectCreate(sceneKeyCode, attr) != 0 || GetCapturerEffectConfig(nodeInfo)) {
+        captureEffectNode_ = nullptr;
+        return ERROR_ILLEGAL_STATE;
+    }
+    // create captureEffectNode, updata mixerNode info by effectnode info
+    mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
+    mixerNode_->Connect(captureEffectNode_);
+    return 0;
 }
 
 int32_t HpaeSourceProcessCluster::CaptureEffectRelease(uint64_t sceneKeyCode)
 {
     CHECK_AND_RETURN_RET_LOG(captureEffectNode_, ERROR_ILLEGAL_STATE, "captureEffectNode_ is nullptr");
+    mixerNode_->DisConnect(captureEffectNode_);
     return captureEffectNode_->CaptureEffectRelease(sceneKeyCode);
+}
+
+bool HpaeSourceProcessCluster::IsEffectNodeValid()
+{
+    return captureEffectNode_ != nullptr;
 }
 
 // for ut test
