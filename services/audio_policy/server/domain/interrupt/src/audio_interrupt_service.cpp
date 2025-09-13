@@ -260,11 +260,11 @@ int32_t AudioInterruptService::ActivateAudioSession(const int32_t zoneId, const 
             return result;
         }
 
-        AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+        AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
         // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
         // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
         lock.unlock();
-        UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
+        UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
         return SUCCESS;
     }
 
@@ -889,11 +889,11 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
         return ret;
     }
 
-    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+    AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
     // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -922,10 +922,6 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
         incomingStreamId, currAudioInterrupt.pid, streamType, zoneId,
         currAudioInterrupt.streamUsage, (currAudioInterrupt.audioFocusType).sourceType);
 
-#ifdef FEATURE_MULTIMODALINPUT_INPUT
-    CHECK_AND_RETURN_RET_LOG(policyServer_ != nullptr, ERR_FOCUS_DENIED, "policyServer nullptr");
-    policyServer_->ReloadLoudVolumeMode(streamType);
-#endif
     if (AudioInterruptIsActiveInFocusList(zoneId, incomingStreamId) && !isUpdatedAudioStrategy) {
         AUDIO_INFO_LOG("Stream is active in focus list, no need to active audio interrupt.");
         return SUCCESS;
@@ -1116,9 +1112,9 @@ int32_t AudioInterruptService::ReleaseAudioInterruptZone(const int32_t zoneId, G
     if (ret != SUCCESS) {
         return ret;
     }
-    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+    AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1129,9 +1125,9 @@ int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, G
     if (ret != SUCCESS) {
         return ret;
     }
-    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+    AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1143,9 +1139,9 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InjectInterruptToAudioZone failed");
     CHECK_AND_RETURN_RET_LOG(zoneId != ZONEID_DEFAULT, SUCCESS, "zone id is default");
 
-    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+    AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1157,9 +1153,9 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InjectInterruptToAudioZone failed");
     CHECK_AND_RETURN_RET_LOG(zoneId != ZONEID_DEFAULT, SUCCESS, "zone id is default");
 
-    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
+    AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1734,8 +1730,8 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
         }
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, audioInterrupt);
         SendActiveVolumeTypeChangeEvent(zoneId);
-        AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
-        UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
+        AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
+        UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
         shouldReturnSuccess = true;
         return;
     }
@@ -2720,7 +2716,6 @@ void AudioInterruptService::SendFocusChangeEvent(const int32_t zoneId, int32_t c
     const AudioInterrupt &audioInterrupt)
 {
     CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
-    CHECK_AND_RETURN_LOG(zoneId == ZONEID_DEFAULT, "zoneId %{public}d is not default", zoneId);
 
     auto itZone = zonesMap_.find(zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};

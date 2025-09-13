@@ -286,10 +286,10 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry::GetPreferredInputDeviceDescriptors(
-    AudioCapturerInfo &captureInfo, std::string networkId)
+    AudioCapturerInfo &captureInfo, int32_t uid, std::string networkId)
 {
     std::shared_lock<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetPreferredInputDeviceDescInner(captureInfo, networkId);
+    return coreService_->GetPreferredInputDeviceDescInner(captureInfo, uid, networkId);
 }
 
 int32_t AudioCoreService::EventEntry::FetchOutputDeviceAndRoute(std::string caller,
@@ -303,11 +303,12 @@ int32_t AudioCoreService::EventEntry::FetchOutputDeviceAndRoute(std::string call
     return coreService_->FetchOutputDeviceAndRoute(caller, reason);
 }
 
-int32_t AudioCoreService::EventEntry::FetchInputDeviceAndRoute(std::string caller)
+int32_t AudioCoreService::EventEntry::FetchInputDeviceAndRoute(std::string caller,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     CHECK_AND_RETURN_RET(coreService_ != nullptr, ERR_UNKNOWN);
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->FetchInputDeviceAndRoute(caller);
+    return coreService_->FetchInputDeviceAndRoute(caller, reason);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::EventEntry::GetActiveBluetoothDevice()
@@ -433,14 +434,16 @@ int32_t AudioCoreService::EventEntry::ClearSelectedInputDeviceByUid(int32_t uid)
     return coreService_->ClearSelectedInputDeviceByUid(uid);
 }
 
-int32_t AudioCoreService::EventEntry::PreferBluetoothAndNearlinkRecordByUid(int32_t uid, bool isPreferred)
+int32_t AudioCoreService::EventEntry::PreferBluetoothAndNearlinkRecordByUid(int32_t uid,
+    BluetoothAndNearlinkPreferredRecordCategory category)
 {
     Trace trace("KeyAction AudioCoreService::PreferBluetoothAndNearlinkRecordByUid");
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->PreferBluetoothAndNearlinkRecordByUid(uid, isPreferred);
+    return coreService_->PreferBluetoothAndNearlinkRecordByUid(uid, category);
 }
 
-bool AudioCoreService::EventEntry::GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid)
+BluetoothAndNearlinkPreferredRecordCategory AudioCoreService::EventEntry::GetPreferBluetoothAndNearlinkRecordByUid(
+    int32_t uid)
 {
     Trace trace("KeyAction AudioCoreService::GetPreferBluetoothAndNearlinkRecordByUid");
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
@@ -584,13 +587,18 @@ int32_t AudioCoreService::EventEntry::ReleaseOffloadPipe(AudioIOHandle id, uint3
 {
     CHECK_AND_RETURN_RET_LOG(coreService_, ERR_INVALID_PARAM, "coreService_ is nullptr");
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("After wait, isOffloadOpened: %{public}d", coreService_->isOffloadOpened_[type].load());
-    CHECK_AND_RETURN_RET_LOG(!coreService_->isOffloadOpened_[type].load(), ERROR, "offload restart");
+    AUDIO_INFO_LOG("After wait, isOffloadOpened_: %{public}d", coreService_->isOffloadOpened_[type].load());
+    if (coreService_->isOffloadOpened_[type].load()) {
+        coreService_->isOffloadInRelease_[type].store(false);
+        AUDIO_INFO_LOG("offload restart");
+        return ERROR;
+    }
     AUDIO_INFO_LOG("Close hdi port id: %{public}u, index %{public}u", id, paIndex);
     coreService_->audioPolicyManager_.CloseAudioPort(id, paIndex);
     CHECK_AND_RETURN_RET_LOG(coreService_->pipeManager_, ERROR, "pipeManager_ is nullptr");
     coreService_->pipeManager_->RemoveAudioPipeInfo(id);
     coreService_->audioIOHandleMap_.DelIOHandleInfo(OFFLOAD_PRIMARY_SPEAKER);
+    coreService_->isOffloadInRelease_[type].store(false);
     return SUCCESS;
 }
 }

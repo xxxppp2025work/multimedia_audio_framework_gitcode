@@ -138,7 +138,7 @@ private:
     int32_t CheckAndStopAudioCapturer(std::string callingFunc);
     int32_t InitAudioInterruptCallback();
     std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
-    void SetClientInfo(uint32_t flag, IAudioStream::StreamClass &streamClass);
+    IAudioStream::StreamClass DecideStreamClassAndUpdateCapturerInfo(uint32_t flag);
     int32_t InitInputDeviceChangeCallback();
     int32_t SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     void InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info);
@@ -162,9 +162,11 @@ private:
     std::shared_ptr<IAudioStream> GetInnerStream() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     IAudioStream::StreamClass SetCaptureInfo(AudioStreamParams &audioStreamParams);
-    std::shared_ptr<AudioStreamDescriptor> GetStreamDescBySwitchInfo(
+    std::shared_ptr<AudioStreamDescriptor> GenerateStreamDesc(
         const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams);
+    bool IsRestoreOrStopNeeded();
+
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;
     mutable std::shared_mutex switchStreamMutex_;

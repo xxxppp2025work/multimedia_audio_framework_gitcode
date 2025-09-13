@@ -133,6 +133,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
     {"WIRED_HEADPHONES", DEVICE_TYPE_WIRED_HEADPHONES},
     {"BLUETOOTH_SCO", DEVICE_TYPE_BLUETOOTH_SCO},
     {"BLUETOOTH_A2DP", DEVICE_TYPE_BLUETOOTH_A2DP},
+    {"BT_SPP", DEVICE_TYPE_BT_SPP},
     {"NEARLINK", DEVICE_TYPE_NEARLINK},
     {"HEARING_AID", DEVICE_TYPE_HEARING_AID},
     {"MIC", DEVICE_TYPE_MIC},
@@ -230,7 +231,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::effectModeMap = {
 
 const std::map<std::string, int32_t> NapiAudioEnum::audioPrivacyTypeMap = {
     {"PRIVACY_TYPE_PUBLIC", PRIVACY_TYPE_PUBLIC},
-    {"PRIVACY_TYPE_PRIVATE", PRIVACY_TYPE_PRIVATE}
+    {"PRIVACY_TYPE_PRIVATE", PRIVACY_TYPE_PRIVATE},
+    {"PRIVACY_TYPE_SHARED", PRIVACY_TYPE_SHARED},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::deviceChangeTypeMap = {
@@ -1487,6 +1489,23 @@ bool NapiAudioEnum::IsValidSourceType(int32_t intValue)
         default:
             return false;
     }
+}
+
+bool NapiAudioEnum::IsLegalBluetoothAndNearlinkPreferredRecordCategory(uint32_t category)
+{
+    bool result = false;
+    switch (category) {
+        case BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE:
+        case BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_DEFAULT:
+        case BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_LOW_LATENCY:
+        case BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_HIGH_QUALITY:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
 }
 
 bool NapiAudioEnum::IsLegalDeviceUsage(int32_t usage)

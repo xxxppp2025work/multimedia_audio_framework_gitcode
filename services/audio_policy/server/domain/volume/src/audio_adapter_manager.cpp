@@ -155,7 +155,7 @@ bool AudioAdapterManager::Init()
     }
 
     char safeVolumeTimeout[6] = {0};
-    ret = GetParameter("persist.multimedia.audio.safevolume.timeout", "1140",
+    ret = GetParameter("persist.multimedia.audio.safevolume.timeout", "1080",
         safeVolumeTimeout, sizeof(safeVolumeTimeout));
     if (ret > 0) {
         safeVolumeTimeout_ = atoi(safeVolumeTimeout);
@@ -414,19 +414,20 @@ void AudioAdapterManager::UpdateSafeVolumeByS4()
     SetVolumeDb(STREAM_MUSIC);
 }
 
-void AudioAdapterManager::SendLoudVolumeModeToDsp(FunctionHoldType funcHoldType, bool state)
+void AudioAdapterManager::SendLoudVolumeModeToDsp(LoudVolumeHoldType funcHoldType, bool state)
 {
     std::string key = "LOUD_VOLUME_MODE";
     std::string value = "super_loudness_mode=voice_off";
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     CHECK_AND_RETURN_LOG(audioServerProxy_ != nullptr, "audioServerProxy_ null");
 
-    if (FUNCTION_HOLD_SYSTEM == funcHoldType) {
+    if (LOUD_VOLUME_MODE_VOICE == funcHoldType) {
         value = state ? "super_loudness_mode=voice_on" : "super_loudness_mode=voice_off";
-    } else if (FUNCTION_HOLD_MUSIC == funcHoldType) {
+    } else if (LOUD_VOLUME_MODE_MUSIC == funcHoldType) {
         value = state ? "super_loudness_mode=music_on" : "super_loudness_mode=music_off";
     } else {
         AUDIO_ERR_LOG("funcHoldType error : %{public}d", funcHoldType);
+        IPCSkeleton::SetCallingIdentity(identity);
         return;
     }
  
@@ -752,7 +753,7 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
-        "SetSystemVolumeLevel audio adapter null");
+        "SetSystemVolumeLevel failed audio adapter null");
 
     AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volume:%{public}d devicetype:%{public}d",
         streamType, volumeDb, volumeLevel, currentActiveDevice_.deviceType_);
@@ -1299,6 +1300,7 @@ void AudioAdapterManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
 {
     isSleVoiceStatus_ = isSleVoiceStatus;
     AUDIO_INFO_LOG("SetSleVoiceStatusFlag: %{public}d", isSleVoiceStatus);
+    SetVolumeDb(STREAM_MUSIC);
 }
 
 void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor)
@@ -2062,6 +2064,7 @@ IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &
     attr.isBigEndian = IsBigEndian(audioModuleInfo.format);
     attr.filePath = audioModuleInfo.fileName.c_str();
     attr.deviceNetworkId = audioModuleInfo.networkId.c_str();
+    attr.macAddress = audioModuleInfo.macAddress.c_str();
     if (!audioModuleInfo.deviceType.empty()) {
         attr.deviceType = std::stoi(audioModuleInfo.deviceType);
     }
@@ -2165,6 +2168,7 @@ DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
+        case DEVICE_TYPE_NEARLINK:
             return HEADSET_VOLUME_TYPE;
         default:
             return SPEAKER_VOLUME_TYPE;

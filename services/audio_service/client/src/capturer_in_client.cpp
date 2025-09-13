@@ -202,15 +202,6 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         info.encoding);
     AudioXCollie guard("CapturerInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
-    if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) || !IsSamplingRateValid(info.samplingRate)) {
-        AUDIO_ERR_LOG("CapturerInClient: Unsupported audio parameter");
-        return ERR_NOT_SUPPORTED;
-    }
-    if (!IsRecordChannelRelatedInfoValid(info.channels, info.channelLayout)) {
-        AUDIO_ERR_LOG("Invalid sink channel %{public}d or channel layout %{public}" PRIu64, info.channels,
-                info.channelLayout);
-        return ERR_NOT_SUPPORTED;
-    }
 
     CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
         ERROR_INVALID_PARAM, "GetByteSizePerFrame failed with invalid params");
@@ -1876,6 +1867,22 @@ bool CapturerInClientInner::GetStopFlag() const
 {
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "Client OHAudioBuffer is nullptr");
     return clientBuffer_->GetStopFlag();
+}
+
+bool CapturerInClientInner::IsRestoreNeeded()
+{
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "buffer null");
+
+    RestoreStatus restoreStatus = clientBuffer_->GetRestoreStatus();
+    if (restoreStatus == NEED_RESTORE) {
+        return true;
+    }
+
+    if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
+        return true;
+    }
+
+    return false;
 }
 } // namespace AudioStandard
 } // namespace OHOS

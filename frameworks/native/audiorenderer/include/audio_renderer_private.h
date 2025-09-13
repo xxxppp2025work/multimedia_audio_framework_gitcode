@@ -174,7 +174,6 @@ public:
         return audioStreamParams;
     }
 
-    AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
     AudioRendererInfo rendererInfo_ = {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC, 0};
     AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };
     AudioSessionStrategy originalStrategy_ = { AudioConcurrencyMode::INVALID };
@@ -200,9 +199,9 @@ private:
     int32_t PrepareAudioStream(AudioStreamParams &audioStreamParams,
         const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass, uint32_t &flag);
     std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
-    std::shared_ptr<AudioStreamDescriptor> GetStreamDescBySwitchInfo(
+    std::shared_ptr<AudioStreamDescriptor> GenerateStreamDesc(
         const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);
-    void SetClientInfo(uint32_t flag, IAudioStream::StreamClass &streamClass);
+    IAudioStream::StreamClass DecideStreamClassAndUpdateRendererInfo(uint32_t flag);
     int32_t InitAudioInterruptCallback(bool isRestoreAudio = false);
     int32_t InitOutputDeviceChangeCallback();
     void InitAudioRouteCallback();
@@ -245,6 +244,7 @@ private:
     bool GetFinalOffloadAllowed(bool originalAllowed);
     void SetReleaseFlagWithLock(bool releaseFlag);
     void SetReleaseFlagNoLock(bool releaseFlag);
+    bool IsRestoreOrStopNeeded();
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;

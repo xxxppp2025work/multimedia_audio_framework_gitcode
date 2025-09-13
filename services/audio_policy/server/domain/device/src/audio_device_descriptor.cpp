@@ -36,6 +36,8 @@ const std::map<DeviceType, std::string> deviceTypeStringMap = {
     {DEVICE_TYPE_HEARING_AID, "HEARING_AID"},
     {DEVICE_TYPE_NEARLINK, "NEARLINK"},
     {DEVICE_TYPE_NEARLINK_IN, "NEARLINK_IN"},
+    {DEVICE_TYPE_BT_SPP, "BT_SPP"},
+    {DEVICE_TYPE_NEARLINK_PORT, "NEARLINK_PORT"},
     {DEVICE_TYPE_MIC, "MIC"},
     {DEVICE_TYPE_WAKEUP, "WAKEUP"},
     {DEVICE_TYPE_USB_HEADSET, "USB_HEADSET"},
@@ -49,6 +51,7 @@ const std::map<DeviceType, std::string> deviceTypeStringMap = {
     {DEVICE_TYPE_FILE_SINK, "FILE_SINK"},
     {DEVICE_TYPE_FILE_SOURCE, "FILE_SOURCE"},
     {DEVICE_TYPE_EXTERN_CABLE, "EXTERN_CABLE"},
+    {DEVICE_TYPE_SYSTEM_PRIVATE, "SYSTEM_PRIVATE"},
     {DEVICE_TYPE_DEFAULT, "DEFAULT"},
     {DEVICE_TYPE_USB_ARM_HEADSET, "USB_ARM_HEADSET"}
 };
@@ -436,6 +439,32 @@ AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
     return deviceDescriptor;
 }
 
+void AudioDeviceDescriptor::MapInputDeviceType(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+{
+    for (size_t index = descs.size() - 1; index >= 0; index--) {
+        if (descs[index]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP || descs[index]->deviceRole_ != INPUT_DEVICE) {
+            continue;
+        }
+        bool hasSame = false;
+        for (const auto& otherDesc : descs) {
+            if (otherDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+                descs[index]->macAddress_ != "" &&
+                otherDesc->macAddress_ == descs[index]->macAddress_ &&
+                otherDesc->deviceRole_ == descs[index]->deviceRole_ &&
+                otherDesc->networkId_ == descs[index]->networkId_) {
+                hasSame = true;
+                break;
+            }
+        }
+
+        if (hasSame) {
+            descs.erase(descs.begin() + index);
+        } else {
+            descs[index]->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+        }
+    }
+}
+
 void AudioDeviceDescriptor::SetDeviceInfo(std::string deviceName, std::string macAddress)
 {
     deviceName_ = deviceName;
@@ -479,7 +508,8 @@ bool AudioDeviceDescriptor::IsPairedDeviceDesc(const AudioDeviceDescriptor &devi
 {
     return ((deviceDescriptor.deviceRole_ == INPUT_DEVICE && deviceRole_ == OUTPUT_DEVICE) ||
         (deviceDescriptor.deviceRole_ == OUTPUT_DEVICE && deviceRole_ == INPUT_DEVICE)) &&
-        deviceDescriptor.deviceType_ == deviceType_ &&
+        (deviceDescriptor.deviceType_ == deviceType_ ||
+            (IsNearlinkDevice(deviceDescriptor.deviceType_) && IsNearlinkDevice(deviceType_))) &&
         deviceDescriptor.macAddress_ == macAddress_ &&
         deviceDescriptor.networkId_ == networkId_;
 }
