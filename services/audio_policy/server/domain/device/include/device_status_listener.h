@@ -46,6 +46,11 @@ public:
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object);
     int32_t UnsetAudioDeviceAnahsCallback();
     void UpdateAnahsPlatformType(std::string anahsShowType);
+    bool SendDistributedInfo(const std::string &deviceInfo);
+    void SetDistributedOnline(bool isOnline);
+    bool GetDistributedOnline() const;
+    void WriteDeviceStatusChangeSysEvent(const std::string &deviceInfo, const DStatusInfo &statusInfo,
+        int serviceStatus);
 
 private:
 #ifdef AUDIO_WIRED_DETECT
@@ -56,6 +61,7 @@ private:
     struct ServiceStatusListener *listener_;
     sptr<IStandardAudioAnahsManagerListener> audioDeviceAnahsCb_;
     std::string anahsShowType_ = "Dialog";
+    std::atomic_bool isDistributedOnline_ = false;
 };
 
 #ifdef AUDIO_WIRED_DETECT

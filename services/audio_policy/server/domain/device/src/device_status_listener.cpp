@@ -36,6 +36,7 @@ namespace {
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 #include "audio_core_service.h"
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -116,10 +117,13 @@ static void ReceiveRemoteOffloadInfo(std::string &info, DStatusInfo &statusInfo)
 static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::string & info,
     DeviceStatusListener * devListener)
 {
+    CHECK_AND_RETURN_LOG(serviceStatus != nullptr, "serviceStatus is nullptr");
+    CHECK_AND_RETURN_LOG(devListener != nullptr, "devListener is nullptr");
     DStatusInfo statusInfo;
     PnpEventType pnpEventType = PNP_EVENT_UNKNOWN;
     if (serviceStatus->status == SERVIE_STATUS_START) {
         AUDIO_DEBUG_LOG("distributed service online");
+        devListener->SetDistributedOnline(true);
     } else if (serviceStatus->status == SERVIE_STATUS_CHANGE && !info.empty()) {
         statusInfo.connectType = ConnectType::CONNECT_TYPE_DISTRIBUTED;
         if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;NID=%[^;];PIN=%d;VID=%d;IID=%d", &pnpEventType,
@@ -132,12 +136,15 @@ static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::st
         statusInfo.isConnected = (pnpEventType == PNP_EVENT_DEVICE_ADD) ? true : false;
         ReceiveRemoteOffloadInfo(info, statusInfo);
         devListener->deviceObserver_.OnDeviceStatusUpdated(statusInfo);
+        devListener->WriteDeviceStatusChangeSysEvent(info, statusInfo, serviceStatus->status);
     } else if (serviceStatus->status == SERVIE_STATUS_STOP) {
         AUDIO_DEBUG_LOG("distributed service offline");
         JUDGE_AND_ERR_LOG(sscanf_s(info.c_str(), "EVENT_TYPE=%d;NID=%[^;];PIN=%d;VID=%d;IID=%d", &pnpEventType,
             statusInfo.networkId, sizeof(statusInfo.networkId), &(statusInfo.hdiPin), &(statusInfo.mappingVolumeId),
             &(statusInfo.mappingInterruptId)) < D_EVENT_PARAMS, "[DeviceStatusListener]: Failed to scan info string");
         devListener->deviceObserver_.OnDeviceStatusUpdated(statusInfo, true);
+        devListener->SetDistributedOnline(false);
+        devListener->WriteDeviceStatusChangeSysEvent(info, statusInfo, serviceStatus->status);
     }
 }
 
@@ -358,6 +365,45 @@ void DeviceStatusListener::OnMicrophoneBlocked(const std::string &info)
     }
     AUDIO_INFO_LOG("[device type :%{public}d], [status :%{public}d]", micBlockedDeviceType, status);
     deviceObserver_.OnMicrophoneBlockedUpdate(micBlockedDeviceType, status);
+}
+
+bool DeviceStatusListener::SendDistributedInfo(const std::string &deviceInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(isDistributedOnline_, false, "distributed service offline");
+    struct ServiceStatus serviceStatus = {};
+    std::string info = deviceInfo;
+    serviceStatus.status = static_cast<uint16_t>(SERVIE_STATUS_CHANGE);
+    ReceviceDistributedInfo(&serviceStatus, info, this);
+    return true;
+}
+
+void DeviceStatusListener::SetDistributedOnline(bool isOnline)
+{
+    AUDIO_DEBUG_LOG("distributed service status changed to %{public}d", isOnline);
+    isDistributedOnline_.store(isOnline);
+}
+
+bool DeviceStatusListener::GetDistributedOnline() const
+{
+    return isDistributedOnline_;
+}
+
+void DeviceStatusListener::WriteDeviceStatusChangeSysEvent(const std::string &deviceInfo,
+    const DStatusInfo &statusInfo, int serviceStatus)
+{
+    AUDIO_INFO_LOG("deviceInfo:%{public}s, networkId:%{public}s, hdiPin:%{public}d,"\
+        "serviceStatus:%{public}d", deviceInfo.c_str(), statusInfo.networkId, statusInfo.hdiPin,
+        serviceStatus);
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::DISTRIBUTED_DEVICE_STATE,
+    Media::MediaMonitor::BEHAVIOR_EVENT);
+    CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
+    bean->Add("IS_ADD", statusInfo.isConnected);
+    bean->Add("NETWORK_ID", statusInfo.networkId);
+    bean->Add("HDI_PIN", statusInfo.hdiPin);
+    bean->Add("SERVICE_STATUS", serviceStatus);
+    bean->Add("DEVICE_INFO", deviceInfo);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 #ifdef AUDIO_WIRED_DETECT

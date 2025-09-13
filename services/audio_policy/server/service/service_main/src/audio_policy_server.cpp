@@ -848,7 +848,10 @@ void AudioPolicyServer::AddAudioServiceOnStart()
         RegisterParamCallback();
         ConnectServiceAdapter();
         LoadEffectLibrary();
+        AUDIO_INFO_LOG("lzz OnAddSystemAbility audio service is not first start");
         isFirstAudioServiceStart_ = true;
+        CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+        coreService_->RestoreDistributedDevice();
     } else {
         AUDIO_WARNING_LOG("OnAddSystemAbility audio service is not first start");
     }

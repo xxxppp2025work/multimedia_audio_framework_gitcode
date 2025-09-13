@@ -741,6 +741,17 @@ int32_t AudioCoreService::SetSessionDefaultOutputDevice(const int32_t callerPid,
     return audioSessionService_.SetSessionDefaultOutputDevice(callerPid, deviceType);
 }
 
+void AudioCoreService::RestoreDistributedDevice()
+{
+    CHECK_AND_RETURN_LOG(deviceStatusListener_ != nullptr, "deviceStatusListener_ is nullptr");
+    AUDIO_INFO_LOG("restore distributed device");
+    std::vector<std::string> deviceInfos;
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().GetDistributedDeviceInfo(deviceInfos);
+    for (const auto &deviceInfo : deviceInfos) {
+        deviceStatusListener_->SendDistributedInfo(deviceInfo);
+    }
+}
+
 int32_t AudioCoreService::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
 {
     // Use GetPreferredInputDeviceDescriptors instead of currentActiveDevice, if prefer != current, recreate stream
