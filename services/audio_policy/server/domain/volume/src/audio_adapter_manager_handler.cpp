@@ -64,7 +64,7 @@ bool AudioAdapterManagerHandler::SendSaveVolume(const DeviceType &deviceType,
 }
 
 bool AudioAdapterManagerHandler::SendStreamMuteStatusUpdate(const AudioStreamType &streamType, const bool &mute,
-    const StreamUsage &streamUsage, const DeviceType &deviceType, std::string networkId)
+    const DeviceType &deviceType, std::string networkId)
 {
     bool ret = true;
 #ifndef TEST_COVERAGE
