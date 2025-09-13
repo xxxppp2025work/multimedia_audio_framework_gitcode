@@ -956,7 +956,7 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(std::shared_ptr<AudioDeviceDe
     volumeDataExtMaintainer_[device->GetKey()]->SetStreamMuteStatus(streamType, mute);
 
     if (handler_ != nullptr) {
-        handler_->SendStreamMuteStatusUpdate(streamType, mute, streamUsage, deviceType, device->networkId_);
+        handler_->SendStreamMuteStatusUpdate(streamType, mute, deviceType, device->networkId_);
     }
     return SetVolumeDb(device, streamType);
 }
