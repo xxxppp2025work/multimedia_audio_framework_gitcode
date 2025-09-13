@@ -121,7 +121,7 @@ void ResampleProcessTest11025()
     uint32_t inRate = SAMPLE_RATE_11025;
     uint32_t outRate = GetData<uint32_t>();
 
-    uint32_t inFrameLen = FRAME_LEN_40MS * inRate / MS_PER_SECOND;;
+    uint32_t inFrameLen = FRAME_LEN_40MS * inRate / MS_PER_SECOND;
     uint32_t outFrameLen = inFrameLen / inRate * outRate;
     
     for (uint32_t channels: TEST_CHANNELS) {

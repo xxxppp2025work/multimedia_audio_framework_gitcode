@@ -252,7 +252,6 @@ int32_t ProResampler::UpdateChannels(uint32_t channels)
     CHECK_AND_RETURN_RET_LOG(state_ && (errRet == RESAMPLER_ERR_SUCCESS), errRet,
         "error code %{public}s", ErrCodeToString(errRet).c_str());
 
-
     return SingleStagePolyphaseResamplerSkipHalfTaps(state_);
 }
 
