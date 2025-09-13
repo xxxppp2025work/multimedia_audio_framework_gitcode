@@ -493,7 +493,7 @@ bool CapturerInServer::CheckBGCapture()
         return true;
     }
 
-    CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
+    CHECK_AND_RETURN_RET_LOG(Util::IsBackgroundSourceType(processConfig_.capturerInfo.sourceType) &&
         AudioService::GetInstance()->InForegroundList(processConfig_.appInfo.appUid), false, "Check failed");
 
     AudioService::GetInstance()->UpdateForegroundState(tokenId, true);
@@ -773,6 +773,9 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
         }
         if (PlaybackCapturerManager::GetInstance()->CheckReleaseUnloadModernInnerCapSink(innerCapId_)) {
             AudioService::GetInstance()->UnloadModernInnerCapSink(innerCapId_);
+        }
+        if (PlaybackCapturerManager::GetInstance()->CheckReleaseUnloadModernOffloadCapSource()) {
+            AudioService::GetInstance()->UnloadModernOffloadCapSource();
         }
         innerCapId_ = 0;
     }

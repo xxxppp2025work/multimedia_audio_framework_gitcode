@@ -3518,6 +3518,34 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_168, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: AudioPolicyServer_222
+* @tc.desc  : Test GetVADeviceBroker.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_222, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    sptr<IRemoteObject> client;
+    int32_t result = server->GetVADeviceBroker(client);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(client, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: AudioPolicyServer_223
+* @tc.desc  : Test GetVADeviceBroker.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_223, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    sptr<IRemoteObject> controller;
+    std::string macAddress = "00:11:22:33:44:55";
+    int32_t result = server->GetVADeviceController(macAddress, controller);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
  * @tc.name  : Test AudioPolicyServer
  * @tc.number: IsStreamActiveByStreamUsage_001
  * @tc.desc  : AudioPolicyServer::IsStreamActiveByStreamUsage
@@ -3671,6 +3699,33 @@ HWTEST(AudioPolicyUnitTest, IsIntelligentNoiseReductionEnabledForCurrentDevice_0
     bool isSupport = false;
     int32_t ret = server->IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType, isSupport);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: CheckAndGetApiVersion_001
+* @tc.desc  : AudioPolicyServer::CheckAndGetApiVersion.
+*/
+HWTEST(AudioPolicyUnitTest, CheckAndGetApiVersion_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    bool hasSystemPermission = false;
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    desc->hasPair_ = false;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs;
+
+    int32_t apiVersion = server->CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
+    EXPECT_EQ(apiVersion, 0);
+    hasSystemPermission = true;
+    apiVersion = server->CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
+    EXPECT_EQ(apiVersion, 0);
+    deviceDescs.push_back(desc);
+    apiVersion = server->CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
+    EXPECT_EQ(apiVersion, 0);
 }
 } // AudioStandard
 } // OHOS

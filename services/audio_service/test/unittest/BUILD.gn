@@ -51,6 +51,9 @@ ohos_unittest("audio_balance_unit_test") {
     "../../../../frameworks/native/playbackcapturer/include",
     "../../../../frameworks/native/audioclock/include",
     "../../../../services/audio_policy/server/include",
+    "../../../../services/audio_engine/manager/include",
+    "../../../../services/audio_engine/plugin/resample/include",
+    "../../../../services/audio_service/common/include/limiter",
   ]
   sources = [
     "audio_group_manager_unit_test.cpp",
@@ -110,6 +113,7 @@ ohos_unittest("none_mix_engine_unit_test") {
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../services/audio_service/common/include",
     "../../../../services/audio_service/server/include",
+    "../../../../services/audio_engine/manager/include",
   ]
 
   cflags = [
@@ -145,6 +149,7 @@ ohos_unittest("direct_playback_engine_unit_test") {
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../services/audio_service/common/include",
     "../../../../services/audio_service/server/include",
+    "../../../../services/audio_engine/manager/include",
   ]
 
   cflags = [
@@ -179,6 +184,7 @@ ohos_unittest("audio_thread_task_unit_test") {
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../services/audio_service/common/include",
     "../../../../services/audio_service/server/include",
+    "../../../../services/audio_engine/manager/include",
   ]
 
   cflags = [
@@ -317,6 +323,8 @@ ohos_unittest("audio_service_unit_test") {
     "../../../../frameworks/native/playbackcapturer/include",
     "../../../../frameworks/native/audioclock/include",
     "../../../../services/audio_policy/server/include",
+    "../../../../services/audio_engine/manager/include",
+    "../../../../services/audio_engine/plugin/resample/include",
   ]
 
   sources = [
@@ -367,6 +375,7 @@ ohos_unittest("audio_service_unit_test") {
     "googletest:gmock",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "ipc:ipc_core",
     "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
@@ -392,6 +401,7 @@ ohos_unittest("pa_renderer_stream_impl_unit_test") {
     "../../../../frameworks/native/audiocapturer/include",
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../services/audio_service/server/include",
+    "../../../../services/audio_engine/manager/include",
   ]
   sources = [ ]
 
@@ -436,6 +446,7 @@ ohos_unittest("hpae_renderer_stream_impl_unit_test") {
     "../../../../frameworks/native/audiocapturer/include",
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../services/audio_service/server/include",
+    "../../../../services/audio_engine/manager/include",
   ]
   sources = [ "hpae_renderer_stream_impl_unit_test.cpp" ]
 
@@ -473,6 +484,7 @@ ohos_unittest("pa_renderer_stream_impl_unit_test_p2") {
     "../../../../frameworks/native/audiocapturer/include",
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../services/audio_service/server/include",
+    "../../../../services/audio_engine/manager/include",
   ]
   sources = []
 
@@ -524,6 +536,7 @@ ohos_unittest("ipc_stream_in_server_unit_test") {
     "../../../../services/audio_service/common/include",
     "../../../../services/audio_service/common/include/dfx",
     "../../../../services/audio_service/server/include",
+    "../../../../services/audio_engine/manager/include",
   ]
 
   sources = [ "ipc_stream_in_server_unit_test.cpp" ]
@@ -593,6 +606,8 @@ ohos_unittest("audio_process_in_server_unit_test") {
     "../../../../services/audio_service/client/include",
     "../../../../services/audio_service/common/include",
     "../../../../services/audio_service/common/include/dfx",
+    "../../../../services/audio_engine/manager/include",
+    "../../../../services/audio_engine/plugin/resample/include",
   ]
 
   sources = [ "audio_process_in_server_unit_test.cpp" ]
@@ -695,6 +710,7 @@ ohos_unittest("hpae_capturer_stream_impl_unit_test") {
     "../../../../frameworks/native/audiocapturer:audio_capturer",
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../services/audio_service/server/include",
+    "../../../../services/audio_engine/manager/include",
   ]
   sources = [ "hpae_capturer_stream_impl_unit_test.cpp" ]
 
@@ -732,6 +748,7 @@ ohos_unittest("pa_capturer_stream_impl_unit_test") {
     "../../../../frameworks/native/audiocapturer:audio_capturer",
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../services/audio_service/server/include",
+    "../../../../services/audio_engine/manager/include",
   ]
   sources = []
 
@@ -989,7 +1006,6 @@ ohos_unittest("audio_process_in_client_second_unit_test") {
     "ipc:ipc_core",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "frame_aware_sched:rtg_interface",
@@ -1066,6 +1082,7 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../services/audio_service/server/src/audio_workgroup_callback.cpp",
     "../../../../services/audio_service/server/src/audio_workgroup.cpp",
     "../../../../services/audio_service/server/src/audio_resource_service.cpp",
+    "../../../../services/audio_service/server/src/audio_injector_service.cpp",
     "capturer_in_server_second_unit_test.cpp",
   ]
 
@@ -1086,6 +1103,7 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../../../../services/audio_engine:audio_engine_manager",
     "../../../../services/audio_engine:audio_engine_plugins",
+    "../../../../services/audio_engine:audio_engine_utils",
     "../../../../services/audio_policy:audio_policy_client",
     "../../../../services/audio_policy:audio_policy_service",
     "../../../../services/audio_service:audio_client",
@@ -1318,7 +1336,10 @@ ohos_unittest("audio_engine_manager_unit_test") {
   testonly = true
   module_out_path = module_output_path
 
-  include_dirs = [ "../../../../services/audio_service/server/include" ]
+  include_dirs = [
+    "../../../../services/audio_service/server/include",
+    "../../../../services/audio_engine/manager/include",
+  ]
 
   sources = [ "audio_engine_manager_unit_test.cpp" ]
 

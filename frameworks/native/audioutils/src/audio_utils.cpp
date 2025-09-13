@@ -45,6 +45,7 @@
 #include "privacy_error.h"
 
 using OHOS::Security::AccessToken::AccessTokenKit;
+using namespace std::chrono_literals;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -161,6 +162,12 @@ static const std::unordered_map<DeviceType, std::string> DEVICE_TYPE_NAME_MAP = 
     {DEVICE_TYPE_INVALID, "INVALID"},
     {DEVICE_TYPE_REMOTE_CAST, "REMOTE_CAST"},
     {DEVICE_TYPE_HEARING_AID, "HEARING_AID"},
+    {DEVICE_TYPE_BT_SPP, "BT_SPP"},
+};
+
+static const std::set<SourceType> BACKGROUND_SOURCE_TYPE = {
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_COMMUNICATION,
 };
 
 uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
@@ -186,6 +193,11 @@ uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
     return audioPerSampleLength;
 }
 
+bool Util::IsBackgroundSourceType(const SourceType sourceType)
+{
+    return BACKGROUND_SOURCE_TYPE.find(sourceType) != BACKGROUND_SOURCE_TYPE.end();
+}
+
 bool Util::IsScoSupportSource(const SourceType sourceType)
 {
     return sourceType == SOURCE_TYPE_VOICE_RECOGNITION || sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION;
@@ -204,6 +216,16 @@ bool Util::IsRingerOrAlarmerStreamUsage(const StreamUsage &usage)
 bool Util::IsRingerAudioScene(const AudioScene &audioScene)
 {
     return audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING;
+}
+
+size_t Util::CalculatePcmSizeFromDurationCeiling(std::chrono::nanoseconds duration,
+    uint32_t sampleRate, uint32_t bytesPerSample)
+{
+    size_t sampleCount = static_cast<size_t>((duration * sampleRate) / (1s));
+    if (((duration * sampleRate) % (1s)) > (0ns)) {
+        sampleCount++;
+    }
+    return sampleCount * bytesPerSample;
 }
 
 WatchTimeout::WatchTimeout(const std::string &funcName, int64_t timeoutNs) : funcName_(funcName), timeoutNs_(timeoutNs)
@@ -1169,7 +1191,7 @@ int32_t GetEngineFlag()
     static int32_t engineFlag = -1;
     if (engineFlag == -1) {
         bool res = GetSysPara(para.c_str(), engineFlag);
-        AUDIO_DEBUG_LOG("get %{public}s = %{public}d", para.c_str(), engineFlag);
+        AUDIO_INFO_LOG("get %{public}s = %{public}d", para.c_str(), engineFlag);
         CHECK_AND_RETURN_RET_LOG(res, engineFlag, "get %{public}s fail", para.c_str());
     }
     return engineFlag;
@@ -2064,6 +2086,51 @@ std::string GetBundleNameByToken(const uint32_t &tokenIdNum)
         return tokenInfo.processName;
     }
 }
+
+static std::unordered_map<AudioSampleFormat, std::string> g_formatToStringMap = {
+    {SAMPLE_U8, "s8"},
+    {SAMPLE_S16LE, "s16le"},
+    {SAMPLE_S24LE, "s24le"},
+    {SAMPLE_S32LE, "s32le"},
+    {SAMPLE_F32LE, "f32le"}
+};
+std::string ConvertToStringForFormat(const AudioSampleFormat format)
+{
+    std::string formatStr = "s16le";
+    auto it = g_formatToStringMap.find(format);
+    if (it != g_formatToStringMap.end()) {
+        formatStr = it->second;
+    }
+    return formatStr;
+}
+
+std::string ConvertToStringForSampleRate(const AudioSamplingRate sampleRate)
+{
+    return std::to_string(static_cast<int32_t>(sampleRate));
+}
+
+std::string ConvertToStringForChannel(const AudioChannel channel)
+{
+    return std::to_string(static_cast<int32_t>(channel));
+}
+
+uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t bufLength)
+{
+    buffer.assign(bufLength, 0);
+    return buffer.data();
+}
+
+bool g_injectSwitch = system::GetBoolParameter("const.multimedia.audio.inject", false);
+bool IsInjectEnable()
+{
+    return g_injectSwitch;
+}
+
+void SetInjectEnable(bool injectSwitch)
+{
+    g_injectSwitch = injectSwitch;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
 

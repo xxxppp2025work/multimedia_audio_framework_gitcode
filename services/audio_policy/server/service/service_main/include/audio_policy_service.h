@@ -76,6 +76,7 @@
 #include "audio_background_manager.h"
 #include "audio_global_config_manager.h"
 #include "sle_audio_device_manager.h"
+#include "va_device_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -192,6 +193,8 @@ public:
 
     int32_t GetMaxRendererInstances();
 
+    bool IsSupportInnerCaptureOffload();
+
     void RegisterDataObserver();
 
     int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
@@ -240,6 +243,8 @@ public:
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId);
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
+    int32_t LoadModernOffloadCapSource();
+    int32_t UnloadModernOffloadCapSource();
 #endif
     void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
 
@@ -278,7 +283,8 @@ private:
         audioCapturerSession_(AudioCapturerSession::GetInstance()),
         audioDeviceLock_(AudioDeviceLock::GetInstance()),
         audioDeviceStatus_(AudioDeviceStatus::GetInstance()),
-        sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance())
+        sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance()),
+        vaDeviceManager_(VADeviceManager::GetInstance())
     {
         deviceStatusListener_ = std::make_unique<DeviceStatusListener>(*this);
     }
@@ -412,6 +418,7 @@ private:
     AudioDeviceLock& audioDeviceLock_;
     AudioDeviceStatus& audioDeviceStatus_;
     SleAudioDeviceManager& sleAudioDeviceManager_;
+    VADeviceManager& vaDeviceManager_;
 };
 
 class SafeVolumeEventSubscriber : public EventFwk::CommonEventSubscriber {

@@ -289,6 +289,8 @@ interface IAudioPolicy {
     void SetDefaultOutputDevice([in] int deviceType /* deviceType */);
     void ForceVolumeKeyControlType([in] int volumeType, [in] int duration, [out] int ret);
     void SetQueryDeviceVolumeBehaviorCallback([in] IRemoteObject object);
+    void GetVADeviceBroker([out] IRemoteObject client);
+    void GetVADeviceController([in] String macAddress, [out] IRemoteObject controller);
     void SetAppConcurrencyMode([in] int appUid, [in] int mode);
     void SetAppSilentOnDisplay([in] int displayId);
     void IsIntelligentNoiseReductionEnabledForCurrentDevice([in] int sourceType, [out] boolean ret);
@@ -300,8 +302,10 @@ interface IAudioPolicy {
     void SelectInputDevice([in] sharedptr<AudioDeviceDescriptor> audioDeviceDescriptor);
     void GetSelectedInputDevice([out] sharedptr<AudioDeviceDescriptor> audioDeviceDescriptor);
     void ClearSelectedInputDevice();
-    void PreferBluetoothAndNearlinkRecord([in] boolean isPreferred);
-    void GetPreferBluetoothAndNearlinkRecord([out] boolean isPreferred);
+    void PreferBluetoothAndNearlinkRecord([in] unsigned int category);
+    void GetPreferBluetoothAndNearlinkRecord([out] unsigned int category);
     void RestoreOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter);
+    void ReloadLoudVolumeMode([in] int streamInFocus, [in] int setVolMode, [out] boolean ret);
+    void IsSupportInnerCaptureOffload([out] boolean ret);
 }
 

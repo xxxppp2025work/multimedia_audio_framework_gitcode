@@ -35,7 +35,7 @@ HpaeInnerCapturerManager::HpaeInnerCapturerManager(HpaeSinkInfo &sinkInfo)
 
 HpaeInnerCapturerManager::~HpaeInnerCapturerManager()
 {
-    AUDIO_INFO_LOG("destructor inner capturer sink.");
+    AUDIO_INFO_LOG("destructor");
     if (isInit_.load()) {
         DeInit();
     }
@@ -55,7 +55,8 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     HpaeNodeInfo nodeInfo = node->GetNodeInfo();
     uint32_t sessionId = nodeInfo.sessionId;
     Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::AddSingleNodeToSinkInner");
-    HILOG_COMM_INFO("[FinishMove] session :%{public}u to sink:%{public}s", sessionId, sinkInfo_.deviceClass.c_str());
+    HILOG_COMM_INFO("[FinishMove] session :%{public}u to sink:%{public}s, sceneType is %{public}d",
+        sessionId, sinkInfo_.deviceClass.c_str(), node->GetSceneType());
     sinkInputNodeMap_[sessionId] = node;
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
@@ -76,7 +77,7 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     }
 
     if (node->GetState() == HPAE_SESSION_RUNNING) {
-        HILOG_COMM_INFO("[FinishMove] session:%{public}u connect to sink:%{public}s",
+        AUDIO_INFO_LOG("[FinishMove] session:%{public}u connect to sink:%{public}s",
             sessionId, sinkInfo_.deviceClass.c_str());
         ConnectRendererInputSessionInner(sessionId);
     }
@@ -118,7 +119,7 @@ void HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner(const std::string &si
     for (const auto &it : sessionIds) {
         DeleteRendererInputSessionInner(it);
     }
-    HILOG_COMM_INFO("[StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
+    HILOG_COMM_INFO("StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
     if (moveType == MOVE_ALL) {
         TriggerSyncCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
@@ -177,9 +178,10 @@ int32_t HpaeInnerCapturerManager::MoveStream(uint32_t sessionId, const std::stri
 int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
 {
     if (!IsInit()) {
-        AUDIO_INFO_LOG("CreateStream not init");
+        AUDIO_INFO_LOG("not init");
         return ERR_INVALID_OPERATION;
     }
+    CHECK_AND_RETURN_RET_LOG(CheckStreamInfo(streamInfo) == SUCCESS, ERROR, "Check StreamInfo ERROR");
     auto request = [this, streamInfo]() {
         if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
             Trace trace("HpaeInnerCapturerManager::CreateRendererStream id[" +
@@ -272,11 +274,11 @@ int32_t HpaeInnerCapturerManager::Init(bool isReload)
 int32_t HpaeInnerCapturerManager::InitSinkInner(bool isReload)
 {
     Trace trace("HpaeInnerCapturerManager::InitSinkInner");
-    if (sinkInfo_.frameLen == 0) {
+    int32_t checkRet = CheckFramelen(sinkInfo_);
+    if (checkRet != SUCCESS) {
         TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
                         sinkInfo_.deviceName, ERR_INVALID_PARAM);
-        AUDIO_ERR_LOG("FrameLen is 0");
-        return ERROR;
+        return checkRet;
     }
     HpaeNodeInfo nodeInfo;
     nodeInfo.channels = sinkInfo_.channels;
@@ -862,7 +864,7 @@ void HpaeInnerCapturerManager::SetSessionStateForCapturer(uint32_t sessionId, Hp
 void HpaeInnerCapturerManager::SendRequestInner(Request &&request, const std::string &funcName, bool isInit)
 {
     if (!isInit && !IsInit()) {
-        AUDIO_INFO_LOG("HpaeInnerCapturerManager not init, %{public}s excute failed", funcName.c_str());
+        AUDIO_INFO_LOG("not init, %{public}s excute failed", funcName.c_str());
         HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_INNER_CAPTURE_MANAGER_TYPE,
             funcName, "HpaeInnerCapturerManager not init");
         return;

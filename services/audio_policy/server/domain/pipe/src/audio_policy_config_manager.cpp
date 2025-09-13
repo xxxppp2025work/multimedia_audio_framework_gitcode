@@ -31,6 +31,7 @@ static const unsigned int BUFFER_CALC_20MS = 20;
 static const char* MAX_RENDERERS_NAME = "maxRenderers";
 static const char* MAX_CAPTURERS_NAME = "maxCapturers";
 static const char* MAX_FAST_RENDERERS_NAME = "maxFastRenderers";
+static const char* OFFLOAD_INNER_CAPTURE_SUPPORT_NAME = "offloadInnerCaptureSupport";
 
 const int32_t DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES = 128;
 const int32_t DEFAULT_MAX_INPUT_NORMAL_INSTANCES = 16;
@@ -325,6 +326,24 @@ int32_t AudioPolicyConfigManager::GetMaxFastRenderersInstances()
         return convertValue;
     }
     return DEFAULT_MAX_FAST_NORMAL_INSTANCES;
+}
+
+bool AudioPolicyConfigManager::IsSupportInnerCaptureOffload()
+{
+    if (isSupportInnerCaptureOffload_.has_value()) {
+        return isSupportInnerCaptureOffload_.value();
+    }
+
+    for (const auto& commonConfig : globalConfigs_.commonConfigs_) {
+        if (commonConfig.name_ != OFFLOAD_INNER_CAPTURE_SUPPORT_NAME) {
+            continue;
+        }
+        AUDIO_INFO_LOG("Offload capture supported value is %{public}s", commonConfig.value_.c_str());
+        isSupportInnerCaptureOffload_ = (commonConfig.value_ == "true");
+        return isSupportInnerCaptureOffload_.value();
+    }
+    isSupportInnerCaptureOffload_ = false;
+    return isSupportInnerCaptureOffload_.value();
 }
 
 int32_t AudioPolicyConfigManager::GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
@@ -701,6 +720,23 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     } // if not match, choose first?
 }
 
+void AudioPolicyConfigManager::UpdateStreamSampleInfo(std::shared_ptr<AudioStreamDescriptor> desc,
+                                                      AudioStreamInfo &streamInfo)
+{
+    CHECK_AND_RETURN(IsInjectEnable());
+
+    if (desc->routeFlag_ != (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST)) {
+        return;
+    }
+
+    /* voip fast support resample, but hal only support 16k or 48k, so need config hal
+       16k or 48k first here, then do resample in endpoint */
+    if ((desc->streamInfo_.samplingRate != SAMPLE_RATE_16000) &&
+        (desc->streamInfo_.samplingRate != SAMPLE_RATE_48000)) {
+        desc->streamInfo_.samplingRate = SAMPLE_RATE_48000;
+    }
+}
+
 void AudioPolicyConfigManager::UpdateBasicStreamInfo(std::shared_ptr<AudioStreamDescriptor> desc,
     std::shared_ptr<AdapterPipeInfo> pipeInfo, AudioStreamInfo &streamInfo)
 {
@@ -717,6 +753,8 @@ void AudioPolicyConfigManager::UpdateBasicStreamInfo(std::shared_ptr<AudioStream
     if (desc->routeFlag_ == AUDIO_INPUT_FLAG_FAST) {
         streamInfo.channels = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
     }
+
+    UpdateStreamSampleInfo(desc, streamInfo);
 
     if (pipeInfo->streamPropInfos_.empty()) {
         AUDIO_WARNING_LOG("streamPropInfos_ is empty!");

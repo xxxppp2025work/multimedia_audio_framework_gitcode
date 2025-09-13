@@ -173,7 +173,7 @@ void HpaeSourceOutputNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<H
     HpaeNodeInfo &nodeInfo)
 {
     CHECK_AND_RETURN_LOG(!inputStream_.CheckIfDisConnected(preNode->GetOutputPort(nodeInfo)),
-        "HpaeSourceOutputNode[%{public}u] has disconnected with preNode", GetSessionId());
+        "%{public}u has disconnected with preNode", GetSessionId());
     inputStream_.DisConnect(preNode->GetOutputPort(nodeInfo, true));
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
@@ -184,7 +184,7 @@ void HpaeSourceOutputNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<H
 
 int32_t HpaeSourceOutputNode::SetState(HpaeSessionState captureState)
 {
-    HILOG_COMM_INFO(" Capturer[%{public}s]->Session[%{public}u - %{public}d] state change:[%{public}s]-->[%{public}s]",
+    HILOG_COMM_INFO("Capturer[%{public}s]->Session[%{public}u - %{public}d] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass().c_str(), GetSessionId(), GetStreamType(), ConvertSessionState2Str(state_).c_str(),
         ConvertSessionState2Str(captureState).c_str());
     state_ = captureState;

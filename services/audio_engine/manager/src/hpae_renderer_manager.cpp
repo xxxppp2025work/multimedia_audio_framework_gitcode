@@ -305,6 +305,7 @@ int32_t HpaeRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
     if (!IsInit()) {
         return ERR_INVALID_OPERATION;
     }
+    CHECK_AND_RETURN_RET_LOG(CheckStreamInfo(streamInfo) == SUCCESS, ERROR, "Check StreamInfo ERROR");
     auto request = [this, streamInfo]() {
         Trace trace("HpaeRendererManager::CreateStream id[" +
             std::to_string(streamInfo.sessionId) + "]");
@@ -544,7 +545,7 @@ void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
     for (const auto &it : sessionIds) {
         DeleteInputSessionForMove(it);
     }
-    HILOG_COMM_INFO("[StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
+    HILOG_COMM_INFO("StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
     if (moveType == MOVE_ALL) {
         TriggerSyncCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
@@ -870,11 +871,11 @@ int32_t HpaeRendererManager::InitManager(bool isReload)
 {
     AUDIO_INFO_LOG("init devicename:%{public}s", sinkInfo_.deviceName.c_str());
     HpaeNodeInfo nodeInfo;
-    if (sinkInfo_.frameLen == 0) {
+    int32_t checkRet = CheckFramelen(sinkInfo_);
+    if (checkRet != SUCCESS) {
         TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
                         sinkInfo_.deviceName, ERR_INVALID_PARAM);
-        AUDIO_ERR_LOG("FrameLen is 0");
-        return ERROR;
+        return checkRet;
     }
     nodeInfo.channels = sinkInfo_.channels;
     nodeInfo.format = sinkInfo_.format;

@@ -249,6 +249,14 @@ void HpaeSourceInputNode::DoProcess()
             CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc),
             "same ec request != reply");
         DoProcessInner(HPAE_SOURCE_BUFFER_TYPE_EC, replyBytesEc);
+    } else if (sourceInputNodeType_ == HpaeSourceInputNodeType::HPAE_SOURCE_OFFLOAD) {
+        uint64_t replyBytesEc = 0;
+        audioCapturerSource_->CaptureFrameWithEc(&fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_MIC), replyBytes,
+                                                 &fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc);
+        CHECK_AND_RETURN_LOG(
+            CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc),
+            "same offload ec request != reply");
+        DoProcessInner(HPAE_SOURCE_BUFFER_TYPE_EC, replyBytesEc);
     } else {
         HpaeSourceBufferType sourceBufferType = nodeInfoMap_.begin()->second.sourceBufferType;
         if (sourceInputNodeType_ == HPAE_SOURCE_EC) {
@@ -463,7 +471,7 @@ int32_t HpaeSourceInputNode::CapturerSourceStop(void)
     Trace trace("HpaeSourceInputNode::CapturerSourceStop");
     SetSourceState(STREAM_MANAGER_SUSPENDED);
     if (audioCapturerSource_->Stop() != SUCCESS) {
-        AUDIO_ERR_LOG("CapturerSourceStop error, sourceInputNode[%{public}u]", sourceInputNodeType_);
+        AUDIO_ERR_LOG("stop error, sourceInputNode[%{public}u]", sourceInputNodeType_);
     }
     return SUCCESS;
 }

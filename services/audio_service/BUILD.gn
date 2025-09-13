@@ -84,6 +84,8 @@ ohos_shared_library("audio_common") {
     "common/src/oh_audio_buffer_base.cpp",
     "common/src/volume_tools.cpp",
     "common/src/app_bundle_manager.cpp",
+    "common/src/va_shared_buffer.cpp",
+    "common/src/va_shared_buffer_operator.cpp",
   ]
 
   cflags = [
@@ -108,6 +110,7 @@ ohos_shared_library("audio_common") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
+    "ipc:ipc_core",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "samgr:samgr_proxy",
@@ -350,6 +353,8 @@ config("audio_service_config") {
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
     "../../frameworks/native/audioclock/include",
+    "../audio_engine/plugin/resample/include",
+    "../audio_engine/simd",
   ]
 
   cflags = []
@@ -421,8 +426,11 @@ audio_ohos_library("audio_process_service") {
 
   configs = [ ":audio_service_config" ]
 
-  include_dirs =
-      [ "../../services/audio_engine/plugin/channel_converter/include" ]
+  include_dirs = [
+      "../../services/audio_engine/plugin/channel_converter/include",
+      "../audio_engine/plugin/resample/include",
+      "../audio_engine/simd",
+  ]
 
   deps = [
     ":audio_common",
@@ -435,6 +443,7 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../audio_engine:audio_engine_manager",
     "../audio_engine:audio_engine_plugins",
+    "../audio_engine:audio_engine_utils",
     "../audio_policy:audio_foundation",
   ]
 
@@ -529,6 +538,10 @@ audio_ohos_library("audio_service") {
   ]
 
   configs = [ ":audio_service_config" ]
+
+  include_dirs = [
+    "../audio_engine/plugin/resample/include",
+  ]
 
   deps = [
     ":audio_common",

@@ -114,6 +114,7 @@ enum HpaeSourceInputNodeType {
     HPAE_SOURCE_MIC_EC,
     HPAE_SOURCE_EC,
     HPAE_SOURCE_MICREF,
+    HPAE_SOURCE_OFFLOAD,
 };
 
 struct HpaeDfxNodeInfo {
@@ -127,7 +128,7 @@ struct HpaeDfxNodeInfo {
     AudioChannel channels;
     AudioChannelLayout channelLayout = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
     FadeType fadeType = NONE_FADE;
-    AudioStreamType streamType;
+    AudioStreamType streamType = STREAM_DEFAULT;
     HpaeProcessorType sceneType;
     std::string deviceClass;
     std::string deviceNetId;

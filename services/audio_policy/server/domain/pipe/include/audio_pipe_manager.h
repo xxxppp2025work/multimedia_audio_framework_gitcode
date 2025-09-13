@@ -74,12 +74,13 @@ public:
     void AddModemCommunicationId(uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void RemoveModemCommunicationId(uint32_t sessionId);
     std::shared_ptr<AudioStreamDescriptor> GetModemCommunicationStreamDescById(uint32_t sessionId);
+    std::shared_ptr<AudioStreamDescriptor> GetModemCommunicationStreamDesc();
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> GetModemCommunicationMap();
     void UpdateModemStreamStatus(AudioStreamStatus streamStatus);
     void UpdateModemStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
     bool IsModemStreamDeviceChanged(std::shared_ptr<AudioDeviceDescriptor> &deviceDescs);
     std::shared_ptr<AudioPipeInfo> GetNormalSourceInfo(bool isEcFeatureEnable);
-    std::vector<uint32_t> GetStreamIdsByUid(uint32_t uid, uint32_t routeFlagMask = UINT32_MAX);
+    std::vector<uint32_t> GetStreamIdsByUidAndPid(int32_t uid, int32_t pid);
     void UpdateOutputStreamDescsByIoHandle(AudioIOHandle id,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &descs);
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllCapturerStreamDescs();

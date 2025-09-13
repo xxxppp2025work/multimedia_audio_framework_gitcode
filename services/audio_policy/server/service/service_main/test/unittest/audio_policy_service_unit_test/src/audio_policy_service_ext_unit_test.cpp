@@ -233,7 +233,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_008, TestSize.Lev
     EXPECT_NE(nullptr, audioRendererFilter);
     audioRendererFilter->uid = -1;
     ret = AudioPolicyService::GetAudioPolicyService().GetOutputDevice(audioRendererFilter);
-    EXPECT_EQ(0, ret.size());
+    EXPECT_NE(0, ret.size());
 }
 
 /**
@@ -357,6 +357,23 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_016, TestSize.Lev
     propertyArray.property.push_back(tmp);
     auto ret = AudioPolicyService::GetAudioPolicyService().SetAudioEffectProperty(propertyArray);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
+* @tc.name  : Test AudioPolicyService.
+* @tc.number: AudioPolicyServiceTest_017
+* @tc.desc  : Test LoadModernOffloadCapSource interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_017, TestSize.Level1)
+{
+    auto ret0 = AudioPolicyService::GetAudioPolicyService().LoadModernOffloadCapSource();
+    EXPECT_EQ(SUCCESS, ret0);
+
+    AudioIOHandle audioIOHandle = 1003;
+    AudioPolicyService::GetAudioPolicyService().audioIOHandleMap_.IOHandles_["offloadCapturerSource"] = audioIOHandle;
+
+    auto ret1 = AudioPolicyService::GetAudioPolicyService().LoadModernOffloadCapSource();
+    EXPECT_EQ(SUCCESS, ret1);
 }
 } // namespace AudioStandard
 } // namespace OHOS

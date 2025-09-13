@@ -54,6 +54,7 @@ static std::string GetEncryptAddr(const std::string &addr)
 }
 
 const int32_t ONE_MINUTE = 60;
+const int32_t HALF_MINUTE = 30;
 const uint32_t ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS = 10000;
 constexpr int32_t CANCEL_FORCE_CONTROL_VOLUME_TYPE = -1;
 
@@ -347,7 +348,7 @@ void AudioVolumeManager::PublishLoudVolumeNotification(int32_t notificationId)
 #endif
 }
 
-void AudioVolumeManager::SendLoudVolumeMode(FunctionHoldType funcHoldType, bool state, bool repeatTrigNotif)
+void AudioVolumeManager::SendLoudVolumeMode(LoudVolumeHoldType funcHoldType, bool state, bool repeatTrigNotif)
 {
     if (state && repeatTrigNotif) {
         const int INSTANT_NOTIFICATION_ID = 6;
@@ -487,6 +488,7 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int
     }
 
     int32_t sVolumeLevel = SelectDealSafeVolume(streamType, volumeLevel);
+    audioPolicyManager_.SaveSystemVolumeForEffect(curOutputDeviceType_, streamType, sVolumeLevel);
     CheckToCloseNotification(streamType, volumeLevel);
     if (volumeLevel != sVolumeLevel) {
         volumeLevel = sVolumeLevel;
@@ -585,6 +587,11 @@ int32_t AudioVolumeManager::SetA2dpDeviceVolume(const std::string &macAddress, c
     audioPolicyManager_.SetAbsVolumeMute(mute);
     AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
         GetEncryptAddr(macAddress).c_str(), sVolumeLevel);
+    AUDIO_INFO_LOG("SetA2dpAbsVolume streamType: STREAM_MUSIC, volumeLevel: %{public}d", sVolumeLevel);
+    float volumeDbTemp = audioPolicyManager_.CalculateVolumeDbNonlinear(STREAM_MUSIC, DEVICE_TYPE_BLUETOOTH_A2DP,
+        sVolumeLevel);
+    audioPolicyManager_.SaveSystemVolumeForEffect(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC, sVolumeLevel);
+    audioPolicyManager_.SetSystemVolumeToEffect(STREAM_MUSIC, volumeDbTemp);
     CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERR_UNKNOWN, "safevolume did not deal");
     return SUCCESS;
 }
@@ -839,7 +846,7 @@ int32_t AudioVolumeManager::CheckActiveMusicTime()
             startSafeTime_ = 0;
             startSafeTimeBt_ = 0;
         }
-        sleep(ONE_MINUTE);
+        sleep(HALF_MINUTE);
     }
     return 0;
 }

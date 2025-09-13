@@ -140,13 +140,15 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
     CHECK_AND_RETURN_LOG(streamDescs.size() != 0, "streamDescs is empty!");
     SortStreamDescsByStartTime(streamDescs);
     streamDescs[0]->routeFlag_ = GetRouteFlagByStreamDesc(streamDescs[0]);
-    if (streamDescs.size() == 1) {
-        return;
-    }
-
     // Do not need to move stream, because stream actions are all decided in DecidePipesAndStreamAction(),
     // not in ProcessConcurrency().
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsMoveToNormal;
+    if (streamDescs.size() == 1) {
+        // modemCommunication streamDescs stored in modemCommunicationIdMap_, need to do extra concurrencyProcess
+        ProcessModemCommunicationConcurrency(streamDescs, streamsMoveToNormal);
+        return;
+    }
+
     for (size_t cmpStreamIdx = 1; cmpStreamIdx < streamDescs.size(); ++cmpStreamIdx) {
         streamDescs[cmpStreamIdx]->routeFlag_ = GetRouteFlagByStreamDesc(streamDescs[cmpStreamIdx]);
         // calculate concurrency in time order
@@ -154,6 +156,7 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
             ProcessConcurrency(streamDescs[curStreamDescIdx], streamDescs[cmpStreamIdx], streamsMoveToNormal);
         }
     }
+    ProcessModemCommunicationConcurrency(streamDescs, streamsMoveToNormal);
 }
 
 // add streamDescs to prefer newPipe based on final routeFlag, create newPipe if needed
@@ -290,6 +293,10 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
             pipeInfo->SetAction(PIPE_ACTION_UPDATE);
         }
     }
+    // modemCommunication streamDescs stored in modemCommunicationIdMap_, need to do extra concurrencyProcess
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> tempStreamDescs{streamDesc};
+    ProcessModemCommunicationConcurrency(tempStreamDescs, streamsMoveToNormal);
+
     // Move concede existing streams to its corresponding normal pipe
     MoveStreamsToNormalPipes(streamsMoveToNormal, pipeInfoList);
 
@@ -315,6 +322,8 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
             return PIPE_TYPE_MULTICHANNEL;
         } else if (flag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) {
             return PIPE_TYPE_OFFLOAD;
+        } else if (flag & AUDIO_OUTPUT_FLAG_MODEM_COMMUNICATION) {
+            return PIPE_TYPE_CALL_OUT;
         } else {
             return PIPE_TYPE_NORMAL_OUT;
         }
@@ -372,13 +381,24 @@ bool AudioPipeSelector::IsSameAdapter(std::shared_ptr<AudioStreamDescriptor> str
     return false;
 }
 
+void AudioPipeSelector::UpdateProcessConcurrency(AudioPipeType existingPipe, AudioPipeType commingPipe,
+                                                 ConcurrencyAction &action)
+{
+    /* becasue call in indicate voip and cell, so can't modify xml */
+    CHECK_AND_RETURN(IsInjectEnable() && action != PLAY_BOTH);
+    if (existingPipe == PIPE_TYPE_CALL_IN && commingPipe == PIPE_TYPE_CALL_IN) {
+        action = PLAY_BOTH;
+    }
+}
+
 bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
     std::shared_ptr<AudioStreamDescriptor> incomingStream,
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove)
 {
-    ConcurrencyAction action = action = AudioStreamCollector::GetAudioStreamCollector().GetConcurrencyAction(
-        GetPipeType(existingStream->routeFlag_, existingStream->audioMode_),
-        GetPipeType(incomingStream->routeFlag_, incomingStream->audioMode_));
+    AudioPipeType existingPipe = GetPipeType(existingStream->routeFlag_, existingStream->audioMode_);
+    AudioPipeType commingPipe = GetPipeType(incomingStream->routeFlag_, incomingStream->audioMode_);
+    ConcurrencyAction action = AudioStreamCollector::GetAudioStreamCollector().GetConcurrencyAction(
+        existingPipe, commingPipe);
     action = IsSameAdapter(existingStream, incomingStream) ? action : PLAY_BOTH;
     // No running offload can not concede incoming special pipe
     if (action == CONCEDE_INCOMING && existingStream->IsNoRunningOffload()) {
@@ -390,6 +410,9 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
         action,
         existingStream->GetSessionId(), existingStream->GetRoute(),
         incomingStream->GetSessionId(), incomingStream->GetRoute());
+
+    /* temporary handle */
+    UpdateProcessConcurrency(existingPipe, commingPipe, action);
 
     bool isUpdate = false;
     switch (action) {
@@ -514,6 +537,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
 
     info.moduleInfo_.deviceType = std::to_string(streamDesc->newDeviceDescs_[0]->deviceType_);
     info.moduleInfo_.networkId = streamDesc->newDeviceDescs_[0]->networkId_;
+    info.moduleInfo_.macAddress = streamDesc->newDeviceDescs_[0]->macAddress_;
     info.moduleInfo_.sourceType = std::to_string(streamDesc->capturerInfo_.sourceType);
 
     info.streamDescriptors_.push_back(streamDesc);
@@ -597,5 +621,19 @@ void AudioPipeSelector::RemoveTargetStreams(
         }
     }
 }
+
+void AudioPipeSelector::ProcessModemCommunicationConcurrency(
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsMoveToNormal)
+{
+    CHECK_AND_RETURN(AudioPipeManager::GetPipeManager()->IsModemCommunicationIdExist());
+    AUDIO_INFO_LOG("ModemCommunication exists, need process concurrency");
+    std::shared_ptr<AudioStreamDescriptor> modemCommStream =
+        AudioPipeManager::GetPipeManager()->GetModemCommunicationStreamDesc();
+    for (auto &streamDesc : streamDescs) {
+        ProcessConcurrency(modemCommStream, streamDesc, streamsMoveToNormal);
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -68,6 +68,7 @@ public:
     int32_t GetMaxRendererInstances();
     int32_t GetMaxCapturersInstances();
     int32_t GetMaxFastRenderersInstances();
+    bool IsSupportInnerCaptureOffload();
     int32_t GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
         const AudioSamplingRate &samplingRate);
     bool GetNormalVoipFlag();
@@ -108,6 +109,8 @@ public:
     {
     }
 private:
+    void UpdateStreamSampleInfo(std::shared_ptr<AudioStreamDescriptor> desc,
+                                AudioStreamInfo &streamInfo);
     void UpdateBasicStreamInfo(std::shared_ptr<AudioStreamDescriptor> desc, std::shared_ptr<AdapterPipeInfo> pipeInfo,
         AudioStreamInfo &streamInfo);
     void GetStreamPropInfoForRecord(std::shared_ptr<AudioStreamDescriptor> desc,
@@ -143,6 +146,8 @@ private:
     AudioDeviceManager &audioDeviceManager_;
 
     AudioPolicyConfigData &audioPolicyConfig_;
+
+    std::optional<float> isSupportInnerCaptureOffload_ = std::nullopt;
 };
 
 } // namespace AudioStandard

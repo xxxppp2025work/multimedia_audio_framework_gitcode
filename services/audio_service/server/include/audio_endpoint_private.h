@@ -32,6 +32,8 @@
 #include "source/i_audio_capture_source.h"
 #include "audio_ring_cache.h"
 #include "audio_stream_info.h"
+#include "audio_injector_service.h"
+#include "audio_limiter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -54,11 +56,14 @@ private:
 
 class AudioEndpointInner : public AudioEndpoint {
 public:
-    AudioEndpointInner(EndpointType type, uint64_t id, const AudioProcessConfig &clientConfig);
+    static constexpr int64_t INVALID_DELAY_STOP_HDI_TIME_NO_RUNNING_NS = -1;
+    AudioEndpointInner(EndpointType type, uint64_t id, AudioMode audioMode);
     ~AudioEndpointInner();
 
-    bool Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo) override;
-    bool StartDevice(EndpointStatus preferredState = INVALID);
+    bool Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo,
+                AudioStreamType streamType) override;
+    bool StartDevice(EndpointStatus preferredState = INVALID,
+        int64_t delayStopTime_ = INVALID_DELAY_STOP_HDI_TIME_NO_RUNNING_NS);
     void HandleStartDeviceFailed();
     bool StopDevice();
 
@@ -66,8 +71,6 @@ public:
     int32_t OnStart(IAudioProcessStream *processStream) override;
     // when audio process pause.
     int32_t OnPause(IAudioProcessStream *processStream) override;
-    // when audio process request update handle info.
-    int32_t OnUpdateHandleInfo(IAudioProcessStream *processStream) override;
 
     /**
      * Call LinkProcessStream when first create process or link other process with this endpoint.
@@ -104,11 +107,12 @@ public:
 
     // for inner-cap
     bool ShouldInnerCap(int32_t innerCapId) override;
-    int32_t EnableFastInnerCap(int32_t innerCapId) override;
+    int32_t EnableFastInnerCap(int32_t innerCapId,
+        const std::optional<std::string> &dualDeviceName = std::nullopt) override;
     int32_t DisableFastInnerCap() override;
     int32_t DisableFastInnerCap(int32_t innerCapId) override;
 
-    int32_t InitDupStream(int32_t innerCapId);
+    int32_t InitDupStream(int32_t innerCapId, const std::optional<std::string> &dualDeviceName = std::nullopt);
 
     EndpointStatus GetStatus() override;
 
@@ -121,6 +125,9 @@ public:
     void BindCore();
     
     void CheckWakeUpTime(int64_t &wakeUpTime);
+
+    int32_t AddCaptureInjector(const uint32_t &sinkPortIndex, const SourceType &sourceType) override;
+    int32_t RemoveCaptureInjector(const uint32_t &sinkPortIndex, const SourceType &sourceType) override;
 private:
     AudioProcessConfig GetInnerCapConfig();
     void StartThread(const IAudioSinkAttr &attr);
@@ -138,8 +145,6 @@ private:
     void HandleZeroVolumeStartEvent();
     void HandleZeroVolumeStopEvent();
     void HandleRendererDataParams(const AudioStreamData &srcData, const AudioStreamData &dstData, bool applyVol = true);
-    int32_t HandleCapturerDataParams(RingBufferWrapper &writeBuf, const BufferDesc &readBuf,
-        const BufferDesc &convertedBuffer);
     void ZeroVolumeCheck(const int32_t vol);
     int64_t GetPredictNextReadTime(uint64_t posInFrame);
     int64_t GetPredictNextWriteTime(uint64_t posInFrame);
@@ -161,6 +166,7 @@ private:
     bool CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos);
     void WaitAllProcessReady(uint64_t curWritePos);
     void CheckSyncInfo(uint64_t curWritePos);
+    void CheckJank(uint64_t curWritePos);
     bool ProcessToEndpointDataHandle(uint64_t curWritePos, std::function<void()> &moveClientIndex);
     void ProcessToDupStream(const std::vector<AudioStreamData> &audioDataList, AudioStreamData &dstStreamData,
         int32_t innerCapId);
@@ -180,9 +186,8 @@ private:
 
     bool IsNearlinkAbsVolSupportStream(DeviceType deviceType, AudioVolumeType volumeType);
 
-    int32_t WriteToSpecialProcBuf(const std::shared_ptr<OHAudioBufferBase> &procBuf, const BufferDesc &readBuf,
-        const BufferDesc &convertedBuffer, bool muteFlag);
     void WriteToProcessBuffers(const BufferDesc &readBuf);
+
     int32_t ReadFromEndpoint(uint64_t curReadPos);
     bool KeepWorkloopRunning();
 
@@ -217,7 +222,6 @@ private:
     int32_t CreateDupBufferInner(int32_t innerCapId);
     int32_t WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId);
     bool PrepareRingBuffer(size_t i, uint64_t curRead, RingBufferWrapper& ringBuffer);
-    int32_t WriteToRingBuffer(RingBufferWrapper &writeBuf, const BufferDesc &buffer);
     void SetupMoveCallback(size_t i, uint64_t curRead, const RingBufferWrapper& ringBuffer,
         std::function<void()>& moveClientIndex);
     void AddProcessStreamToList(IAudioProcessStream *processStream,
@@ -227,6 +231,24 @@ private:
     bool NeedUseTempBuffer(const RingBufferWrapper &ringBuffer, size_t spanSizeInByte);
     void PrepareStreamDataBuffer(size_t i, size_t spanSizeInByte,
         RingBufferWrapper &ringBuffer, AudioStreamData &streamData);
+
+    int32_t WriteDupBufferInnerForWriteModeInner(const BufferDesc &bufferDesc, int32_t innerCapId);
+    int32_t WriteDupBufferInnerForCallbackModeInner(const BufferDesc &bufferDesc, int32_t innerCapId);
+
+    static bool IsDupRenderCallbackMode(int32_t engineFlag, bool isDualStream);
+    static bool IsDualStream(const CaptureInfo &capInfo);
+
+    int32_t PeekRendererInjectData(const BufferDesc &readBuf, BufferDesc &rendererOrgDesc,
+                                   AudioStreamInfo &streamInfo);
+    int32_t ConvertDataFormat(const BufferDesc &readBuf, BufferDesc &rendererOrgDesc,
+                              AudioStreamInfo &streamInfo, BufferDesc &rendererConvDesc,
+                              BufferDesc &captureConvDesc);
+    float* MixRendererAndCaptureData(const size_t bufLength, BufferDesc &rendererConvDesc,
+                                     BufferDesc &captureConvDesc);
+    int32_t CreateAndCfgLimiter(const size_t bufLength, const AudioStreamInfo &streamInfo);
+    int32_t LimitMixData(float *inBuff, float *outBuff, const size_t bufLength,
+                         const AudioStreamInfo &streamInfo);
+    void InjectToCaptureDataProc(const BufferDesc &readBuf);
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t TWO_MILLISECOND_DURATION = 2000000; // 2ms
@@ -266,11 +288,12 @@ private:
     EndpointType endpointType_;
     AdapterType adapterType_ = ADAPTER_TYPE_FAST;
     int32_t id_ = 0;
+    AudioMode audioMode_ = AUDIO_MODE_PLAYBACK;
+
     std::mutex listLock_;
     std::vector<IAudioProcessStream *> processList_;
     std::vector<std::shared_ptr<OHAudioBufferBase>> processBufferList_;
     std::vector<std::vector<uint8_t>> processTmpBufferList_;
-    AudioProcessConfig clientConfig_;
 
     std::atomic<bool> isInited_ = false;
 
@@ -348,6 +371,17 @@ private:
     bool coreBinded_ = false;
     bool isExistLoopback_ = false;
     int32_t audioHapticsSyncId_ = false;
+
+    std::mutex injectLock_; // protect isNeedInject_、injectSinkPortIdx_
+    bool isNeedInject_ = false;
+    uint32_t injectSinkPortIdx_ = UINT32_INVALID_VALUE;
+
+    bool isConvertReadFormat_ = false;
+    AudioInjectorService &injector_;
+    std::vector<uint8_t> injectPeekBuffer_;   // reuse for mix proc, 7.5k, need consider free
+    std::vector<uint8_t> rendererConvBuffer_; // reuse for resample proc, 7.5k, need consider free
+    std::vector<uint8_t> captureConvBuffer_;  // reuse for limit proc, 7.5k, need consider free
+    std::shared_ptr<AudioLimiter> limiter_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

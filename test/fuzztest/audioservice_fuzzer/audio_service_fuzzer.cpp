@@ -378,7 +378,7 @@ void AudioServiceGetReleaseDelayTimeFuzzTest()
     AudioProcessConfig clientConfig = {};
     std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(
         static_cast<AudioEndpoint::EndpointType>(GetData<uint32_t>() % ENDPOINTTYPESIZE),
-        GetData<uint64_t>(), clientConfig);
+        GetData<uint64_t>(), clientConfig.audioMode);
     endpoint->deviceInfo_.deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
     bool isSwitchStream = GetData<bool>();
     bool isRecord = GetData<bool>();
@@ -598,7 +598,7 @@ void AudioServiceCheckDisableFastInnerFuzzTest()
 
     AudioProcessConfig clientConfig = {};
     std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
-        GetData<uint64_t>(), clientConfig);
+        GetData<uint64_t>(), clientConfig.audioMode);
     audioService->CheckDisableFastInner(endpoint);
 }
 
@@ -619,7 +619,7 @@ void AudioServiceFilterAllFastProcessFuzzTest()
     sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, audioService.get());
     AudioProcessConfig clientConfig = {};
     std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
-        GetData<uint64_t>(), clientConfig);
+        GetData<uint64_t>(), clientConfig.audioMode);
     endpoint->deviceInfo_.deviceRole_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
     audioService->linkedPairedList_.clear();
     audioService->linkedPairedList_.push_back(std::make_pair(audioprocess, endpoint));
@@ -643,7 +643,7 @@ void AudioServiceHandleFastCaptureFuzzTest()
 
     AudioProcessConfig clientConfig = {};
     std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
-        GetData<uint64_t>(), clientConfig);
+        GetData<uint64_t>(), clientConfig.audioMode);
 
     audioService->HandleFastCapture(captureIds, audioprocess, endpoint);
 }
@@ -716,8 +716,6 @@ void AudioServiceDisableDualToneListFuzzTest()
         renderer = std::make_shared<RendererInServer>(processConfig, streamListener);
     }
 
-    audioService->filteredDualToneRendererMap_.clear();
-    audioService->filteredDualToneRendererMap_.push_back(renderer);
     int32_t sessionId = GetData<int32_t>();
     audioService->DisableDualStream(sessionId);
 }
@@ -766,7 +764,7 @@ void AudioServiceDumpFuzzTest()
     audioService->workingConfigs_.insert(make_pair(GetData<int32_t>(), playbackCaptureConfig));
     config.audioMode = static_cast<AudioMode>(GetData<uint32_t>() % NUM_2);
     std::shared_ptr<AudioEndpointInner> endpointInner = std::make_shared<AudioEndpointInner>(
-        AudioEndpoint::TYPE_VOIP_MMAP, GetData<uint64_t>(), config);
+        AudioEndpoint::TYPE_VOIP_MMAP, GetData<uint64_t>(), config.audioMode);
     audioService->linkedPairedList_.clear();
     audioService->linkedPairedList_.push_back(std::make_pair(audioProcess, endpointInner));
     audioService->endpointList_.clear();
