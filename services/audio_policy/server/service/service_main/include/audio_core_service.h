@@ -198,6 +198,7 @@ private:
     void DumpSelectHistory(std::string &dumpString);
     void SetAudioRouteCallback(uint32_t sessionId, const sptr<IRemoteObject> &object);
     void UnsetAudioRouteCallback(uint32_t sessionId);
+    void RegisterDeviceStatusListener();
 
     // Called by EventEntry - with lock
     // Stream operations

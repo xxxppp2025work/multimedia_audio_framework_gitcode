@@ -117,6 +117,11 @@ void AudioCoreService::Init()
     audioCapturerSession_.Init(audioA2dpOffloadManager_);
 
     isFastControlled_ = GetFastControlParam();
+}
+
+void AudioCoreService::RegisterDeviceStatusListener()
+{
+    CHECK_AND_RETURN_LOG(deviceStatusListener_ != nullptr, "deviceStatusListener_ is nullptr");
     // Register device status listener
     int32_t status = deviceStatusListener_->RegisterDeviceStatusListener();
     if (status != SUCCESS) {
