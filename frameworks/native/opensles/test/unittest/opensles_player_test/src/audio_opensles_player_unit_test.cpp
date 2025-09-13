@@ -1500,7 +1500,7 @@ HWTEST(AudioOpenslesPlayerUnitTest, GetBufferAdapter_001, TestSize.Level4)
 
 HWTEST(AudioOpenslesPlayerUnitTest, RegisterCallbackAdapter_001, TestSize.Level3)
 {
-    SLresult result = AudioPlayerAdapter::GetInstance()->RegisterCallbackAdapter(nullptr, 0, nullptr);
+    SLresult result = AudioPlayerAdapter::GetInstance()->RegisterCallbackAdapter(bufferQueueItf_, 0, nullptr);
     EXPECT_TRUE(result == SL_RESULT_RESOURCE_ERROR);
 }
 

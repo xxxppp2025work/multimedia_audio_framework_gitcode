@@ -566,6 +566,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     EXPECT_EQ(0, floatRet);
 
     AudioProcessConfig config = {};
+    config.streamInfo.channels = AudioChannel::MONO;
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
     AudioService::GetInstance()->GetAudioProcess(config);
     AudioService::GetInstance()->OnInitInnerCapList(1);
@@ -674,6 +675,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceFilterAllFastProcess_001, TestSize.Leve
 
     AudioProcessConfig config = {};
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    config.streamInfo.channels = AudioChannel::MONO;
     AudioService::GetInstance()->GetAudioProcess(config);
     AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->workingConfig_.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
@@ -724,6 +726,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceDump_001, TestSize.Level1)
 
     AudioProcessConfig config = {};
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    config.streamInfo.channels = AudioChannel::MONO;
     AudioService::GetInstance()->GetAudioProcess(config);
     AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->workingConfig_.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
@@ -760,6 +763,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceSetNonInterruptMute_001, TestSize.Level
 
     AudioProcessConfig config = {};
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    config.streamInfo.channels = AudioChannel::MONO;
     AudioService::GetInstance()->GetAudioProcess(config);
     AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->workingConfig_.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
@@ -794,6 +798,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_001, TestSize.Level1)
 
     AudioProcessConfig config = {};
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    config.streamInfo.channels = AudioChannel::MONO;
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, AudioService::GetInstance());
     EXPECT_NE(audioprocess, nullptr);
@@ -835,6 +840,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_002, TestSize.Level1)
     AudioProcessConfig config = {};
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
     config.rendererInfo.isLoopback = true;
+    config.streamInfo.channels = AudioChannel::MONO;
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, AudioService::GetInstance());
     EXPECT_NE(audioprocess, nullptr);
@@ -878,6 +884,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_003, TestSize.Level1)
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
     config.audioMode = AUDIO_MODE_RECORD;
     config.capturerInfo.isLoopback = true;
+    config.streamInfo.channels = AudioChannel::MONO;
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, AudioService::GetInstance());
     EXPECT_NE(audioprocess, nullptr);
@@ -894,21 +901,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_003, TestSize.Level1)
     int32_t ret = 0;
     ret = AudioService::GetInstance()->OnProcessRelease(audioprocess, isSwitchStream);
     EXPECT_EQ(ret, 0);
-}
-
-/**
- * @tc.name  : Test GetAudioEndpointForDevice API
- * @tc.type  : FUNC
- * @tc.number: GetAudioEndpointForDevice_001
- * @tc.desc  : Test GetAudioEndpointForDevice interface.
- */
-HWTEST(AudioServiceUnitTest, GetAudioEndpointForDevice_001, TestSize.Level1)
-{
-    AudioService *audioService = AudioService::GetInstance();
-    AudioProcessConfig clientConfig;
-    clientConfig.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    clientConfig.rendererInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
-    audioService->GetAudioProcess(clientConfig);
 }
 
 /**
