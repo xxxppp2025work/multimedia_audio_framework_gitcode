@@ -644,7 +644,7 @@ int32_t AudioCoreService::SetInputDevice(const DeviceType deviceType, const uint
     int32_t ret = audioDeviceManager_.SetInputDevice(deviceType, sessionID, sourceType, isRunning);
     audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::APP_PREFER,
         pipeManager_->GetClientUidBySessionId(sessionID), sessionID, sourceType,
-        AudioDeviceManager::GetAudioDeviceManager().GetSelectedCaptureDevice(sessionId));
+        AudioDeviceManager::GetAudioDeviceManager().GetSelectedCaptureDevice(sessionID));
     if (ret == NEED_TO_FETCH) {
         FetchInputDeviceAndRoute("SetInputDevice");
         return SUCCESS;
