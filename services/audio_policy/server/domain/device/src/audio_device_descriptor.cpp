@@ -530,6 +530,11 @@ bool AudioDeviceDescriptor::IsRemote() const
     return networkId_ != "LocalDevice";
 }
 
+bool AudioDeviceDescriptor::IsA2dpOffload() const
+{
+    return a2dpOffloadFlag_ == A2DP_OFFLOAD;
+}
+
 void AudioDeviceDescriptor::Dump(std::string &dumpString)
 {
     AppendFormat(dumpString, "      - device %d: role %s type %d (%s) name: %s\n",

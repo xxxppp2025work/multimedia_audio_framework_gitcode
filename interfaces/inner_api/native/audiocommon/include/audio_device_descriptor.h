@@ -110,6 +110,8 @@ public:
 
     bool IsRemote() const;
 
+    bool IsA2dpOffload() const;
+
     DeviceType MapInternalToExternalDeviceType(int32_t apiVersion, bool isSupportedNearlink = true) const;
 
     DeviceStreamInfo GetDeviceStreamInfo(void) const;

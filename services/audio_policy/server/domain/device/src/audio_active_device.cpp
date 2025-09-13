@@ -315,6 +315,11 @@ bool AudioActiveDevice::IsDeviceActive(DeviceType deviceType)
     return GetCurrentOutputDeviceType() == deviceType;
 }
 
+bool AudioActiveDevice::IsA2dpOffload()
+{
+    return currentActiveDevice_.IsA2dpOffload();
+}
+
 int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active, const int32_t uid)
 {
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
