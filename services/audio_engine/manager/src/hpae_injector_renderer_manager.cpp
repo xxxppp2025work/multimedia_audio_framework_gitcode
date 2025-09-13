@@ -13,6 +13,22 @@
  * limitations under the License.
  */
 
+#ifndef LOG_TAG
+#define LOG_TAG "HpaeInjectorRendererManager"
+#endif
+
+#include "hpae_injector_renderer_manager.h"
+#include "audio_errors.h"
+#include "audio_stream_info.h"
+#include "audio_utils.h"
+#include "hpae_node_common.h"
+#include "hpae_message_queue_monitor.h"
+#include "hpae_stream_move_monitor.h"
+#include "audio_engine_log.h"
+
+namespace OHOS {
+namespace AudioStandard {
+namespace HPAE {
 HpaeInjectorRendererManager::HpaeInjectorRendererManager(HpaeSinkInfo &sinkInfo)
     : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT), sinkInfo_(sinkInfo)
 {}
@@ -481,6 +497,12 @@ int32_t HpaeInjectorRendererManager::ReloadRenderManager(const HpaeSinkInfo &sin
     return SUCCESS;
 }
 
+std::string HpaeInjectorRendererManager::GetDeviceHDFDumpInfo()
+{
+    // todo : hidump info
+    return "";
+}
+
 int32_t HpaeInjectorRendererManager::SetLoudnessGain(uint32_t sessionId, float loudnessGain)
 {
     AUDIO_ERR_LOG("Unsupported operation");
@@ -662,3 +684,36 @@ bool HpaeInjectorRendererManager::SetSessionFade(uint32_t sessionId, IOperation 
     sessionGainNode->SetFadeState(operation);
     return true;
 }
+
+void HpaeInjectorRendererManager::SetSessionState(uint32_t sessionId, HpaeSessionState state)
+{
+    sessionNodeMap_[sessionId].state = state;
+    sinkInputNodeMap_[sessionId]->SetState(state);
+}
+
+void HpaeInjectorRendererManager::TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &inputNode)
+{
+    HpaeSessionState inputState = inputNode->GetState();
+    if (inputState == HPAE_SESSION_STOPPING || inputState == HPAE_SESSION_PAUSING) {
+        HpaeSessionState state = inputState == HPAE_SESSION_PAUSING ? HPAE_SESSION_PAUSED : HPAE_SESSION_STOPPED;
+        IOperation operation = inputState == HPAE_SESSION_PAUSING ? OPERATION_PAUSED : OPERATION_STOPPED;
+        SetSessionState(sessionId, state);
+        inputNode->SetState(state);
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state, operation);
+    }
+}
+
+bool HpaeInjectorRendererManager::CheckIsStreamRunning()
+{
+    bool isRunning = false;
+    for (const auto& it : sessionNodeMap_) {
+        if (it.second.state == HPAE_SESSION_RUNNING) {
+            isRunning = true;
+            break;
+        }
+    }
+    return isRunning;
+}
+}  // namespace HPAE
+}  // namespace AudioStandard
+}  // namespace OHOS
