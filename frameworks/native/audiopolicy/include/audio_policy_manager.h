@@ -702,6 +702,7 @@ public:
     int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         const DeviceInfoUpdateCommand command);
     int32_t SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback);
+    int32_t GetVADeviceBroker(std::shared_ptr<VADeviceBrokerWrapper> &vaBroker);
     bool IsCollaborativePlaybackSupported();
     int32_t SetCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled);

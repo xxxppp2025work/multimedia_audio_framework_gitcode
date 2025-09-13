@@ -680,5 +680,14 @@ int32_t AudioPolicyManager::SetSleAudioOperationCallback(const std::shared_ptr<S
 
     return gsp->SetSleAudioOperationCallback(object);
 }
+
+int32_t AudioPolicyManager::GetVADeviceBroker(std::shared_ptr<VADeviceBrokerWrapper> &vaBroker)
+{
+    auto vaBrokerWrapper = std::make_shared<VADeviceBrokerWrapperImpl>();
+    CHECK_AND_RETURN_RET_LOG(vaBrokerWrapper != nullptr, ERROR, "vaBrokerWrapper is null");
+    vaBroker = vaBrokerWrapper;
+
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS
