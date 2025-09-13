@@ -26,7 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 HpaeSourceProcessCluster::HpaeSourceProcessCluster(HpaeNodeInfo& nodeInfo) // nodeInfo maybe sourceinputnode info
-    : HpaeNode(nodeInfo), captureEffectNode_(std::make_shared<HpaeCaptureEffectNode>(nodeInfo))，
+    : HpaeNode(nodeInfo), captureEffectNode_(std::make_shared<HpaeCaptureEffectNode>(nodeInfo)),
       mixerNode_(std::make_shared<HpaeMixerNode>(nodeInfo))
 {
 #ifdef ENABLE_HIDUMP_DFX
@@ -110,8 +110,10 @@ std::shared_ptr<HpaeNode> HpaeSourceProcessCluster::GetSharedInstance(HpaeNodeIn
 OutputPort<HpaePcmBuffer *> *HpaeSourceProcessCluster::GetOutputPort(HpaeNodeInfo &nodeInfo, bool isDisConnect)
 {
     std::string sourceOutputNodeKey = TransNodeInfoToStringKey(nodeInfo);
-    HpaeNodeInfo effectNodeInfo;
-    captureEffectNode_->GetCapturerEffectConfig(effectNodeInfo);
+    HpaeNodeInfo effectNodeInfo = mixerNode_->GetNodeInfo();
+    if (captureEffectNode_ != nullptr) {
+        captureEffectNode_->GetCapturerEffectConfig(effectNodeInfo);
+    }
     std::string effectNodeKey = TransNodeInfoToStringKey(effectNodeInfo);
     AUDIO_INFO_LOG("sourceOutput:[%{public}s] effectNode:[%{public}s]",
         sourceOutputNodeKey.c_str(), effectNodeKey.c_str());
@@ -168,7 +170,7 @@ void HpaeSourceProcessCluster::DisConnectWithInfo(const std::shared_ptr<OutputNo
 void HpaeSourceProcessCluster::ConnectInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
 {
     AUDIO_INFO_LOG("connect injector sinkOutputNode in processcluster");
-    CHECK_AND_RETURN_(preNode != nullptr, "pre sinkOutputNode is nullptr");
+    CHECK_AND_RETURN_LOG(preNode != nullptr, "pre sinkOutputNode is nullptr");
     HpaeNodeInfo sinkNodeInfo = preNode->GetNodeInfo();
     HpaeNodeInfo mixerNodeInfo = mixerNode_->GetNodeInfo();
     if (CheckHpaeNodeInfoIsSame(sinkNodeInfo, mixerNodeInfo)) {
@@ -176,7 +178,7 @@ void HpaeSourceProcessCluster::ConnectInjector(const std::shared_ptr<OutputNode<
         mixerNode_->Connect(preNode);
     } else {
         injectorFmtConverterNodeMap_[preNode] =
-            std::make_shared(HpaeAudioFormatConverterNode)(sinkNodeInfo, mixerNodeInfo);
+            std::make_shared<HpaeAudioFormatConverterNode>(sinkNodeInfo, mixerNodeInfo);
         mixerNode_->Connect(injectorFmtConverterNodeMap_[preNode]);
         injectorFmtConverterNodeMap_[preNode]->Connect(preNode);
     }
@@ -185,14 +187,14 @@ void HpaeSourceProcessCluster::ConnectInjector(const std::shared_ptr<OutputNode<
 void HpaeSourceProcessCluster::DisConnectInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
 {
     AUDIO_INFO_LOG("disconnect injector sinkOutputNode in processcluster");
-    CHECK_AND_RETURN_(preNode != nullptr, "pre sinkOutputNode is nullptr");
+    CHECK_AND_RETURN_LOG(preNode != nullptr, "pre sinkOutputNode is nullptr");
     HpaeNodeInfo sinkNodeInfo = preNode->GetNodeInfo();
     HpaeNodeInfo mixerNodeInfo = mixerNode_->GetNodeInfo();
     if (CheckHpaeNodeInfoIsSame(sinkNodeInfo, mixerNodeInfo)) {
         AUDIO_INFO_LOG("Specification of sinkOutputNode is same with mixerNode");
         mixerNode_->DisConnect(preNode);
     } else {
-        injectorFmtConverterNodeMap_[preNode]->Connect(preNode);
+        injectorFmtConverterNodeMap_[preNode]->DisConnect(preNode);
         mixerNode_->DisConnect(injectorFmtConverterNodeMap_[preNode]);
         injectorFmtConverterNodeMap_.erase(preNode);
     }
@@ -200,11 +202,11 @@ void HpaeSourceProcessCluster::DisConnectInjector(const std::shared_ptr<OutputNo
 
 bool HpaeSourceProcessCluster::GetCapturerEffectConfig(HpaeNodeInfo &nodeInfo, HpaeSourceBufferType type)
 {
-    if (captureEffectNode_ != nullptr) {
-        return captureEffectNode_->GetCapturerEffectConfig(nodeInfo, type);
+    if (captureEffectNode_ == nullptr) {
+        nodeInfo = mixerNode_->GetNodeInfo();
+        return true;
     }
-    nodeInfo = mixerNode_->GetNodeInfo();
-    return true;
+    return captureEffectNode_->GetCapturerEffectConfig(nodeInfo, type);
 }
 
 size_t HpaeSourceProcessCluster::GetOutputPortNum()

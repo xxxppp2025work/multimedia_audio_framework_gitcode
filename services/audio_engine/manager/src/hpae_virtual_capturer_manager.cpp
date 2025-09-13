@@ -322,15 +322,15 @@ void HpaeVirtualCapturerManager::SetSessionState(HpaeCaptureMoveInfo &streamInfo
     streamInfo.sourceOutputNode->SetState(capturerState);
 }
 
-int32_t HpaeCapturerManager::AddCaptureInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
-    const SourceType &sourceType)
+int32_t HpaeVirtualCapturerManager::AddCaptureInjector(
+    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, const SourceType &sourceType)
 {
     AUDIO_ERR_LOG("Unsupported operation");
     return SUCCESS;
 }
 
-int32_t HpaeCapturerManager::RemoveCaptureInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
-    const SourceType &sourceType)
+int32_t HpaeVirtualCapturerManager::RemoveCaptureInjector(
+    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, const SourceType &sourceType)
 {
     AUDIO_ERR_LOG("Unsupported operation");
     return SUCCESS;

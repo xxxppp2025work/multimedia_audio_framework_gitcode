@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
- * Licensed under the Apache License, Version 2.0 (the "License")
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -28,7 +28,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-static constexpr uint32_t DEFAULT_RING_CACHE_NUM = 1;
+static constexpr uint32_t DEFAULT_RING_BUFFER_NUM = 1;
 static constexpr uint32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr uint32_t MS_PER_SECOND = 1000;
 
@@ -47,7 +47,7 @@ HpaeSinkVirtualOutputNode::HpaeSinkVirtualOutputNode(HpaeNodeInfo &nodeInfo)
     ringCache_ = AudioRingCache::Create(GetRingCacheSize());
     if (ringCache_ == nullptr) {
         AUDIO_ERR_LOG("ringCache create fail");
-    } 
+    }
 }
 
 HpaeSinkVirtualOutputNode::~HpaeSinkVirtualOutputNode()
@@ -67,7 +67,7 @@ void HpaeSinkVirtualOutputNode::DoRenderProcess()
 
     OptResult result = ringCache_->Enqueue(
         {reinterpret_cast<uint8_t *>(outputData->GetPcmDataBuffer()), outputData->DataSize()});
-    CHECK_AND_RETURN_LOG(retsult.ret == OPERATION_SUCCESS, "ringCache enqueue fail");
+    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "ringCache enqueue fail");
 }
 
 void HpaeSinkVirtualOutputNode::DoProcess()
@@ -75,14 +75,15 @@ void HpaeSinkVirtualOutputNode::DoProcess()
     Trace trace("HpaeSinkVirtualOutputNode::DoProcess " + GetTraceInfo());
     OptResult result = ringCache_->Dequeue(
         {reinterpret_cast<uint8_t *>(outputAudioBuffer_.GetPcmDataBuffer()), outputAudioBuffer_.DataSize()});
-    CHECK_AND_RETURN_LOG(retsult.ret == OPERATION_SUCCESS, "ringCache dequeue fail");
+    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "ringCache dequeue fail");
     outputStream_.WriteDataToOutput(&outputAudioBuffer_);
     if (auto callback = GetNodeStatusCallback().lock()) {
         callback->OnNotifyQueue();
     }
 }
 
-int32_t HpaeSinkVirtualOutputNode::PeekAudioData(uint8_t **buffer, const size_t &bufferSize)
+int32_t HpaeSinkVirtualOutputNode::PeekAudioData(uint8_t **buffer, const size_t &bufferSize,
+    AudioStreamInfo &audioStreamInfo)
 {
     Trace trace("HpaeSinkVirtualOutputNode::PeekAudioData" + GetTraceInfo());
     std::lock_guard<std::mutex> lock(mutex_);
@@ -117,7 +118,17 @@ bool HpaeSinkVirtualOutputNode::ResetAll()
     return true;
 }
 
-void HpaeSinkVirtualOutputNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override
+std::shared_ptr<HpaeNode> HpaeSinkVirtualOutputNode::GetSharedInstance()
+{
+    return shared_from_this();
+}
+
+OutputPort<HpaePcmBuffer *> *HpaeSinkVirtualOutputNode::GetOutputPort()
+{
+    return &outputStream_;
+}
+
+void HpaeSinkVirtualOutputNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
 #ifdef ENABLE_HIDUMP_DFX
@@ -127,7 +138,7 @@ void HpaeSinkVirtualOutputNode::Connect(const std::shared_ptr<OutputNode<HpaePcm
 #endif
 }
 
-void HpaeSinkVirtualOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override
+void HpaeSinkVirtualOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     inputStream_.DisConnect(preNode->GetOutputPort());
 #ifdef ENABLE_HIDUMP_DFX
@@ -136,6 +147,11 @@ void HpaeSinkVirtualOutputNode::DisConnect(const std::shared_ptr<OutputNode<Hpae
         callback->OnNotifyDfxNodeInfo(false, preNodeReal->GetNodeId(), preNodeReal->GetNodeInfo());
     }
 #endif
+}
+
+StreamManagerState HpaeSinkVirtualOutputNode::GetState()
+{
+    return state_;
 }
 
 int32_t HpaeSinkVirtualOutputNode::RenderSinkInit()
@@ -160,7 +176,7 @@ int32_t HpaeSinkVirtualOutputNode::RenderSinkStart(void)
 int32_t HpaeSinkVirtualOutputNode::RenderSinkStop(void)
 {
     if (ringCache_ != nullptr) {
-        ringCache_.ResetBuffer();
+        ringCache_->ResetBuffer();
     }
     SetSinkState(STREAM_MANAGER_SUSPENDED);
     return SUCCESS;
@@ -169,11 +185,6 @@ int32_t HpaeSinkVirtualOutputNode::RenderSinkStop(void)
 size_t HpaeSinkVirtualOutputNode::GetPreOutNum()
 {
     return inputStream_.GetPreOutputNum();
-}
-
-StreamManagerState HpaeSinkVirtualOutputNode::GetSinkState(void)
-{
-    return state_;
 }
 
 int32_t HpaeSinkVirtualOutputNode::SetSinkState(StreamManagerState sinkState)
@@ -198,7 +209,7 @@ bool HpaeSinkVirtualOutputNode::GetIsReadFinished()
     return result.size != 0;
 }
 
-int32_t HpaeSinkVirtualOutputNode::ReloadNode(hpaeNodeInfo nodeInfo)
+int32_t HpaeSinkVirtualOutputNode::ReloadNode(HpaeNodeInfo nodeInfo)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     nodeInfo.nodeId = GetNodeId(); // not change nodeId

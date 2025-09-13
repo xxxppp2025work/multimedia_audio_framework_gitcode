@@ -104,6 +104,7 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
     
     if (sceneType != HPAE_SCENE_EFFECT_NONE && !SafeGetMap(sceneClusterMap_, sceneType)) {
         // todo: algorithm instance count control
+        HpaeNodeInfo nodeInfo = sourceInputClusterMap_[mainMicType_]->GetNodeInfo();
         sceneClusterMap_[sceneType] = std::make_shared<HpaeSourceProcessCluster>(nodeInfo);
         if (CaptureEffectCreate(sceneType, enhanceScene) != SUCCESS) {
             // sceneClusterMap_.erase(sceneType);
@@ -1027,7 +1028,7 @@ int32_t HpaeCapturerManager::AddCaptureInjector(const std::shared_ptr<OutputNode
 {
     auto request = [this, sinkOutputNode, sourceType] {
         HpaeProcessorType sceneType = TransSourceTypeToSceneType(sourceType);
-        auto sceneCluster = SaftGetMap(sceneClusterMap_, sceneType);
+        auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
         CHECK_AND_RETURN_LOG(sceneCluster != nullptr, "sourceType[%{public}d] cluster not exit", sourceType);
         sceneCluster->ConnectInjector(sinkOutputNode);
     };
@@ -1040,7 +1041,7 @@ int32_t HpaeCapturerManager::RemoveCaptureInjector(const std::shared_ptr<OutputN
 {
     auto request = [this, sinkOutputNode, sourceType] {
         HpaeProcessorType sceneType = TransSourceTypeToSceneType(sourceType);
-        auto sceneCluster = SaftGetMap(sceneClusterMap_, sceneType);
+        auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
         CHECK_AND_RETURN_LOG(sceneCluster != nullptr, "sourceType[%{public}d] cluster not exit", sourceType);
         sceneCluster->DisConnectInjector(sinkOutputNode);
     };

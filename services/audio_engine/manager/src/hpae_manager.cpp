@@ -273,7 +273,7 @@ int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo,
         sinkVirtualOutputNodeMap_[sinkInfo.sinkId] = sinkVirtualOutputNodeMap_[oldId];
         HpaeNodeInfo nodeInfo;
         TransSinkInfoToNodeInfo(sinkInfo, rendererManagerMap_[audioModuleInfo.name], nodeInfo);
-        sinkVirtualOutputNodeMap_[sinInfo.sinkId]->ReloadNode(nodeInfo);
+        sinkVirtualOutputNodeMap_[sinkInfo.sinkId]->ReloadNode(nodeInfo);
     }
     rendererManagerMap_[audioModuleInfo.name]->ReloadRenderManager(sinkInfo, isReload);
     return SUCCESS;
@@ -301,7 +301,7 @@ int32_t HpaeManager::CreateRendererManager(const AudioModuleInfo &audioModuleInf
         AUDIO_INFO_LOG("SetDefaultSink name: %{public}s", defaultSink_.c_str());
     }
 
-    if (sinkInfo.deviceName == "virtual") { // todo : rewrite correct name
+    if (audioModuleInfo.name == "virtual") { // todo : rewrite correct name
         std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
         HpaeNodeInfo nodeInfo;
         TransSinkInfoToNodeInfo(sinkInfo, rendererManager, nodeInfo);
@@ -2563,7 +2563,7 @@ void HpaeManager::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const Audio
         CHECK_AND_RETURN_LOG(sinkIdSinkNameMap_.find(sinkPortIndex) != sinkIdSinkNameMap_.end(),
             "sinkPortIndex[%{public}u] not exit", sinkPortIndex);
         std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
-        auto rendererManager = SaftGetMap(rendererManagerMap_, sinkIdSinkNameMap_[sinkPortIndex]);
+        auto rendererManager = SafeGetMap(rendererManagerMap_, sinkIdSinkNameMap_[sinkPortIndex]);
         CHECK_AND_RETURN_LOG(rendererManager, "sink[%{public}s] is in wrong state",
             sinkIdSinkNameMap_[sinkPortIndex].c_str());
         HpaeSinkInfo sinkInfo;
@@ -2574,7 +2574,7 @@ void HpaeManager::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const Audio
         auto sinkOutputNode = SafeGetMap(sinkVirtualOutputNodeMap_, sinkPortIndex);
         CHECK_AND_RETURN_LOG(sinkOutputNode, "reload injector failed, sinkOutputNode is null");
         HpaeNodeInfo nodeInfo;
-        TransSinkInfoToNodeInfo(sinkInfo, rendererMnaager, nodeInfo);
+        TransSinkInfoToNodeInfo(sinkInfo, rendererManager, nodeInfo);
         sinkOutputNode->ReloadNode(nodeInfo);
         rendererManager->ReloadRenderManager(sinkInfo, true);
     };
@@ -2588,13 +2588,13 @@ void HpaeManager::AddCaptureInjector(
         CHECK_AND_RETURN_LOG(sinkIdSinkNameMap_.find(sinkPortIndex) != sinkIdSinkNameMap_.end(),
             "sinkPortIndex[%{public}u] not exit", sinkPortIndex);
         std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
-        auto rendererManager = SaftGetMap(rendererManagerMap_, sinkIdSinkNameMap_[sinkPortIndex]);
+        auto rendererManager = SafeGetMap(rendererManagerMap_, sinkIdSinkNameMap_[sinkPortIndex]);
         CHECK_AND_RETURN_LOG(rendererManager, "sink[%{public}s] is in wrong state",
             sinkIdSinkNameMap_[sinkPortIndex].c_str());
         CHECK_AND_RETURN_LOG(sourceIdSourceNameMap_.find(sourcePortIndex) != sourceIdSourceNameMap_.end(),
             "sourcePortIndex[%{public}u] not exit", sourcePortIndex);
-        auto capturerManager = SafeGetMap(sourceIdSourceNameMap_, sourceIdSourceNameMap_[sourcePortIndex]);
-        CHECK_AND_RETURN_LOG(rendererManager, "source[%{public}s] is in wrong state",
+        auto capturerManager = SafeGetMap(capturerManagerMap_, sourceIdSourceNameMap_[sourcePortIndex]);
+        CHECK_AND_RETURN_LOG(capturerManager, "source[%{public}s] is in wrong state",
             sourceIdSourceNameMap_[sourcePortIndex].c_str());
         capturerManager->AddCaptureInjector(sinkVirtualOutputNodeMap_[sinkPortIndex], sourceType);
     };
@@ -2608,13 +2608,13 @@ void HpaeManager::RemoveCaptureInjector(
         CHECK_AND_RETURN_LOG(sinkIdSinkNameMap_.find(sinkPortIndex) != sinkIdSinkNameMap_.end(),
             "sinkPortIndex[%{public}u] not exit", sinkPortIndex);
         std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
-        auto rendererManager = SaftGetMap(rendererManagerMap_, sinkIdSinkNameMap_[sinkPortIndex]);
+        auto rendererManager = SafeGetMap(rendererManagerMap_, sinkIdSinkNameMap_[sinkPortIndex]);
         CHECK_AND_RETURN_LOG(rendererManager, "sink[%{public}s] is in wrong state",
             sinkIdSinkNameMap_[sinkPortIndex].c_str());
         CHECK_AND_RETURN_LOG(sourceIdSourceNameMap_.find(sourcePortIndex) != sourceIdSourceNameMap_.end(),
             "sourcePortIndex[%{public}u] not exit", sourcePortIndex);
-        auto capturerManager = SafeGetMap(sourceIdSourceNameMap_, sourceIdSourceNameMap_[sourcePortIndex]);
-        CHECK_AND_RETURN_LOG(rendererManager, "source[%{public}s] is in wrong state",
+        auto capturerManager = SafeGetMap(capturerManagerMap_, sourceIdSourceNameMap_[sourcePortIndex]);
+        CHECK_AND_RETURN_LOG(capturerManager, "source[%{public}s] is in wrong state",
             sourceIdSourceNameMap_[sourcePortIndex].c_str());
         capturerManager->RemoveCaptureInjector(sinkVirtualOutputNodeMap_[sinkPortIndex], sourceType);
     };

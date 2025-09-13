@@ -66,7 +66,7 @@ void HpaeMixerNode::SetNodeInfo(HpaeNodeInfo& nodeInfo)
     HpaeNode::SetNodeInfo(nodeInfo);
 }
 
-void HpaeCaptureEffectNode::ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode,
+void HpaeMixerNode::ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode,
     HpaeNodeInfo &nodeInfo)
 {
     std::shared_ptr<HpaeNode> realPreNode = preNode->GetSharedInstance(nodeInfo);
@@ -79,7 +79,7 @@ void HpaeCaptureEffectNode::ConnectWithInfo(const std::shared_ptr<OutputNode<Hpa
 #endif
 }
 
-void HpaeCaptureEffectNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode,
+void HpaeMixerNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode,
     HpaeNodeInfo &nodeInfo)
 {
     CHECK_AND_RETURN_LOG(!inputStream_.CheckIfDisConnected(preNode->GetOutputPort(nodeInfo)),

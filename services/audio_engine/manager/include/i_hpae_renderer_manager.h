@@ -22,6 +22,7 @@
 #include "hpae_stream_manager.h"
 #include "hpae_dfx_tree.h"
 #include "hpae_co_buffer_node.h"
+#include "hpae_sink_virtual_output_node.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
