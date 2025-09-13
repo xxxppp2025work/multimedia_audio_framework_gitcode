@@ -1023,7 +1023,7 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
         volumeDataMaintainer_.SaveMuteStatusWithDatabaseVolumeName(
             currentActiveDevice_.volumeBehavior_.databaseVolumeName, streamType, mute);
     } else if (handler_ != nullptr) {
-        handler_->SendStreamMuteStatusUpdate(streamType, mute, streamUsage, deviceType, networkId);
+        handler_->SendStreamMuteStatusUpdate(streamType, mute, deviceType, networkId);
     }
 
     // Achieve the purpose of adjusting the mute status by adjusting the stream volume.
