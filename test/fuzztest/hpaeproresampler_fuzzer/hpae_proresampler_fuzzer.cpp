@@ -32,11 +32,8 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const size_t NUM_TWO = 2;
-const size_t NUM_SEVEN = 7;
 const static std::vector<uint32_t>  TEST_CHANNELS = {MONO, STEREO, CHANNEL_6};
 
-constexpr uint32_t INVALID_QUALITY = -1;
 constexpr uint32_t QUALITY_ONE = 1;
 constexpr uint32_t FRAME_LEN_100MS = 100;
 constexpr uint32_t FRAME_LEN_40MS = 40;
@@ -85,13 +82,15 @@ void ResampleBaseTest()
     resampler.UpdateRates(inRate, outRate);
     
     channels = GetData<uint32_t>();
-    resampler.UpdateRates(channels);
+    resampler.UpdateChannels(channels);
 }
 
 void ResampleProcessTest()
 {
     uint32_t inRate = GetData<uint32_t>();
     uint32_t outRate = GetData<uint32_t>();
+
+    CHECK_AND_RETURN_LOG(inRate != 0, "divisor cannot be 0");
 
     uint32_t inFrameLen = 0;
     if (inRate % CUSTOME_RATE_MULTIPLE == 0) {
@@ -101,12 +100,12 @@ void ResampleProcessTest()
     } else {
         inFrameLen = FRAME_LEN_100MS * inRate / MS_PER_SECOND;
     }
-    uint32_t outFramelen = inFrameLen / inRate * outRate;
+    uint32_t outFrameLen = inFrameLen / inRate * outRate;
     
     for (uint32_t channels: TEST_CHANNELS) {
         ProResampler resampler(inRate, outRate, channels, QUALITY_ONE);
         vector<float> in(inFrameLen, 0.0f);
-        vector<float> out(outFramelen, 0.0f);
+        vector<float> out(outFrameLen, 0.0f);
         for (uint32_t i = 0; i < inFrameLen; i++) {
             in[i] = GetData<float>();
         }
@@ -123,12 +122,12 @@ void ResampleProcessTest11025()
     uint32_t outRate = GetData<uint32_t>();
 
     uint32_t inFrameLen = FRAME_LEN_40MS * inRate / MS_PER_SECOND;;
-    uint32_t outFramelen = inFrameLen / inRate * outRate;
+    uint32_t outFrameLen = inFrameLen / inRate * outRate;
     
     for (uint32_t channels: TEST_CHANNELS) {
         ProResampler resampler(inRate, outRate, channels, QUALITY_ONE);
         vector<float> in(inFrameLen, 0.0f);
-        vector<float> out(outFramelen, 0.0f);
+        vector<float> out(outFrameLen, 0.0f);
         for (uint32_t i = 0; i < inFrameLen; i++) {
             in[i] = GetData<float>();
         }

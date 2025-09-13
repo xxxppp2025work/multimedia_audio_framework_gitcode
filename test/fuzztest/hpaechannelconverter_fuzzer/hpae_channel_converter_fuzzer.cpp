@@ -24,7 +24,7 @@
 #include "volume_ramp.h"
 #include <algorithm>
 #include <cinttypes>
-#include "down_mixer.h"
+#include "channel_converter.h"
 #include "audio_engine_log.h"
 
 namespace OHOS {
@@ -121,6 +121,7 @@ const static std::map<AudioChannel, AudioChannelLayout> DOWNMIX_CHANNEL_COUNT_MA
 };
 
 constexpr uint32_t TEST_FORMAT_SIZE = 4;
+constexpr AudioSampleFormat TEST_FORMAT = SAMPLE_F32LE;
 constexpr uint32_t TEST_ERR_FRAME_LEN = 100;
 constexpr uint32_t TEST_FRAME_LEN = 10;
 constexpr bool MIX_FLE = true;
@@ -160,38 +161,17 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-void SetAudioChannelInfoTest()
-{
-    ChannelConverter channelConverter;
-    AudioChannelInfo inChannelInfo;
-    AudioChannelInfo outChannelInfo;
-    inChannelInfo.channelLayout = static_cast<AudioChannelLayout>(GetData<uint64_t>());
-    inChannelInfo.numChannels = BitCounts(inChannelInfo.channelLayout);
-
-    outChannelInfo.channelLayout = static_cast<AudioChannelLayout>(GetData<uint64_t>());
-    outChannelInfo.numChannels = BitCounts(outChannelInfo.channelLayout);
-
-    channelConverter.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE);
-}
-
 void SetParamFuzzTest()
 {
-    // invalid input Param
-    ChannelConverter channelConverter;
+    // real FuzzTest random input
     AudioChannelInfo inChannelInfo;
     AudioChannelInfo outChannelInfo;
-    inChannelInfo.numChannels = MAX_CHANNELS + 1;
-    inChannelInfo.channelLayout = CH_LAYOUT_UNKNOWN;
-    outChannelInfo.numChannels = MAX_CHANNELS + 1;
-    outChannelInfo.channelLayout = CH_LAYOUT_UNKNOWN;
-    channelConverter.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE);
-
-    // real FuzzTest random input
+    ChannelConverter channelConverter;
     inChannelInfo.channelLayout = static_cast<AudioChannelLayout>(GetData<uint64_t>());
     inChannelInfo.numChannels = BitCounts(inChannelInfo.channelLayout);
     outChannelInfo.channelLayout = static_cast<AudioChannelLayout>(GetData<uint64_t>());
     outChannelInfo.numChannels = BitCounts(outChannelInfo.channelLayout);
-    channelConverter.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE);
+    channelConverter.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT, MIX_FLE);
     
     // valid param, predefined downmix rules, only for ensuring coverage rate
     for (AudioChannelLayout outLayout: OUTPUT_CH_LAYOUT_SET) {
@@ -200,24 +180,23 @@ void SetParamFuzzTest()
         for (AudioChannelLayout inLayout: FULL_CH_LAYOUT_SET) {
             inChannelInfo.channelLayout = inLayout;
             inChannelInfo.numChannels = MAX_CHANNELS;
-            channelConverter.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE);
+            channelConverter.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT, MIX_FLE);
         }
     }
     
     // valid param, general downmix table rule, only ensuring coverage rate
-    // need to add general Upmix test case to ensure line coverage later
     for (AudioChannelLayout outLayout: GENERAL_OUTPUT_CH_LAYOUT_SET) {
         outChannelInfo.numChannels = BitCounts(outLayout);
         outChannelInfo.channelLayout = outLayout;
         for (AudioChannelLayout inLayout: FULL_CH_LAYOUT_SET) {
             inChannelInfo.channelLayout = inLayout;
             inChannelInfo.numChannels = MAX_CHANNELS;
-            channelConverter.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE);
+            channelConverter.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT, MIX_FLE);
         }
     }
 
-    // make sure more coverage: SetDefaultChannelLayout
     DownMixer downMixer;
+    // make sure more coverage: SetDefaultChannelLayout
     for (auto pair : DOWNMIX_CHANNEL_COUNT_MAP) {
         downMixer.SetDefaultChannelLayout(pair.first);
     }
@@ -244,7 +223,7 @@ void DownMixProcesFuzzTest()
     channelConverter.Process(TEST_FRAME_LEN, in.data(), testInBufferSize, out.data(), testOutBufferSize);
     
     // test input and output buffer length smaller than expected for line coverage
-    channelConverter.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE);
+    channelConverter.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT, MIX_FLE);
     channelConverter.Process(TEST_ERR_FRAME_LEN, in.data(), testInBufferSize, out.data(), testOutBufferSize);
 
     // test process usual channel layout
@@ -256,13 +235,13 @@ void DownMixProcesFuzzTest()
     // test process HOA
     inChannelInfo.channelLayout = CH_LAYOUT_HOA_ORDER2_ACN_SN3D;
     inChannelInfo.numChannels = CHANNEL_9;
-    in.resize(CHANNEL_9 * TEST_BUFFER_LEN, 0.0f);
+    in.resize(CHANNEL_9 * TEST_FRAME_LEN, 0.0f);
     testInBufferSize = in.size() * TEST_FORMAT_SIZE;
     for (uint32_t i = 0; i < in.size(); i++) {
         in[i] = GetData<float>();
     }
-    channelConverter.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE);
-    channelConverter.Process(TEST_BUFFER_LEN, in.data(), testInBufferSize, out.data(), testOutBufferSize);
+    channelConverter.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT, MIX_FLE);
+    channelConverter.Process(TEST_FRAME_LEN, in.data(), testInBufferSize, out.data(), testOutBufferSize);
 }
 
 void UpMixProcesFuzzTest()
@@ -275,15 +254,18 @@ void UpMixProcesFuzzTest()
     outChannelInfo.channelLayout = CH_LAYOUT_9POINT1POINT6;
     outChannelInfo.numChannels = CHANNEL_16;
 
-    // test downmix uninitialized for line coverage
+    // test upmix uninitialized for line coverage
     ChannelConverter channelConverter;
     std::vector<float> in(TEST_FRAME_LEN * STEREO, 0.0f);
     std::vector<float> out(TEST_FRAME_LEN * CHANNEL_16, 0.0f);
     uint32_t testInBufferSize = in.size() * TEST_FORMAT_SIZE;
     uint32_t testOutBufferSize = out.size() * TEST_FORMAT_SIZE;
     channelConverter.Process(TEST_FRAME_LEN, in.data(), testInBufferSize, out.data(), testOutBufferSize);
+
+    channelConverter.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT, MIX_FLE);
     
     // test data with input samller than expected
+    channelConverter.Process(TEST_ERR_FRAME_LEN, in.data(), testInBufferSize, out.data(), testOutBufferSize);
 
     // test process usual channel layout
     for (uint32_t i = 0; i < in.size(); i++) {
@@ -294,7 +276,6 @@ void UpMixProcesFuzzTest()
 
 typedef void (*TestFuncs)();
 TestFuncs g_testFuncs[] = {
-    SetAudioChannelInfoTest,
     SetParamFuzzTest,
     DownMixProcesFuzzTest,
     UpMixProcesFuzzTest,
