@@ -46,7 +46,7 @@ struct RecordDeviceInfo {
     AudioDevicePtr selectedDevice_{std::make_shared<AudioDeviceDescriptor>()};
     AudioDevicePtr activeSelectedDevice_{std::make_shared<AudioDeviceDescriptor>()};
     std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> appPreferredDevices_{};
-}
+};
 
 class AudioUsrSelectManager {
 public:
