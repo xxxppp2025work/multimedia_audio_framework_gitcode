@@ -291,8 +291,6 @@ void AudioConnectedDevice::SetDisplayName(const std::string macAddress, const st
     for (auto device : connectedDevices_) {
         if (device->macAddress_ == macAddress) {
             device->deviceName_ = deviceName;
-            int32_t bluetoothId_ = device->deviceId_;
-            std::string name_ = device->deviceName_;
         }
     }
 }

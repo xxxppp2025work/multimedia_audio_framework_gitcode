@@ -1445,7 +1445,6 @@ AudioIOHandle AudioAdapterManager::OpenAudioPort(std::shared_ptr<AudioPipeInfo> 
     AUDIO_INFO_LOG("[PipeExecInfo] pipe name %{public}s, moduleArgs %{public}s",
         pipeInfo->name_.c_str(), moduleArgs.c_str());
     curActiveCount_++;
-    AudioIOHandle ioHandle = HDI_INVALID_ID;
     if (IsPaRoute(pipeInfo->routeFlag_)) {
         return OpenPaAudioPort(pipeInfo, paIndex, moduleArgs);
     }

@@ -193,17 +193,6 @@ static std::string TranslateKeyEvent(const int32_t keyType)
     return event;
 }
 
-static bool HasUsbDevice(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
-{
-    for (auto &item : devices) {
-        CHECK_AND_CONTINUE(item != nullptr);
-        if (IsUsb(item->deviceType_) && !item->hasPair_) {
-            return true;
-        }
-    }
-    return false;
-}
-
 uint32_t AudioPolicyServer::TranslateErrorCode(int32_t result)
 {
     uint32_t resultForMonitor = 0;

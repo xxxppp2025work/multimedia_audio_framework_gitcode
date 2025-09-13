@@ -34,9 +34,6 @@ static constexpr char AUDIO_CONVERTER_CONFIG_FILE[] = "/etc/audio/audio_converte
 static constexpr char AUDIO_CONVERTER_CONFIG_FILE[] = "/system/etc/audio/audio_converter_config.xml";
 #endif
 
-static constexpr int32_t FILE_CONTENT_ERROR = -2;
-static constexpr int32_t FILE_PARSE_ERROR = -3;
-
 enum XML_ERROR {
     XML_PARSE_RECOVER = 1 << 0,   // recover on errors
     XML_PARSE_NOERROR = 1 << 5,   // suppress error reports

@@ -33,7 +33,6 @@ namespace {
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-const uint32_t PCM_8_BIT = 8;
 const uint32_t SESSION_ID_INVALID = 0;
 const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
 const std::string PIPE_PRIMARY_INPUT = "primary_input";
@@ -276,7 +275,6 @@ bool AudioCapturerSession::IsStreamValid(const std::shared_ptr<AudioStreamDescri
 bool AudioCapturerSession::FindRunningNormalSession(uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo)
 {
     bool hasSession = false;
-    SourceType tmpSource = SOURCE_TYPE_INVALID;
 
     const std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = AudioPipeManager::GetPipeManager()->GetPipeList();
     std::shared_ptr<AudioPipeInfo> incommingPipe =
