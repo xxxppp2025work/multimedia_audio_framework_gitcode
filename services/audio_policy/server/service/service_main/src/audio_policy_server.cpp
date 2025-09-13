@@ -2636,6 +2636,7 @@ int32_t AudioPolicyServer::SetAudioClientInfoMgrCallback(const sptr<IRemoteObjec
         return ERR_OPERATION_FAILED;
     }
 
+    lock_guard<std::mutex> lg(mtxSetAudioClientInfoMgrCallback_);
     sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
 
     if (callback != nullptr) {
@@ -2669,6 +2670,7 @@ int32_t AudioPolicyServer::SetAudioVKBInfoMgrCallback(const sptr<IRemoteObject> 
         return ERR_OPERATION_FAILED;
     }
 
+    lock_guard<std::mutex> lg(mtxSetAudioVKBInfoMgrCallback_);
     sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
 
     if (callback != nullptr) {
