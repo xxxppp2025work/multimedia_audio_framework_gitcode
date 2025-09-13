@@ -32,6 +32,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
+const static uint32_t TEST_SESSION_ID = 1;
 
 typedef void (*TestFuncs)();
 
@@ -62,13 +63,6 @@ uint32_t GetArrLength(T& arr)
         return 0;
     }
     return sizeof(arr) / sizeof(arr[0]);
-}
-
-void CoreServiceProviderWrapperFuzzTest()
-{
-    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = new AudioCoreService::EventEntry(audioCoreService);
-    CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker));
 }
 
 void UpdateSessionOperationFuzzTest()
@@ -119,30 +113,22 @@ void GetProcessDeviceInfoBySessionIdFuzzTest()
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     auto coreServiceWorker = new AudioCoreService::EventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker));
-    uint32_t sessionId = GetData<uint32_t>();
+    uint32_t sessionId = TEST_SESSION_ID;
+    coreServiceProviderWrapper.GenerateSessionId(sessionId);
+
+    sessionId = GetData<uint32_t>();
     AudioDeviceDescriptor deviceInfo;
     bool reload = GetData<bool>();
     AudioStreamInfo info;
     coreServiceProviderWrapper.GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, reload);
 }
 
-void GenerateSessionIdFuzzTest()
-{
-    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
-    auto coreServiceWorker = new AudioCoreService::EventEntry(audioCoreService);
-    CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker));
-    uint32_t sessionId = GetData<uint32_t>();
-    coreServiceProviderWrapper.GenerateSessionId(sessionId);
-}
-
 TestFuncs g_testFuncs[] = {
-    CoreServiceProviderWrapperFuzzTest,
     UpdateSessionOperationFuzzTest,
     ReloadCaptureSessionFuzzTest,
     SetDefaultOutputDeviceFuzzTest,
     GetAdapterNameBySessionIdFuzzTest,
     GetProcessDeviceInfoBySessionIdFuzzTest,
-    GenerateSessionIdFuzzTest,
 };
 
 

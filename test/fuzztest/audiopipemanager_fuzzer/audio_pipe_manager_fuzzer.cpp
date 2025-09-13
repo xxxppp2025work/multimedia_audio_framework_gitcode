@@ -98,7 +98,7 @@ void RemoveAudioPipeInfoFuzzTest()
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     std::shared_ptr<AudioPipeInfo> targetPipe = std::make_shared<AudioPipeInfo>();
     targetPipe->adapterName_ = "test_adapter";
-    targetPipe->routeFlag_ = 1;
+    targetPipe->routeFlag_ = GetData<uint32_t>();
 
     audioPipeManager->AddAudioPipeInfo(targetPipe);
     audioPipeManager->RemoveAudioPipeInfo(targetPipe);
@@ -250,11 +250,11 @@ void GetPipeinfoByNameAndFlagFuzzTest()
 
     std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
     pipe1->adapterName_ = "existing_adapter";
-    pipe1->routeFlag_ = 1;
+    pipe1->routeFlag_ = GetData<uint32_t>();
     audioPipeManager->AddAudioPipeInfo(pipe1);
 
     std::string targetAdapterName = "existing_adapter";
-    uint32_t targetRouteFlag = 1;
+    uint32_t targetRouteFlag = GetData<uint32_t>();
     audioPipeManager->GetPipeinfoByNameAndFlag(targetAdapterName, targetRouteFlag);
 }
 
