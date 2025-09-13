@@ -109,7 +109,7 @@ void AudioAdapterManagerHandler::HandleUpdateStreamMuteStatus(const AppExecFwk::
     std::shared_ptr<StreamMuteStatusEvent> eventContextObj = event->GetSharedObject<StreamMuteStatusEvent>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     AudioPolicyManagerFactory::GetAudioPolicyManager().HandleStreamMuteStatus(eventContextObj->streamType_,
-        eventContextObj->mute_, eventContextObj->streamUsage_, eventContextObj->deviceType_,
+        eventContextObj->mute_, eventContextObj->deviceType_,
         eventContextObj->networkId_);
 }
 
