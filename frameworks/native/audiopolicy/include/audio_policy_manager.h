@@ -37,6 +37,7 @@
 #include "audio_combine_denoising_manager.h"
 #include "audio_stream_descriptor.h"
 #include "sle_audio_operation_callback_stub_impl.h"
+#include "va_device_broker_wrapper_impl.h"
 #include "audio_capturer_options.h"
 
 namespace OHOS {
@@ -702,6 +703,7 @@ public:
     int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         const DeviceInfoUpdateCommand command);
     int32_t SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback);
+    int32_t GetVADeviceBroker(std::shared_ptr<VADeviceBrokerWrapper> &vaBroker);
     bool IsCollaborativePlaybackSupported();
     int32_t SetCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled);
