@@ -75,7 +75,6 @@
     *SendInitCommand*;
     *EnhanceChainManagerSendInitCommand*;
     *InitEffectBuffer*;
-    *EffectChainManagerQueryHdiSupportedChannelLayout*;
     *LoadEffectProperties*;
     *ApplyAudioEffectChain*;
     *CheckAndAddSessionID*;
@@ -98,6 +97,7 @@
     *ResetInfo*;
     *SetAbsVolumeStateToEffect*;
     *DeleteStreamVolume*;
+    *IsChannelLayoutSupportForDspEffect*;
   local:
     *;
 };

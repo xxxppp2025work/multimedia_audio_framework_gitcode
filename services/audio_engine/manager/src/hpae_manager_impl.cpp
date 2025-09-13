@@ -589,6 +589,12 @@ void HpaeManagerImpl::DeleteStreamVolumeToEffect(const std::string stringSession
     manager_->DeleteStreamVolumeToEffect(stringSessionID);
 }
 
+bool HpaeManagerImpl::IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
+    return manager_->IsChannelLayoutSupportForDspEffect(channelLayout);
+}
+
 // interfaces for injector
 void HpaeManagerImpl::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo)
 {

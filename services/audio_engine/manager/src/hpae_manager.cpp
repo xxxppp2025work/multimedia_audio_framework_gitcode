@@ -2532,6 +2532,11 @@ void HpaeManager::DeleteStreamVolumeToEffect(const std::string stringSessionID)
     SendRequest(request, __func__);
 }
 
+bool HpaeManager::IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout)
+{
+    return HpaePolicyManager::GetInstance().IsChannelLayoutSupportForDspEffect(channelLayout);
+}
+
 // interfaces for injector
 void HpaeManager::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo)
 {}

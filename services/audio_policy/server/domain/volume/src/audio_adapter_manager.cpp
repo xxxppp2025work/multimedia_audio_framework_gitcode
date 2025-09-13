@@ -3407,6 +3407,12 @@ int32_t AudioAdapterManager::SetSystemVolumeToEffect(AudioStreamType streamType,
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "audioServiceAdapter is null");
     return audioServiceAdapter_->SetSystemVolumeToEffect(streamType, volume);
 }
+
+bool AudioAdapterManager::IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "audioServiceAdapter is null");
+    return audioServiceAdapter_->IsChannelLayoutSupportForDspEffect(channelLayout);
+}
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

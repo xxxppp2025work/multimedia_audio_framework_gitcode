@@ -242,6 +242,14 @@ public:
      * @return int32_t the result, only supports proaudio for now.
      */
     virtual int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume) NOT_SUPPORT_RET
+
+    /**
+     * @brief Check is channelLayout support for multichannel render manager
+     *
+     * @return {@link true} if support, {@link false} otherwise
+     */
+    virtual bool IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout) NOT_SUPPORT_RET
+
     virtual ~AudioServiceAdapter();
 };
 } // namespace AudioStandard

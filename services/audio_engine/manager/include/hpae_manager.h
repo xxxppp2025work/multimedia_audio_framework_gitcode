@@ -194,6 +194,7 @@ public:
     void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) override;
     void DeleteStreamVolumeToEffect(const std::string stringSessionID) override;
     uint64_t ProcessPendingTransitionsAndGetNextDelay();
+    bool IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout) override;
     // interfaces for injector
     void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) override;
     void AddCaptureInjector(

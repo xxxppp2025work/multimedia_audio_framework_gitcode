@@ -426,11 +426,6 @@ int32_t HpaeRendererManager::DeleteProcessCluster(uint32_t sessionId)
             if (outputCluster_ != nullptr) {
                 outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
             }
-            // for collaboration
-            if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
-                hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
-                TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
-            }
             sceneClusterMap_[sceneType]->SetConnectedFlag(false);
         }
     }
@@ -878,6 +873,7 @@ int32_t HpaeRendererManager::InitManager(bool isReload)
         return checkRet;
     }
     nodeInfo.channels = sinkInfo_.channels;
+    nodeInfo.channelLayout = static_cast<AudioChannelLayout>(sinkInfo_.channelLayout);
     nodeInfo.format = sinkInfo_.format;
     nodeInfo.frameLen = sinkInfo_.frameLen;
     nodeInfo.nodeId = 0;

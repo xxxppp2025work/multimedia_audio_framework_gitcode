@@ -143,6 +143,7 @@ public:
     virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) = 0;
     virtual void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) = 0;
     virtual void DeleteStreamVolumeToEffect(const std::string stringSessionID) = 0;
+    virtual bool IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout) = 0;
 
     // interfaces for injector
     virtual void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) = 0;
