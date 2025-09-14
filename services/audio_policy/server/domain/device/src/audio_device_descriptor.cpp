@@ -151,6 +151,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
     spatializationSupported_ = false;
     isVrSupported_ = true;
+    hightQualityRecordingSupported_ = false;
 }
 
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
@@ -182,6 +183,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
     spatializationSupported_ = false;
     isVrSupported_ = true;
+    hightQualityRecordingSupported_ = false;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
@@ -252,7 +254,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     spatializationSupported_ = deviceDescriptor->spatializationSupported_;
     isVrSupported_ = deviceDescriptor->isVrSupported_;
     clientInfo_ = deviceDescriptor->clientInfo_;
-    hightQualityRecordingSupported_ = deviceDescriptor.hightQualityRecordingSupported_;
+    hightQualityRecordingSupported_ = deviceDescriptor->hightQualityRecordingSupported_;
 }
 
 DeviceType AudioDeviceDescriptor::getType() const
